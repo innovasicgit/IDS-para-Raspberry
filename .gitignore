@@ -1,0 +1,16 @@
+# Entornos virtuales
+nuevoEntorno/
+entorno_servidor/
+venv/
+.env
+
+# Archivos de instalación
+*.zip
+*.exe
+*.msi
+
+# Archivos temporales
+_pycache_/
+*.pyc
+*.pyo
+*.log
