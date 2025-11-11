@@ -12,6 +12,6 @@ plotly==6.1.2
 pyod==2.0.5
 tensorflow==2.16.1
 keras==3.10.0
-# Utilidades extra
 joblib==1.5.1
+GPUtil==1.4.0
 requests==2.32.4
