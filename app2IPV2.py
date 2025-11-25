@@ -1,19 +1,31 @@
-import os
-import shlex
-from subprocess import PIPE
-from tkinter import OptionMenu
 import streamlit as st
 import streamlit.components.v1 as components
 import joblib
 import pandas as pd
+import numpy as np
+from pyod.utils.utility import standardizer
+from pyod.models.combination import average
+import plotly.graph_objects as go
+from streamlit_lottie import st_lottie
+import requests
+import sklearn
+import sklearn.metrics as metrics
+from sklearn.metrics import auc, silhouette_score, calinski_harabasz_score, davies_bouldin_score
+from streamlit_option_menu import option_menu
+import time
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, roc_curve
+from subprocess import PIPE, Popen
+import shlex
+import psutil
+import os
+import threading
+import tempfile
 import metricas
-"""
-Nota de Juanca 
-IMPORTANTE: No redefinir AutoencoderClassifier aquí.
-Usamos únicamente la clase real definida en autoencoder_classifier.py
-para que joblib/pickle pueda resolver el símbolo correcto y el modelo
-se comporte exactamente como fue entrenado (Keras + scikit-learn wrapper).
-"""
+import pickle
+from sklearn.base import BaseEstimator, ClassifierMixin
+from del_columns import del_columns
+from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
@@ -25,7 +37,6 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 import psutil
 import time
-from del_columns import del_columns
 from autoencoder_classifier import AutoencoderClassifier
 
 # >>> RUTAS DE MODELOS (globales, visibles para todo el módulo)
@@ -34,10 +45,6 @@ OCSVM_MODEL_PATH    = "model/ocsvm__EJERCICIO10_n_components6_fit.pkl"
 KMEANS_MODEL_PATHS  = "model/kmeans1__EJERCICIO10_n_components6_over.pkl"
 AUTOENCODER_MODEL_PATH = "model/autoencoder.pkl"
 KMEANS_TXT_PATH     = "model/list_kmeans_over.txt"
-
-# Nota: La clase AutoencoderClassifier SE IMPORTA desde autoencoder_classifier.py.
-# No se redefine aquí para evitar sombrear el import y alterar el comportamiento
-# del modelo serializado.
 
 def load_model(model_path):
     try:
@@ -113,7 +120,7 @@ from pathlib import Path
 with st.sidebar:
     logo_path = Path(__file__).parent / "img" / "logo.png"
     st.image(str(logo_path), width=150)
-    selected = OptionMenu(
+    selected = option_menu(
         "Navegación",
         ["Inicio", "Panel de Control", "Comparar Modelos"],
         icons=["house", "graph-up", "bar-chart"],
@@ -698,7 +705,7 @@ def show_dashboard_page():
 
         # Función para capturar paquetes
         def capturing_packets(comm_arg):
-            process = psutil.Popen(comm_arg, stdout=PIPE, stderr=PIPE, text=True)
+            process = Popen(comm_arg, stdout=PIPE, stderr=PIPE, text=True)
             return process
 
         # Función para transformar los paquetes en el formato correcto
