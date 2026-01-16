@@ -36,7 +36,6 @@ import sklearn.metrics._dist_metrics as _dm
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 import psutil
-import time
 from i18n import t, set_language, get_language
 
 

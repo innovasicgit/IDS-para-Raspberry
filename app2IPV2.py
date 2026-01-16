@@ -58,6 +58,7 @@ from backend.capture_utils import (
     type_packet,
     packet_df,
 )
+from backend.arp_filter import apply_realtime_arp_filter, get_arp_filter_description
 from backend.predict import predecir, mostrar_metricas
 
 # Configuración de página y estilos (primera llamada a Streamlit)
@@ -119,6 +120,20 @@ with st.sidebar:
                 "OCSVM percentil umbral", min_value=0.0, max_value=1.0, value=0.45, step=0.01,
                 help="Si se usa umbral, clasifica como normal si el score ≥ percentil seleccionado."
             )
+            st.divider()
+            st.markdown("**🔍 Filtro de Paquetes ARP**")
+            st.session_state.arp_limit_mode = st.selectbox(
+                "Límite de captura de paquetes ARP",
+                options=['low', 'medium', 'high', 'none'],
+                index=0,
+                format_func=lambda x: {
+                    'low': '🟢 Bajo (≈15% ARP)',
+                    'medium': '🟡 Medio (≈30% ARP)',
+                    'high': '🔴 Alto (≈50% ARP)',
+                    'none': '⚪ Sin filtro (todos los paquetes)'
+                }.get(x, x),
+                help="Controla qué porcentaje de paquetes ARP se capturan. Todos los demás paquetes (TCP, UDP, etc.) se capturan sin límite."
+            )
     except Exception:
         with st.expander("⚙️ Opciones de desarrollador", expanded=False):
             st.caption(f"sklearn: {getattr(sklearn, '__version__', 'N/A')}")
@@ -138,6 +153,20 @@ with st.sidebar:
             st.session_state.ocsvm_percentile = st.slider(
                 "OCSVM percentil umbral", min_value=0.0, max_value=1.0, value=0.45, step=0.01,
                 help="Si se usa umbral, clasifica como normal si el score ≥ percentil seleccionado."
+            )
+            st.divider()
+            st.markdown("**🔍 Filtro de Paquetes ARP**")
+            st.session_state.arp_limit_mode = st.selectbox(
+                "Límite de captura de paquetes ARP",
+                options=['low', 'medium', 'high', 'none'],
+                index=0,
+                format_func=lambda x: {
+                    'low': '🟢 Bajo (≈15% ARP)',
+                    'medium': '🟡 Medio (≈30% ARP)',
+                    'high': '🔴 Alto (≈50% ARP)',
+                    'none': '⚪ Sin filtro (todos los paquetes)'
+                }.get(x, x),
+                help="Controla qué porcentaje de paquetes ARP se capturan. Todos los demás paquetes (TCP, UDP, etc.) se capturan sin límite."
             )
 
 # ...existing code...
@@ -464,19 +493,29 @@ def show_dashboard_page():
                 progress_bar = st.progress(0, text="Capturando paquetes...")
                 total_packets = manual_packets
                 start_ts = time.time()
+                arp_mode = st.session_state.get('arp_limit_mode', 'low')
+                arp_count = 0
+                packets_count = 0
 
-                i = 0
-                while i < total_packets:
+                while packets_count < total_packets:
                     # Parar por tiempo si está configurado
                     if manual_duration and (time.time() - start_ts) >= manual_duration:
                         break
                     packet_str = process.stdout.readline().strip()
                     if packet_str:
                         packet_list = packet_str.split("\t")
-                        type_packet_data = type_packet(packet_list)
-                        captured_data = packet_df(type_packet_data, captured_data)
-                        i += 1
-                        progress_bar.progress(i / total_packets, text=f"Paquetes capturados: {i}/{total_packets}")
+                        protocol = packet_list[1] if len(packet_list) > 1 else ''
+                        
+                        # Usar el filtro ARP en tiempo real
+                        accept_packet = apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_mode)
+                        
+                        if accept_packet:
+                            type_packet_data = type_packet(packet_list)
+                            captured_data = packet_df(type_packet_data, captured_data)
+                            if protocol == 'ARP':
+                                arp_count += 1
+                            packets_count += 1
+                            progress_bar.progress(packets_count / total_packets, text=f"Paquetes capturados: {packets_count}/{total_packets} (ARP: {arp_count})")
 
                 try:
                     process.terminate()
@@ -484,6 +523,9 @@ def show_dashboard_page():
                     pass
                 progress_bar.empty()
                 st.success("✅ Captura finalizada.")
+                
+                if arp_mode != 'none':
+                    st.info(f"📊 Estadísticas de captura: {packets_count - arp_count} paquetes útiles + {arp_count} paquetes ARP = {packets_count} total")
 
                 # Mostrar el DataFrame capturado y permitir guardar
                 if captured_data is not None and list(captured_data.columns) != ['value']:
@@ -511,17 +553,33 @@ def show_dashboard_page():
                     start_ts = time.time()
                     end_ts = start_ts + duration_sec
                     prog = st.progress(0, text='Capturando (automática)...')
+                    
+                    arp_mode = st.session_state.get('arp_limit_mode', 'low')
+                    arp_count = 0
+                    packets_count = 0
+                    
                     while time.time() < end_ts:
                         if st.session_state.auto_capture['stop_requested']:
                             break
                         packet_str = process.stdout.readline().strip()
                         if packet_str:
                             packet_list = packet_str.split('\t')
-                            type_packet_data = type_packet(packet_list)
-                            captured_data = packet_df(type_packet_data, captured_data)
+                            protocol = packet_list[1] if len(packet_list) > 1 else ''
+                            
+                            # Usar el filtro ARP en tiempo real
+                            accept_packet = apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_mode)
+                            
+                            if accept_packet:
+                                type_packet_data = type_packet(packet_list)
+                                captured_data = packet_df(type_packet_data, captured_data)
+                                if protocol == 'ARP':
+                                    arp_count += 1
+                                packets_count += 1
+                        
                         elapsed = time.time() - start_ts
                         frac = min(1.0, elapsed / duration_sec)
-                        prog.progress(frac, text=f"Tiempo transcurrido: {int(elapsed)}s / {duration_sec}s")
+                        prog.progress(frac, text=f"Tiempo: {int(elapsed)}s / {duration_sec}s (Paquetes: {packets_count}, ARP: {arp_count})")
+                    
                     try:
                         process.terminate()
                     except Exception:
@@ -535,6 +593,8 @@ def show_dashboard_page():
                         st.session_state.auto_capture['next_run_ts'] = None
                     else:
                         if captured_data is not None and list(captured_data.columns) != ['value']:
+                            if arp_mode != 'none':
+                                st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
                             st.success('✅ Captura automática finalizada. Ejecutando predicción...')
                             st.session_state.data = captured_data
                             run_prediction_on_data(captured_data)
@@ -563,12 +623,23 @@ def show_dashboard_page():
                 )
                 
                 if uploaded_file is not None:
-                    data = pd.read_csv(uploaded_file)
-                    st.markdown('<div class="notification" style="background-color: #4CAF50; color: white;">✅ Datos cargados exitosamente</div>', unsafe_allow_html=True)
-                    
-                    with st.expander("📊 Vista previa de datos"):
-                        st.dataframe(data.head())
-                        st.info(f"Dimensiones del dataset: {data.shape[0]} filas, {data.shape[1]} columnas")
+                    try:
+                        data = pd.read_csv(uploaded_file)
+                        if data.empty or data.shape[1] == 0:
+                            st.error("❌ El archivo CSV está vacío o no contiene columnas válidas.")
+                            data = None
+                        else:
+                            st.markdown('<div class="notification" style="background-color: #4CAF50; color: white;">✅ Datos cargados exitosamente</div>', unsafe_allow_html=True)
+                            
+                            with st.expander("📊 Vista previa de datos"):
+                                st.dataframe(data.head())
+                                st.info(f"Dimensiones del dataset: {data.shape[0]} filas, {data.shape[1]} columnas")
+                    except pd.errors.EmptyDataError:
+                        st.error("❌ El archivo CSV está vacío o no tiene columnas válidas.")
+                        data = None
+                    except Exception as e:
+                        st.error(f"❌ Error al cargar el archivo: {str(e)}")
+                        data = None
                 else:
                     data = None
 
@@ -611,107 +682,7 @@ def show_dashboard_page():
         
     
 
-    with col2:
-        if 'uploaded_file' in locals() and uploaded_file is not None:
-            with st.spinner('⏳ Procesando datos...'):
-                data = pd.read_csv(uploaded_file)
-                st.markdown('<div class="notification" style="background-color: #4CAF50; color: white;">✅ Datos cargados exitosamente</div>', unsafe_allow_html=True)
-                time.sleep(3)
-
-                with st.expander("📊 Vista previa de datos"):
-                    st.dataframe(data.head())
-                    st.info(f"Dimensiones del dataset: {data.shape[0]} filas, {data.shape[1]} columnas")
-
     # Nota: Bloque antiguo de predicción con archivo subido eliminado por duplicado y uso de modelos no permitidos.
-            
-            # New Traffic Pattern Visualization
-            st.markdown("### 📈 Patrón de Tráfico y Anomalías")
-            
-            # Calculate traffic metrics
-            traffic_data = data.mean(axis=1)  # Using mean of all features as traffic indicator
-            
-            # Calculate ceiling and floor
-            window = 20  # Window size for rolling calculations
-            ceiling = traffic_data.rolling(window=window).max()
-            floor = traffic_data.rolling(window=window).min()
-            
-            # Create traffic pattern figure
-            fig_traffic = go.Figure()
-
-            # Add main traffic line
-            fig_traffic.add_trace(go.Scatter(
-                x=list(range(len(traffic_data))),
-                y=traffic_data,
-                mode='lines',
-                name='Tráfico',
-                line=dict(color='#4B9FE1', width=1)
-            ))
-
-            # Add ceiling line
-            fig_traffic.add_trace(go.Scatter(
-                x=list(range(len(ceiling))),
-                y=ceiling,
-                mode='lines',
-                name='Techo',
-                line=dict(color='#00C853', width=2, dash='dash')
-            ))
-
-            # Add floor line
-            fig_traffic.add_trace(go.Scatter(
-                x=list(range(len(floor))),
-                y=floor,
-                mode='lines',
-                name='Suelo',
-                line=dict(color='#FFA726', width=2, dash='dash')
-            ))
-
-            # Add anomaly points
-            anomaly_indices = np.where(y_pred == 1)[0]
-            fig_traffic.add_trace(go.Scatter(
-                x=anomaly_indices,
-                y=traffic_data[anomaly_indices],
-                mode='markers',
-                name='Anomalías',
-                marker=dict(
-                    color='#FF5252',
-                    size=8,
-                    symbol='circle'
-                )
-            ))
-
-            # Update layout
-            fig_traffic.update_layout(
-                title="Patrón de Tráfico y Detección de Anomalías",
-                title_x=0.5,
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white'),
-                showlegend=True,
-                legend=dict(
-                    yanchor="top",
-                    y=0.99,
-                    xanchor="left",
-                    x=0.01,
-                    bgcolor="rgba(0,0,0,0)"
-                ),
-                margin=dict(t=50, l=50, r=50, b=50),
-                xaxis=dict(
-                    title="Muestras",
-                    showgrid=False,
-                    showline=True,
-                    linecolor='rgba(255,255,255,0.2)'
-                ),
-                yaxis=dict(
-                    title="Intensidad de Tráfico",
-                    showgrid=True,
-                    gridcolor='rgba(255,255,255,0.1)',
-                    zeroline=False
-                )
-            )
-
-            st.plotly_chart(fig_traffic, use_container_width=True)
-                
-            # Nota: Métricas externas y tabla detallada se gestionan en la página de comparación.
 
 
 # Control de navegación

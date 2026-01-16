@@ -90,3 +90,56 @@ def packet_df(type_packet_dict, df):
     if list(df.columns) == ['value']:
         return None
     return df
+
+
+def apply_arp_filter(df, arp_limit_mode='low'):
+    """
+    Filtra paquetes ARP del DataFrame según el modo especificado.
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        DataFrame con los paquetes capturados
+    arp_limit_mode : str
+        Modo de límite de ARP: 'low' (por defecto), 'medium', 'high', 'none'
+        - 'low': Mantiene solo el 20% de paquetes ARP
+        - 'medium': Mantiene el 50% de paquetes ARP
+        - 'high': Mantiene el 80% de paquetes ARP
+        - 'none': No filtra ARP (mantiene todos)
+    
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame filtrado con reducción de paquetes ARP
+    """
+    if df is None or df.empty or 'protocols' not in df.columns:
+        return df
+    
+    if arp_limit_mode == 'none':
+        return df
+    
+    # Identificar paquetes ARP y no-ARP
+    arp_mask = df['protocols'] == 'ARP'
+    non_arp_df = df[~arp_mask]
+    arp_df = df[arp_mask]
+    
+    # Si no hay paquetes ARP, retornar el DataFrame original
+    if arp_df.empty:
+        return df
+    
+    # Determinar qué porcentaje de paquetes ARP mantener
+    retention_rate = {
+        'low': 0.20,      # Mantiene 20% de ARP
+        'medium': 0.50,   # Mantiene 50% de ARP
+        'high': 0.80      # Mantiene 80% de ARP
+    }.get(arp_limit_mode, 0.20)
+    
+    # Muestrear paquetes ARP según el porcentaje
+    num_arp_to_keep = max(1, int(len(arp_df) * retention_rate))
+    arp_df_filtered = arp_df.sample(n=num_arp_to_keep, random_state=42)
+    
+    # Combinar y reordenar por índice original
+    result_df = pd.concat([non_arp_df, arp_df_filtered], ignore_index=False)
+    result_df = result_df.sort_index().reset_index(drop=True)
+    
+    return result_df
