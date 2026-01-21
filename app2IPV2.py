@@ -59,6 +59,7 @@ from backend.capture_utils import (
     packet_df,
 )
 from backend.arp_filter import apply_realtime_arp_filter, get_arp_filter_description
+from backend.notifications import NotificationManager
 from backend.predict import predecir, mostrar_metricas
 
 # Configuración de página y estilos (primera llamada a Streamlit)
@@ -66,6 +67,10 @@ setup_page_and_style()
 
 # (Estilos y configuración aplicados por setup_page_and_style)
 ensure_auth()
+
+# Inicializar NotificationManager en session_state si no existe
+if 'notification_manager' not in st.session_state:
+    st.session_state.notification_manager = NotificationManager()
 
 # Autenticación via módulo externo
 
@@ -134,6 +139,39 @@ with st.sidebar:
                 }.get(x, x),
                 help="Controla qué porcentaje de paquetes ARP se capturan. Todos los demás paquetes (TCP, UDP, etc.) se capturan sin límite."
             )
+            st.divider()
+            st.markdown("**📧 Notificaciones por Correo**")
+            st.session_state.enable_email_notifications = st.toggle(
+                "Habilitar notificaciones por correo",
+                value=False,
+                help="Solo para capturas automáticas. Las manuales se notifican en la interfaz."
+            )
+            if st.session_state.enable_email_notifications:
+                st.session_state.user_email = st.text_input(
+                    "Correo de destino",
+                    value=st.session_state.get('user_email', ''),
+                    placeholder="usuario@gmail.com",
+                    help="Correo donde recibirás las notificaciones"
+                )
+                st.session_state.gmail_user = st.text_input(
+                    "Usuario de Gmail",
+                    value=st.session_state.get('gmail_user', ''),
+                    placeholder="tucuenta@gmail.com",
+                    help="Cuenta de Gmail desde donde se enviarán los emails"
+                )
+                st.session_state.gmail_app_password = st.text_input(
+                    "Contraseña de aplicación Gmail",
+                    type="password",
+                    value=st.session_state.get('gmail_app_password', ''),
+                    help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)"
+                )
+                st.info(
+                    "📌 **Instrucciones:**\n"
+                    "1. Ve a https://myaccount.google.com/apppasswords\n"
+                    "2. Asegúrate de tener verificación en 2 pasos activada\n"
+                    "3. Selecciona 'Mail' y 'Windows Computer'\n"
+                    "4. Copia la contraseña de 16 caracteres y pégala arriba"
+                )
     except Exception:
         with st.expander("⚙️ Opciones de desarrollador", expanded=False):
             st.caption(f"sklearn: {getattr(sklearn, '__version__', 'N/A')}")
@@ -168,6 +206,39 @@ with st.sidebar:
                 }.get(x, x),
                 help="Controla qué porcentaje de paquetes ARP se capturan. Todos los demás paquetes (TCP, UDP, etc.) se capturan sin límite."
             )
+            st.divider()
+            st.markdown("**📧 Notificaciones por Correo**")
+            st.session_state.enable_email_notifications = st.toggle(
+                "Habilitar notificaciones por correo",
+                value=False,
+                help="Solo para capturas automáticas. Las manuales se notifican en la interfaz."
+            )
+            if st.session_state.enable_email_notifications:
+                st.session_state.user_email = st.text_input(
+                    "Correo de destino",
+                    value=st.session_state.get('user_email', ''),
+                    placeholder="usuario@gmail.com",
+                    help="Correo donde recibirás las notificaciones"
+                )
+                st.session_state.gmail_user = st.text_input(
+                    "Usuario de Gmail",
+                    value=st.session_state.get('gmail_user', ''),
+                    placeholder="tucuenta@gmail.com",
+                    help="Cuenta de Gmail desde donde se enviarán los emails"
+                )
+                st.session_state.gmail_app_password = st.text_input(
+                    "Contraseña de aplicación Gmail",
+                    type="password",
+                    value=st.session_state.get('gmail_app_password', ''),
+                    help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)"
+                )
+                st.info(
+                    "📌 **Instrucciones:**\n"
+                    "1. Ve a https://myaccount.google.com/apppasswords\n"
+                    "2. Asegúrate de tener verificación en 2 pasos activada\n"
+                    "3. Selecciona 'Mail' y 'Windows Computer'\n"
+                    "4. Copia la contraseña de 16 caracteres y pégala arriba"
+                )
 
 # ...existing code...
 
@@ -395,6 +466,8 @@ def show_dashboard_page():
                     total = normal_count + ddos_tcp_count + ddos_udp_count + reconnaissance_count
                     labels = ['Normal','DDOS_TCP','DDOS_UDP','Reconnaissance']
                     values = [normal_count, ddos_tcp_count, ddos_udp_count, reconnaissance_count]
+                    # Calcular porcentaje de anomalías (todo lo que no sea Normal)
+                    anomaly_percentage = ((ddos_tcp_count + ddos_udp_count + reconnaissance_count) / total * 100) if total > 0 else 0
                     resumen_text = f"Se analizaron {total} paquetes. Normal: {normal_count}, DDOS_TCP: {ddos_tcp_count}, DDOS_UDP: {ddos_udp_count}, Reconnaissance: {reconnaissance_count}."
                 elif model_option=='AUTOENCODER':
                     normal_count = int(np.count_nonzero(y_pred == 0))
@@ -404,6 +477,8 @@ def show_dashboard_page():
                     total = normal_count + ddos_tcp_count + ddos_udp_count + reconnaissance_count
                     labels = ['Normal','DDOS_TCP','DDOS_UDP','Reconnaissance']
                     values = [normal_count, ddos_tcp_count, ddos_udp_count, reconnaissance_count]
+                    # Calcular porcentaje de anomalías
+                    anomaly_percentage = ((ddos_tcp_count + ddos_udp_count + reconnaissance_count) / total * 100) if total > 0 else 0
                     resumen_text = f"Se analizaron {total} paquetes. Normal: {normal_count}, DDOS_TCP: {ddos_tcp_count}, DDOS_UDP: {ddos_udp_count}, Reconnaissance: {reconnaissance_count}."
                 else:
                     n_normales = int((y_pred == 0).sum())
@@ -411,8 +486,23 @@ def show_dashboard_page():
                     total = n_normales + n_anomalos
                     labels = ['Normal','Anómalo']
                     values = [n_normales, n_anomalos]
+                    # Calcular porcentaje de anomalías
+                    anomaly_percentage = (n_anomalos / total * 100) if total > 0 else 0
                     resumen_text = f"Se analizaron {total} paquetes. Normales: {n_normales}, Anómalos: {n_anomalos}."
 
+                # ============ NOTIFICACIONES ============
+                # Actualizar estado y obtener mensaje de alerta
+                nm = st.session_state.notification_manager
+                nm.update_state(anomaly_percentage)
+                is_attack = anomaly_percentage >= 80
+                
+                # Mostrar notificación en interfaz (toast/alert)
+                alert_msg = nm.get_alert_message(anomaly_percentage, is_manual=True)
+                if alert_msg['type'] == 'error':
+                    st.error(f"{alert_msg['title']}\n{alert_msg['message']}", icon='🚨')
+                else:
+                    st.success(f"{alert_msg['title']}\n{alert_msg['message']}", icon='✅')
+                
                 # Guardar estado para el panel derecho
                 st.session_state['prediccion_realizada'] = True
                 st.session_state['resumen_prediccion'] = {'texto': resumen_text, 'labels': labels, 'values': values}
