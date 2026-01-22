@@ -60,6 +60,7 @@ from backend.capture_utils import (
 )
 from backend.arp_filter import apply_realtime_arp_filter, get_arp_filter_description
 from backend.notifications import NotificationManager
+from backend.notifications_db import NotificationsDB
 from backend.predict import predecir, mostrar_metricas
 
 # Configuración de página y estilos (primera llamada a Streamlit)
@@ -71,6 +72,21 @@ ensure_auth()
 # Inicializar NotificationManager en session_state si no existe
 if 'notification_manager' not in st.session_state:
     st.session_state.notification_manager = NotificationManager()
+
+# Inicializar NotificationsDB para persistencia
+if 'notifications_db' not in st.session_state:
+    st.session_state.notifications_db = NotificationsDB()
+    
+    # Cargar configuración guardada
+    db = st.session_state.notifications_db
+    saved_config = db.load_email_config()
+    saved_enabled = db.load_preferences()
+    
+    # Cargar en session_state
+    st.session_state.user_email = saved_config.get('recipient_email', '')
+    st.session_state.gmail_user = saved_config.get('gmail_user', '')
+    st.session_state.gmail_app_password = saved_config.get('gmail_app_password', '')
+    st.session_state.enable_email_notifications = saved_enabled
 
 # Autenticación via módulo externo
 
@@ -143,27 +159,31 @@ with st.sidebar:
             st.markdown("**📧 Notificaciones por Correo**")
             st.session_state.enable_email_notifications = st.toggle(
                 "Habilitar notificaciones por correo",
-                value=False,
-                help="Solo para capturas automáticas. Las manuales se notifican en la interfaz."
+                value=st.session_state.get('enable_email_notifications', False),
+                help="Solo para capturas automáticas. Las manuales se notifican en la interfaz.",
+                key="toggle_email_notifications_1"
             )
             if st.session_state.enable_email_notifications:
                 st.session_state.user_email = st.text_input(
                     "Correo de destino",
                     value=st.session_state.get('user_email', ''),
                     placeholder="usuario@gmail.com",
-                    help="Correo donde recibirás las notificaciones"
+                    help="Correo donde recibirás las notificaciones",
+                    key="user_email_input_1"
                 )
                 st.session_state.gmail_user = st.text_input(
                     "Usuario de Gmail",
                     value=st.session_state.get('gmail_user', ''),
                     placeholder="tucuenta@gmail.com",
-                    help="Cuenta de Gmail desde donde se enviarán los emails"
+                    help="Cuenta de Gmail desde donde se enviarán los emails",
+                    key="gmail_user_input_1"
                 )
                 st.session_state.gmail_app_password = st.text_input(
                     "Contraseña de aplicación Gmail",
                     type="password",
                     value=st.session_state.get('gmail_app_password', ''),
-                    help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)"
+                    help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)",
+                    key="gmail_app_password_input_1"
                 )
                 st.info(
                     "📌 **Instrucciones:**\n"
@@ -172,6 +192,36 @@ with st.sidebar:
                     "3. Selecciona 'Mail' y 'Windows Computer'\n"
                     "4. Copia la contraseña de 16 caracteres y pégala arriba"
                 )
+                
+                # Botones de guardar/limpiar
+                col_save, col_clear = st.columns(2)
+                with col_save:
+                    if st.button("💾 Guardar Configuración", use_container_width=True, key="btn_save_email_config_1"):
+                        db = st.session_state.notifications_db
+                        success, msg = db.save_email_config(
+                            st.session_state.user_email,
+                            st.session_state.gmail_user,
+                            st.session_state.gmail_app_password
+                        )
+                        # Guardar también la preferencia
+                        db.save_preferences(st.session_state.enable_email_notifications)
+                        if success:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
+                
+                with col_clear:
+                    if st.button("🗑️ Limpiar Datos", use_container_width=True, key="btn_clear_email_config_1"):
+                        db = st.session_state.notifications_db
+                        success, msg = db.delete_email_config()
+                        if success:
+                            st.warning(msg)
+                            st.session_state.user_email = ""
+                            st.session_state.gmail_user = ""
+                            st.session_state.gmail_app_password = ""
+                            st.rerun()
+                        else:
+                            st.error(msg)
     except Exception:
         with st.expander("⚙️ Opciones de desarrollador", expanded=False):
             st.caption(f"sklearn: {getattr(sklearn, '__version__', 'N/A')}")
@@ -210,27 +260,31 @@ with st.sidebar:
             st.markdown("**📧 Notificaciones por Correo**")
             st.session_state.enable_email_notifications = st.toggle(
                 "Habilitar notificaciones por correo",
-                value=False,
-                help="Solo para capturas automáticas. Las manuales se notifican en la interfaz."
+                value=st.session_state.get('enable_email_notifications', False),
+                help="Solo para capturas automáticas. Las manuales se notifican en la interfaz.",
+                key="toggle_email_notifications_2"
             )
             if st.session_state.enable_email_notifications:
                 st.session_state.user_email = st.text_input(
                     "Correo de destino",
                     value=st.session_state.get('user_email', ''),
                     placeholder="usuario@gmail.com",
-                    help="Correo donde recibirás las notificaciones"
+                    help="Correo donde recibirás las notificaciones",
+                    key="user_email_input_2"
                 )
                 st.session_state.gmail_user = st.text_input(
                     "Usuario de Gmail",
                     value=st.session_state.get('gmail_user', ''),
                     placeholder="tucuenta@gmail.com",
-                    help="Cuenta de Gmail desde donde se enviarán los emails"
+                    help="Cuenta de Gmail desde donde se enviarán los emails",
+                    key="gmail_user_input_2"
                 )
                 st.session_state.gmail_app_password = st.text_input(
                     "Contraseña de aplicación Gmail",
                     type="password",
                     value=st.session_state.get('gmail_app_password', ''),
-                    help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)"
+                    help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)",
+                    key="gmail_app_password_input_2"
                 )
                 st.info(
                     "📌 **Instrucciones:**\n"
@@ -239,6 +293,36 @@ with st.sidebar:
                     "3. Selecciona 'Mail' y 'Windows Computer'\n"
                     "4. Copia la contraseña de 16 caracteres y pégala arriba"
                 )
+                
+                # Botones de guardar/limpiar
+                col_save, col_clear = st.columns(2)
+                with col_save:
+                    if st.button("💾 Guardar Configuración", use_container_width=True, key="btn_save_email_config_2"):
+                        db = st.session_state.notifications_db
+                        success, msg = db.save_email_config(
+                            st.session_state.user_email,
+                            st.session_state.gmail_user,
+                            st.session_state.gmail_app_password
+                        )
+                        # Guardar también la preferencia
+                        db.save_preferences(st.session_state.enable_email_notifications)
+                        if success:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
+                
+                with col_clear:
+                    if st.button("🗑️ Limpiar Datos", use_container_width=True, key="btn_clear_email_config_2"):
+                        db = st.session_state.notifications_db
+                        success, msg = db.delete_email_config()
+                        if success:
+                            st.warning(msg)
+                            st.session_state.user_email = ""
+                            st.session_state.gmail_user = ""
+                            st.session_state.gmail_app_password = ""
+                            st.rerun()
+                        else:
+                            st.error(msg)
 
 # ...existing code...
 
@@ -416,9 +500,49 @@ def show_dashboard_page():
         def save_packet_csv(df, path):
             df.to_csv(path, index=False)
             st.success(f"✅ Archivo guardado en {path}")
+        
+        # Función robusta para limpiar datos
+        def clean_data(df):
+            """
+            Limpia datos de forma exhaustiva para evitar NaN.
+            """
+            df = df.copy()
+            
+            # 1. Convertir vacíos a NaN
+            df = df.replace(['', 'NaN', 'nan', 'None', 'null'], np.nan)
+            
+            # 2. Reemplazar comas por puntos en columnas específicas
+            lista = ['ip_ttl', 'tos', 'ip_flags_rb', 'ip_flags_df', 'ip_flags_mf']
+            for col in lista:
+                if col in df.columns:
+                    try:
+                        df[col] = df[col].astype(str).str.replace(',', '.')
+                    except Exception:
+                        pass
+            
+            # 3. Convertir a numérico, reemplazando errores con NaN
+            for col in df.columns:
+                if df[col].dtype == 'object':
+                    try:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                    except Exception:
+                        pass
+            
+            # 4. Rellenar NaN con 0
+            df = df.fillna(0)
+            
+            # 5. Reemplazar infinitos con 0
+            df = df.replace([np.inf, -np.inf], 0)
+            
+            # 6. Verificar que NO hay NaN
+            if df.isna().any().any():
+                st.warning("⚠️ Aún hay valores NaN después de la limpieza, reemplazando con 0...")
+                df = df.fillna(0)
+            
+            return df
             
         # Auxiliar: ejecutar predicción y mostrar resultado (manual/automática)
-        def run_prediction_on_data(data_df):
+        def run_prediction_on_data(data_df, is_manual=True):
             try:
                 model = None
                 if model_option == 'IForest':
@@ -433,15 +557,14 @@ def show_dashboard_page():
                     st.error('No se pudo cargar el modelo seleccionado')
                     return
 
-                lista = ['ip_ttl','tos','ip_flags_rb','ip_flags_df','ip_flags_mf']
-                if set(lista).issubset(set(data_df.columns)):
-                    data_df[lista] = data_df[lista].astype('str')
-                    data_df.ip_ttl = data_df.ip_ttl.str.replace(',','.')
-                    data_df.tos = data_df.tos.str.replace(',','.')
-                    data_df.ip_flags_rb = data_df.ip_flags_rb.str.replace(',','.')
-                    data_df.ip_flags_df = data_df.ip_flags_df.str.replace(',','.')
-                    data_df.ip_flags_mf = data_df.ip_flags_mf.str.replace(',','.')
-                data_df = data_df.replace('', np.nan).fillna(0)
+                # ============ LIMPIEZA ROBUSTA DE DATOS ============
+                data_df = clean_data(data_df)
+                
+                # Verificar que no hay NaN después de limpiar
+                nan_count = data_df.isna().sum().sum()
+                if nan_count > 0:
+                    st.error(f"❌ Error: Aún hay {nan_count} valores NaN después de limpiar")
+                    return
 
                 start_time = time.time()
                 cpu_usage = psutil.cpu_percent(1)
@@ -502,6 +625,26 @@ def show_dashboard_page():
                     st.error(f"{alert_msg['title']}\n{alert_msg['message']}", icon='🚨')
                 else:
                     st.success(f"{alert_msg['title']}\n{alert_msg['message']}", icon='✅')
+                
+                # Enviar email si está habilitado y si debe enviarse
+                # Nota: En capturas automáticas se envía; en manuales no
+                if st.session_state.get('enable_email_notifications', False) and not is_manual:
+                    if nm.should_send_email(is_attack):
+                        try:
+                            success, msg = nm.send_email(
+                                recipient_email=st.session_state.get('user_email', ''),
+                                gmail_user=st.session_state.get('gmail_user', ''),
+                                gmail_password=st.session_state.get('gmail_app_password', ''),
+                                anomaly_percentage=anomaly_percentage,
+                                is_manual=is_manual,
+                                model_name=model_option
+                            )
+                            if success:
+                                st.toast(f"📧 Email enviado correctamente", icon='✉️')
+                            else:
+                                st.warning(f"⚠️ Error enviando email: {msg}")
+                        except Exception as e:
+                            st.warning(f"⚠️ Error al enviar email: {str(e)}")
                 
                 # Guardar estado para el panel derecho
                 st.session_state['prediccion_realizada'] = True
@@ -687,7 +830,7 @@ def show_dashboard_page():
                                 st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
                             st.success('✅ Captura automática finalizada. Ejecutando predicción...')
                             st.session_state.data = captured_data
-                            run_prediction_on_data(captured_data)
+                            run_prediction_on_data(captured_data, is_manual=False)
                         # Programar siguiente ciclo y relanzar el countdown
                         st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
                         st.session_state.auto_capture['is_capturing'] = False
@@ -825,14 +968,30 @@ def show_compare_page():
     def _prep_df(df: pd.DataFrame) -> pd.DataFrame:
         lista = ['ip_ttl','tos','ip_flags_rb','ip_flags_df','ip_flags_mf']
         df = df.copy()
+        
+        # Convertir vacíos a NaN
+        df = df.replace(['', 'NaN', 'nan', 'None', 'null'], np.nan)
+        
+        # Reemplazar comas por puntos
         if set(lista).issubset(set(df.columns)):
             df[lista] = df[lista].astype('str')
             df.ip_ttl = df.ip_ttl.str.replace(',', '.')
             df.tos = df.tos.str.replace(',', '.')
-            df.ip_flags_rb = df.ip_flags_rb.str_replace(',', '.') if hasattr(df.ip_flags_rb, 'str_replace') else df.ip_flags_rb.str.replace(',', '.')
+            df.ip_flags_rb = df.ip_flags_rb.str.replace(',', '.')
             df.ip_flags_df = df.ip_flags_df.str.replace(',', '.')
             df.ip_flags_mf = df.ip_flags_mf.str.replace(',', '.')
-        return df.replace('', np.nan).fillna(0)
+        
+        # Convertir a numérico
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                try:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                except Exception:
+                    pass
+        
+        # Rellenar NaN e infinitos
+        df = df.replace([np.inf, -np.inf], 0)
+        return df.fillna(0)
 
     def _load(opt: str):
                return {
