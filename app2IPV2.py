@@ -24,6 +24,7 @@ import threading
 import tempfile
 import metricas
 import pickle
+import select
 from sklearn.base import BaseEstimator, ClassifierMixin
 from del_columns import del_columns
 from sklearn.compose import ColumnTransformer
@@ -39,7 +40,6 @@ from sklearn.neighbors import NearestNeighbors
 import psutil
 import time
 from autoencoder_classifier import AutoencoderClassifier
-
 from frontend.style import setup_page_and_style
 from frontend.home_page import show_home_page
 from frontend.auth_ui import ensure_auth
@@ -51,7 +51,7 @@ from backend.constants import (
     AUTOENCODER_MODEL_PATH,
     KMEANS_TXT_PATH,
 )
-from backend.model_utils import load_model, dict_predict, pred_threshold, dbscan_predict
+from backend.model_utils import load_model, dict_predict, pred_threshold
 from backend.capture_utils import (
     build_tshark_command,
     capturing_packets,
@@ -89,11 +89,28 @@ if 'notifications_db' not in st.session_state:
     st.session_state.enable_email_notifications = saved_enabled
 
 # Autenticación via módulo externo
-
-
 # ---------------------------------------------------- INICIO PAGE----------------------------------------------------------------------------------------------------------------------------
 # Navegación mejorada
 from pathlib import Path
+
+# Helpers para query params (persistencia de página y sesión)
+def _get_qp():
+    try:
+        return dict(st.query_params)
+    except Exception:
+        return st.experimental_get_query_params() or {}
+
+def _set_qp(params: dict):
+    try:
+        for k in list(getattr(st, "query_params", {})):
+            try:
+                del st.query_params[k]
+            except Exception:
+                pass
+        for k, v in params.items():
+            st.query_params[k] = v
+    except Exception:
+        st.experimental_set_query_params(**params)
 
 with st.sidebar:
     logo_path = Path(__file__).parent / "img" / "logo.png"
@@ -101,15 +118,36 @@ with st.sidebar:
     if st.session_state.get("authenticated"):
         st.caption(f"Conectado como: {st.session_state.username}")
         if st.button("Cerrar sesión", key="logout_btn"):
+            # Revocar sesión si existe token en query params
+            try:
+                from backend import auth
+                qp = _get_qp()
+                token = qp.get("token")
+                if isinstance(token, list):
+                    token = token[0] if token else None
+                if token:
+                    auth.revoke_session(token)
+            except Exception:
+                pass
             st.session_state.authenticated = False
             st.session_state.username = None
+            # Limpiar token y llevar a inicio
+            _set_qp({"page": "home"})
             st.rerun()
+    # Determinar selección inicial según página persistida
+    qp = _get_qp()
+    page = st.session_state.get("page") or qp.get("page")
+    if isinstance(page, list):
+        page = page[0] if page else None
+    _page_to_index = {"home": 0, "dashboard": 1, "compare": 2}
+    default_idx = _page_to_index.get(page, 0)
+
     selected = option_menu(
         "Navegación",
         ["Inicio", "Panel de Control", "Comparar Modelos"],
         icons=["house", "graph-up", "bar-chart"],
         menu_icon="cast",
-        default_index=0
+        default_index=default_idx
     )
 
     if selected == "Inicio":
@@ -118,6 +156,16 @@ with st.sidebar:
         st.session_state.page = "dashboard"
     else:
         st.session_state.page = "compare"
+
+    # Actualizar query params con la página actual manteniendo token
+    _qp_now = _get_qp()
+    _token_now = _qp_now.get("token")
+    if isinstance(_token_now, list):
+        _token_now = _token_now[0] if _token_now else None
+    params_to_set = {"page": st.session_state.page}
+    if _token_now:
+        params_to_set["token"] = _token_now
+    _set_qp(params_to_set)
 
     # Ubicar opciones avanzadas al final de la barra lateral
     st.divider()
@@ -223,128 +271,20 @@ with st.sidebar:
                         else:
                             st.error(msg)
     except Exception:
-        with st.expander("⚙️ Opciones de desarrollador", expanded=False):
-            st.caption(f"sklearn: {getattr(sklearn, '__version__', 'N/A')}")
-            st.session_state.ae_normal_threshold = st.slider(
-                "Umbral Normal (Autoencoder)", min_value=0.0, max_value=1.0, value=0.60, step=0.01,
-                help="Si la probabilidad de 'Normal' es mayor o igual al umbral, se clasifica como Normal."
-            )
-            st.session_state.ae_reconstruction_threshold = st.slider(
-                "Umbral Reconstrucción (AE)", min_value=0.0, max_value=1.0, value=0.02, step=0.001,
-                help="Si el error de reconstrucción es menor o igual al umbral, se considera normal (junto con el umbral de probabilidad)."
-            )
-            st.session_state.ocsvm_use_sign = st.toggle(
-                "OCSVM: usar predicción por signo",
-                value=True,
-                help="Usa labels del OCSVM (1=inlier, -1=outlier). Si se desactiva, se usa un umbral sobre decision_function."
-            )
-            st.session_state.ocsvm_percentile = st.slider(
-                "OCSVM percentil umbral", min_value=0.0, max_value=1.0, value=0.45, step=0.01,
-                help="Si se usa umbral, clasifica como normal si el score ≥ percentil seleccionado."
-            )
-            st.divider()
-            st.markdown("**🔍 Filtro de Paquetes ARP**")
-            st.session_state.arp_limit_mode = st.selectbox(
-                "Límite de captura de paquetes ARP",
-                options=['low', 'medium', 'high', 'none'],
-                index=0,
-                format_func=lambda x: {
-                    'low': '🟢 Bajo (≈15% ARP)',
-                    'medium': '🟡 Medio (≈30% ARP)',
-                    'high': '🔴 Alto (≈50% ARP)',
-                    'none': '⚪ Sin filtro (todos los paquetes)'
-                }.get(x, x),
-                help="Controla qué porcentaje de paquetes ARP se capturan. Todos los demás paquetes (TCP, UDP, etc.) se capturan sin límite."
-            )
-            st.divider()
-            st.markdown("**📧 Notificaciones por Correo**")
-            st.session_state.enable_email_notifications = st.toggle(
-                "Habilitar notificaciones por correo",
-                value=st.session_state.get('enable_email_notifications', False),
-                help="Solo para capturas automáticas. Las manuales se notifican en la interfaz.",
-                key="toggle_email_notifications_2"
-            )
-            if st.session_state.enable_email_notifications:
-                st.session_state.user_email = st.text_input(
-                    "Correo de destino",
-                    value=st.session_state.get('user_email', ''),
-                    placeholder="usuario@gmail.com",
-                    help="Correo donde recibirás las notificaciones",
-                    key="user_email_input_2"
-                )
-                st.session_state.gmail_user = st.text_input(
-                    "Usuario de Gmail",
-                    value=st.session_state.get('gmail_user', ''),
-                    placeholder="tucuenta@gmail.com",
-                    help="Cuenta de Gmail desde donde se enviarán los emails",
-                    key="gmail_user_input_2"
-                )
-                st.session_state.gmail_app_password = st.text_input(
-                    "Contraseña de aplicación Gmail",
-                    type="password",
-                    value=st.session_state.get('gmail_app_password', ''),
-                    help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)",
-                    key="gmail_app_password_input_2"
-                )
-                st.info(
-                    "📌 **Instrucciones:**\n"
-                    "1. Ve a https://myaccount.google.com/apppasswords\n"
-                    "2. Asegúrate de tener verificación en 2 pasos activada\n"
-                    "3. Selecciona 'Mail' y 'Windows Computer'\n"
-                    "4. Copia la contraseña de 16 caracteres y pégala arriba"
-                )
-                
-                # Botones de guardar/limpiar
-                col_save, col_clear = st.columns(2)
-                with col_save:
-                    if st.button("💾 Guardar Configuración", use_container_width=True, key="btn_save_email_config_2"):
-                        db = st.session_state.notifications_db
-                        success, msg = db.save_email_config(
-                            st.session_state.user_email,
-                            st.session_state.gmail_user,
-                            st.session_state.gmail_app_password
-                        )
-                        # Guardar también la preferencia
-                        db.save_preferences(st.session_state.enable_email_notifications)
-                        if success:
-                            st.success(msg)
-                        else:
-                            st.error(msg)
-                
-                with col_clear:
-                    if st.button("🗑️ Limpiar Datos", use_container_width=True, key="btn_clear_email_config_2"):
-                        db = st.session_state.notifications_db
-                        success, msg = db.delete_email_config()
-                        if success:
-                            st.warning(msg)
-                            st.session_state.user_email = ""
-                            st.session_state.gmail_user = ""
-                            st.session_state.gmail_app_password = ""
-                            st.rerun()
-                        else:
-                            st.error(msg)
-
-# ...existing code...
-
-#---------------------------------------------------- DASHBOARD ----------------------------------------------------------------------------------------------------------------------------
+        pass
+#---------------------------------------------------- SECCIÓN DASHBOARD ----------------------------------------------------------------------------------------------------------------------------
 # DistanceMetric.get_metric("euclidean") devuelve un objeto cuya clase interna
 # es la que Python debe encontrar al desempaquetar el pickle.
 _dm.EuclideanDistance = DistanceMetric.get_metric("euclidean").__class__
 
-
- # RUTAS DE LOS MODELOS
-
 def show_dashboard_page():
-    st.title('❇ Panel de Control de Detección')
+    st.title('🛡️ Panel de Control de Detección')
 
     # Inicializa el flag una sola vez
     if 'prediccion_realizada' not in st.session_state:
         st.session_state['prediccion_realizada'] = False
 
-    model_path = "model/lof_1_6_1_EJERCICIO10_n_components6_fit_over.pkl"
-    loaded_object = joblib.load(model_path)
-    print(f"Tipo del objeto cargado: {type(loaded_object)}")
-    print(f"Contenido: {loaded_object}")
+     # RUTAS DE LOS MODELOS
     
     model_path = "model/iforest__EJERCICIO10_n_components6_fit.pkl"
     loaded_object = joblib.load(model_path)
@@ -355,26 +295,13 @@ def show_dashboard_page():
     loaded_object = joblib.load(model_path)
     print(f"Tipo del objeto cargado: {type(loaded_object)}")
     print(f"Contenido: {loaded_object}")
-    
-    model_path = "model/dbscan_1_6_1_EJERCICIO10_n_components6_fit_over.pkl"
-    loaded_object = joblib.load(model_path)
-    print(f"Tipo del objeto cargado: {type(loaded_object)}")
-    print(f"Contenido: {loaded_object}")
-    
+
     model_path = "model/ocsvm__EJERCICIO10_n_components6_fit.pkl"
     loaded_object = joblib.load(model_path)
     print(f"Tipo del objeto cargado: {type(loaded_object)}")
     print(f"Contenido: {loaded_object}")
     
-
-    # Rutas de modelos permitidos (alineados con el Panel de Control)
-    # IFOREST_MODEL_PATHS = "model/iforest__EJERCICIO10_n_components6_fit.pkl"
-    # OCSVM_MODEL_PATH = "model/ocsvm__EJERCICIO10_n_components6_fit.pkl"
-    # KMEANS_MODEL_PATHS = "model/kmeans1__EJERCICIO10_n_components6_over.pkl"
-    # AUTOENCODER_MODEL_PATH = "model/autoencoder.pkl"
-    # KMEANS_TXT_PATH = "model/list_kmeans_over.txt"
-
-
+    
     # Inicializa el flag una sola vez
     if 'prediccion_realizada' not in st.session_state:
         st.session_state['prediccion_realizada'] = False
@@ -393,8 +320,6 @@ def show_dashboard_page():
         }
 
     # Usar rutas globales: IFOREST_MODEL_PATHS, OCSVM_MODEL_PATH, KMEANS_MODEL_PATHS, AUTOENCODER_MODEL_PATH
-
-
     # load_model importado desde backend.model_utils
 
     col1, col2 = st.columns([1, 2])
@@ -405,7 +330,7 @@ def show_dashboard_page():
             st.markdown("## 👋 Bienvenido al Panel IDS")
             st.info("Aquí verás el resumen y visualización de los resultados una vez realices una predicción. Selecciona el modelo y las opciones en el panel de la izquierda, luego captura paquetes y realiza la predicción.")
         else:
-            st.markdown("## 📄 Resumen de la Predicción")
+            st.markdown("## 📝 Resumen de la Predicción")
             resumen = st.session_state['resumen_prediccion']
             st.info(resumen['texto'])
             import plotly.express as px
@@ -427,20 +352,12 @@ def show_dashboard_page():
     
     # Interfas Usuario Panel de Control
     with col1:
-        st.markdown("### 🖥 Panel de Control")
-        model_option = st.selectbox(
-            "📌 Seleccione el modelo de detección",
-            ('IForest','OCSVM','KMEANS','AUTOENCODER'),
-            help="Cada modelo utiliza diferentes técnicas para detectar anomalías"
-        )
-        metric_option = st.selectbox(
-            "📌 Seleccione el tipo de metrica",
-            ('Externas', 'Internas'),
-            help="Cada modelo utiliza diferentes técnicas para detectar anomalías"
-        )
+        st.markdown("### Panel de Control")
+        model_option = st.selectbox("📌 Seleccione el modelo de detección", ('AUTOENCODER','IForest','KMEANS','OCSVM'), help="Cada modelo utiliza diferentes técnicas para detectar anomalías")
+        metric_option = st.selectbox("📌 Seleccione el tipo de metrica",('Internas', 'Externas'), help="Internas (sin etiquetas), externas (con etiquetas reales)")
 
         # Pestañas justo debajo del formulario (Automática por defecto, Manual)
-        tab_auto, tab_manual = st.tabs(["🚀 Captura automática", "🖐️ Captura manual"])
+        tab_auto, tab_manual = st.tabs(["🔄 Captura automática", "🖐️ Captura manual"])
 
         # ---------------- Captura automática (en pestaña) ----------------
         with tab_auto:
@@ -493,7 +410,6 @@ def show_dashboard_page():
         comm_arg = build_tshark_command()
         
         # Funciones de predicción y métricas importadas desde backend.predict
-        
         # mostrar_metricas importado desde backend.predict
 
         # Función para guardar los paquetes en CSV
@@ -617,19 +533,52 @@ def show_dashboard_page():
                 # Actualizar estado y obtener mensaje de alerta
                 nm = st.session_state.notification_manager
                 nm.update_state(anomaly_percentage)
-                is_attack = anomaly_percentage >= 80
+                alert_level = nm.get_alert_level(anomaly_percentage)
                 
-                # Mostrar notificación en interfaz (toast/alert)
-                alert_msg = nm.get_alert_message(anomaly_percentage, is_manual=True)
-                if alert_msg['type'] == 'error':
-                    st.error(f"{alert_msg['title']}\n{alert_msg['message']}", icon='🚨')
-                else:
-                    st.success(f"{alert_msg['title']}\n{alert_msg['message']}", icon='✅')
+                # Indicador visual del nivel de alerta
+                st.markdown("### 🚦 Nivel de Alerta")
+                col_alert_a, col_alert_b = st.columns([1, 2])
+                with col_alert_a:
+                    if alert_level == 'attack':
+                        st.metric("Anomalías", f"{anomaly_percentage:.1f}%", delta="Crítico", delta_color="inverse")
+                    elif alert_level == 'suspicious':
+                        st.metric("Anomalías", f"{anomaly_percentage:.1f}%", delta="Sospechoso", delta_color="off")
+                    else:
+                        st.metric("Anomalías", f"{anomaly_percentage:.1f}%", delta="Normal", delta_color="normal")
+                with col_alert_b:
+                    if alert_level == 'attack':
+                        st.markdown(
+                            """
+                            <div style="background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">
+                                🚨 NIVEL CRÍTICO - Posible ataque
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    elif alert_level == 'suspicious':
+                        st.markdown(
+                            """
+                            <div style="background: linear-gradient(90deg, #ff9800 0%, #ff6f00 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">
+                                ⚠️ NIVEL MEDIO - Actividad sospechosa
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(
+                            """
+                            <div style="background: linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">
+                                ✅ NIVEL NORMAL
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                st.markdown("---")
                 
                 # Enviar email si está habilitado y si debe enviarse
                 # Nota: En capturas automáticas se envía; en manuales no
                 if st.session_state.get('enable_email_notifications', False) and not is_manual:
-                    if nm.should_send_email(is_attack):
+                    if nm.should_send_email(anomaly_percentage):
                         try:
                             success, msg = nm.send_email(
                                 recipient_email=st.session_state.get('user_email', ''),
@@ -734,7 +683,17 @@ def show_dashboard_page():
                     # Parar por tiempo si está configurado
                     if manual_duration and (time.time() - start_ts) >= manual_duration:
                         break
-                    packet_str = process.stdout.readline().strip()
+                    # Lectura no bloqueante para evitar congelamientos
+                    packet_str = ""
+                    try:
+                        ready, _, _ = select.select([process.stdout], [], [], 0.5)
+                        if ready:
+                            packet_str = process.stdout.readline().strip()
+                    except Exception:
+                        packet_str = ""
+                    # Si el proceso terminó inesperadamente, salir
+                    if process.poll() is not None:
+                        break
                     if packet_str:
                         packet_list = packet_str.split("\t")
                         protocol = packet_list[1] if len(packet_list) > 1 else ''
@@ -759,84 +718,9 @@ def show_dashboard_page():
                 
                 if arp_mode != 'none':
                     st.info(f"📊 Estadísticas de captura: {packets_count - arp_count} paquetes útiles + {arp_count} paquetes ARP = {packets_count} total")
-
-                # Mostrar el DataFrame capturado y permitir guardar
-                if captured_data is not None and list(captured_data.columns) != ['value']:
-                    st.write("📊 *Paquetes capturados:*")
-                    st.dataframe(captured_data)
-                    st.session_state.data = captured_data
-                    st.success("Datos capturados listos para predicción")
-                    if st.button("💾 Guardar en CSV"):
-                        save_packet_csv(captured_data, "captura_paquetes.csv")
-
-        # ---------------- Pestaña: Captura automática ----------------
-        with tab_auto:
-            # Ejecución automática si está activa y toca ciclo
-            if st.session_state.auto_capture['active'] and not st.session_state.auto_capture['is_capturing']:
-                due = st.session_state.auto_capture['next_run_ts'] is not None and time.time() >= st.session_state.auto_capture['next_run_ts']
-                if due:
-                    st.session_state.auto_capture['is_capturing'] = True
-                    st.info('🚀 Ejecutando captura automática...')
-                    process = capturing_packets(comm_arg)
-
-                    captured_data = None
-                    duration_sec = int(st.session_state.auto_capture['duration_sec'])
-                    if duration_sec <= 0:
-                        duration_sec = 60
-                    start_ts = time.time()
-                    end_ts = start_ts + duration_sec
-                    prog = st.progress(0, text='Capturando (automática)...')
                     
-                    arp_mode = st.session_state.get('arp_limit_mode', 'low')
-                    arp_count = 0
-                    packets_count = 0
-                    
-                    while time.time() < end_ts:
-                        if st.session_state.auto_capture['stop_requested']:
-                            break
-                        packet_str = process.stdout.readline().strip()
-                        if packet_str:
-                            packet_list = packet_str.split('\t')
-                            protocol = packet_list[1] if len(packet_list) > 1 else ''
-                            
-                            # Usar el filtro ARP en tiempo real
-                            accept_packet = apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_mode)
-                            
-                            if accept_packet:
-                                type_packet_data = type_packet(packet_list)
-                                captured_data = packet_df(type_packet_data, captured_data)
-                                if protocol == 'ARP':
-                                    arp_count += 1
-                                packets_count += 1
-                        
-                        elapsed = time.time() - start_ts
-                        frac = min(1.0, elapsed / duration_sec)
-                        prog.progress(frac, text=f"Tiempo: {int(elapsed)}s / {duration_sec}s (Paquetes: {packets_count}, ARP: {arp_count})")
-                    
-                    try:
-                        process.terminate()
-                    except Exception:
-                        pass
-                    prog.empty()
-
-                    if st.session_state.auto_capture['stop_requested']:
-                        st.warning('⏹️ Captura automática detenida por el usuario.')
-                        st.session_state.auto_capture['active'] = False
-                        st.session_state.auto_capture['is_capturing'] = False
-                        st.session_state.auto_capture['next_run_ts'] = None
-                    else:
-                        if captured_data is not None and list(captured_data.columns) != ['value']:
-                            if arp_mode != 'none':
-                                st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
-                            st.success('✅ Captura automática finalizada. Ejecutando predicción...')
-                            st.session_state.data = captured_data
-                            run_prediction_on_data(captured_data, is_manual=False)
-                        # Programar siguiente ciclo y relanzar el countdown
-                        st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
-                        st.session_state.auto_capture['is_capturing'] = False
-                        st.rerun()
-
-        # Sección de carga de archivo CSV
+                
+                # Sección de carga de archivo CSV
         uploaded_file = None  # Evita UnboundLocalError si no se usa el cargador
         with st.container():
             st.markdown("### 📊 Cargar Datos para Predicción")
@@ -875,12 +759,103 @@ def show_dashboard_page():
                         data = None
                 else:
                     data = None
-
+                    
         if st.button('🚀 Realizar Predicción', key='predict'):
             if data is not None:
                 run_prediction_on_data(data)
             else:
                 st.warning("⚠ Por favor capture paquetes o cargue un archivo CSV antes de realizar la predicción.")
+
+                # Mostrar el DataFrame capturado y permitir guardar
+                if captured_data is not None and list(captured_data.columns) != ['value']:
+                    st.write("📊 *Paquetes capturados:*")
+                    st.dataframe(captured_data)
+                    st.session_state.data = captured_data
+                    st.success("Datos capturados listos para predicción")
+                    if st.button("💾 Guardar en CSV"):
+                        save_packet_csv(captured_data, "captura_paquetes.csv")
+
+        # ---------------- Pestaña: Captura automática ----------------
+        with tab_auto:
+            # Ejecución automática si está activa y toca ciclo
+            if st.session_state.auto_capture['active'] and not st.session_state.auto_capture['is_capturing']:
+                due = st.session_state.auto_capture['next_run_ts'] is not None and time.time() >= st.session_state.auto_capture['next_run_ts']
+                if due:
+                    st.session_state.auto_capture['is_capturing'] = True
+                    st.info('🚀 Ejecutando captura automática...')
+                    process = capturing_packets(comm_arg)
+
+                    captured_data = None
+                    duration_sec = int(st.session_state.auto_capture['duration_sec'])
+                    if duration_sec <= 0:
+                        duration_sec = 60
+                    start_ts = time.time()
+                    end_ts = start_ts + duration_sec
+                    prog = st.progress(0, text='Capturando (automática)...')
+                    
+                    arp_mode = st.session_state.get('arp_limit_mode', 'low')
+                    arp_count = 0
+                    packets_count = 0
+                    
+                    while time.time() < end_ts:
+                        if st.session_state.auto_capture['stop_requested']:
+                            break
+                        # Lectura no bloqueante para evitar congelamientos
+                        packet_str = ""
+                        try:
+                            ready, _, _ = select.select([process.stdout], [], [], 0.5)
+                            if ready:
+                                packet_str = process.stdout.readline().strip()
+                        except Exception:
+                            packet_str = ""
+                        # Si el proceso terminó inesperadamente, salir del ciclo
+                        if process.poll() is not None:
+                            break
+                        if packet_str:
+                            packet_list = packet_str.split('\t')
+                            protocol = packet_list[1] if len(packet_list) > 1 else ''
+                            
+                            # Usar el filtro ARP en tiempo real
+                            accept_packet = apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_mode)
+                            
+                            if accept_packet:
+                                type_packet_data = type_packet(packet_list)
+                                captured_data = packet_df(type_packet_data, captured_data)
+                                if protocol == 'ARP':
+                                    arp_count += 1
+                                packets_count += 1
+                        
+                        elapsed = time.time() - start_ts
+                        frac = min(1.0, elapsed / duration_sec)
+                        prog.progress(frac, text=f"Tiempo: {int(elapsed)}s / {duration_sec}s (Paquetes: {packets_count}, ARP: {arp_count})")
+                    
+                    try:
+                        process.terminate()
+                    except Exception:
+                        pass
+                    prog.empty()
+
+                    if st.session_state.auto_capture['stop_requested']:
+                        st.warning('⏹️ Captura automática detenida por el usuario.')
+                        st.session_state.auto_capture['active'] = False
+                        st.session_state.auto_capture['is_capturing'] = False
+                        st.session_state.auto_capture['next_run_ts'] = None
+                    else:
+                        if captured_data is not None and list(captured_data.columns) != ['value']:
+                            if arp_mode != 'none':
+                                st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
+                            st.success('✅ Captura automática finalizada. Ejecutando predicción...')
+                            st.session_state.data = captured_data
+                            run_prediction_on_data(captured_data, is_manual=False)
+                        # Programar siguiente ciclo y relanzar el countdown
+                        try:
+                            interval = int(st.session_state.auto_capture['interval_sec'])
+                        except Exception:
+                            interval = 60
+                        st.session_state.auto_capture['next_run_ts'] = time.time() + max(1, interval)
+                        st.session_state.auto_capture['is_capturing'] = False
+                        st.rerun()
+                        
 
         # Descargar reporte PDF de la última predicción
         st.markdown("### 📄 Descargar Reporte PDF")
@@ -912,10 +887,6 @@ def show_dashboard_page():
             plt.close(fig_bar)
         else:
             st.warning("⚠ Primero debes capturar tráfico o hacer una predicción antes de descargar el reporte.") 
-        
-    
-
-    # Nota: Bloque antiguo de predicción con archivo subido eliminado por duplicado y uso de modelos no permitidos.
 
 
 # Control de navegación
@@ -952,8 +923,8 @@ def show_compare_page():
             st.info('Cargue un CSV o use la última captura para habilitar la comparación.')
 
     st.markdown('#### Modelos a comparar')
-    model_choices = ['IForest', 'OCSVM', 'KMEANS', 'AUTOENCODER']
-    selected_models = st.multiselect('Seleccione modelos', model_choices, default=['IForest','OCSVM','KMEANS'])
+    model_choices = ['AUTOENCODER', 'IForest', 'KMEANS', 'OCSVM']
+    selected_models = st.multiselect('Seleccione modelos', model_choices, default=['AUTOENCODER','IForest','KMEANS'])
 
     metric_compare = st.selectbox('Métricas de validación', ['Internas', 'Externas', 'Ninguna'], help='Internas: Silhouette, Calinski, Davies. Externas: requiere columna de etiquetas reales.')
 
@@ -1007,7 +978,6 @@ def show_compare_page():
                 scores = model.decision_function(df)
                 y = pred_threshold(scores, -0.10)['Pred'].values
                 pp3 = model[0].transform(df)
-            # LOF no permitido
             elif opt == 'OCSVM':
                 scores = model.decision_function(df)
                 thr = np.percentile(scores, 100 * 0.45)
@@ -1016,7 +986,6 @@ def show_compare_page():
             elif opt == 'KMEANS':
                 y = model.predict(df)
                 pp3 = model[0].transform(df)
-            # DBSCAN no permitido
             elif opt == 'AUTOENCODER':
                 y = model.predict(df)
                 pp3 = model[0].transform(df)
@@ -1165,7 +1134,8 @@ with col2:
         """
         <div style='text-align: center'>
             <p>🛡 Sistema de Detección de Anomalías IoT</p>
-            <p>© 2025 Innovasic | UCC</p>
+            <p>© 2026 Innovasic | UCC</p>
         </div>
         """,
         unsafe_allow_html=True)
+

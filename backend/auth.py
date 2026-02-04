@@ -37,6 +37,17 @@ def init_db():
             )
             """
         )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS sessions (
+                token TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                role TEXT NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         conn.commit()
     finally:
         conn.close()
@@ -120,6 +131,61 @@ def verify_login(username: str, password: str, code: str) -> tuple[bool, str]:
         if not hmac.compare_digest(current_code, code.strip()):
             return False, "Código inválido"
         return True, role
+    finally:
+        conn.close()
+
+
+def create_session(username: str, role: str, ttl_hours: int = 24) -> str:
+    """Crea una sesión persistente y devuelve el token."""
+    token = secrets.token_urlsafe(24)
+    expires_at = datetime.utcnow() + timedelta(hours=ttl_hours)
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        # Limpia sesiones expiradas del usuario
+        cur.execute("DELETE FROM sessions WHERE expires_at < ?", (datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),))
+        cur.execute(
+            "INSERT INTO sessions (token, username, role, expires_at) VALUES (?, ?, ?, ?)",
+            (token, username.strip(), role, expires_at.strftime("%Y-%m-%d %H:%M:%S")),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return token
+
+
+def verify_session(token: str) -> tuple[bool, str | None, str | None]:
+    """Verifica si el token de sesión es válido y no ha expirado."""
+    if not token:
+        return False, None, None
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT username, role, expires_at FROM sessions WHERE token = ?", (token,))
+        row = cur.fetchone()
+        if not row:
+            return False, None, None
+        username, role, exp_str = row
+        exp = datetime.strptime(exp_str, "%Y-%m-%d %H:%M:%S")
+        if datetime.utcnow() > exp:
+            # Expirada: eliminar
+            cur.execute("DELETE FROM sessions WHERE token = ?", (token,))
+            conn.commit()
+            return False, None, None
+        return True, username, role
+    finally:
+        conn.close()
+
+
+def revoke_session(token: str) -> None:
+    """Revoca/elimina un token de sesión."""
+    if not token:
+        return
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        conn.commit()
     finally:
         conn.close()
 

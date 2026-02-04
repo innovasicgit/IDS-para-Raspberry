@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from .model_utils import pred_threshold, dbscan_predict
+from .model_utils import pred_threshold
 
 
 def predecir(model, data, model_option):
@@ -30,10 +30,7 @@ def predecir(model, data, model_option):
         if(model_option=='IForest'):
             scores = model.decision_function(data)
             predicciones=pred_threshold(scores, -0.10)
-        if(model_option=='LOF'):
-            scores = model.decision_function(data)
-            threshold = np.percentile(scores, 100 * 0.2)
-            predicciones = np.where(scores >= threshold,0,1)
+        
         if(model_option=='OCSVM'):
             scores = None
             try:
@@ -54,12 +51,6 @@ def predecir(model, data, model_option):
         if(model_option=='KMEANS'):
             scores=""
             predicciones=model.predict(data)
-        if model_option == 'DBSCAN':
-            scores=""
-            preproc = model.named_steps['preprocessor_3_pca']
-            X = preproc.transform(data)
-            db = model.named_steps['dbscan']
-            predicciones = dbscan_predict(db, X)
         if(model_option=='AUTOENCODER'):
             proba = None
             est = None
@@ -101,7 +92,7 @@ def predecir(model, data, model_option):
                 scores = ""
         pp3 = None
         try:
-            if model_option in ['IForest','OCSVM','LOF','DBSCAN']:
+            if model_option in ['IForest','OCSVM']:
                 transformer = None
                 if hasattr(model, 'named_steps'):
                     transformer = model.named_steps.get('preprocessor_3_pca') or model.named_steps.get('prepro_3_pca')

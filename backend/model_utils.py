@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 
-from sklearn.neighbors import NearestNeighbors
 import streamlit as st
 
 from .constants import (
@@ -47,9 +46,4 @@ def pred_threshold(score, threshold):
     return Actual_pred.reset_index(drop=True)
 
 
-def dbscan_predict(dbscan, X_new):
-    core_samples = dbscan.components_
-    core_labels = dbscan.labels_[dbscan.core_sample_indices_]
-    nn = NearestNeighbors(n_neighbors=1).fit(core_samples)
-    dist, idx = nn.kneighbors(X_new)
-    return np.where(dist.ravel() <= dbscan.eps, core_labels[idx.ravel()], -1)
+ 
