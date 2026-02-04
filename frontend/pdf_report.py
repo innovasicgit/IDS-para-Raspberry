@@ -84,9 +84,9 @@ def generar_reporte_pdf(resumen, labels, values, descripcion_amenazas, fig=None,
     if logo_path and os.path.exists(logo_path):
         resolved_logo = logo_path
     else:
-        # Intento de ruta relativa: ../img/logo.png (desde frontend/)
+        # Intento de ruta relativa: ../img/logo.gif (desde frontend/)
         base_dir = os.path.dirname(os.path.dirname(__file__))
-        candidate = os.path.join(base_dir, 'img', 'logo.png')
+        candidate = os.path.join(base_dir, 'img', 'logo.gif')
         if os.path.exists(candidate):
             resolved_logo = candidate
     if resolved_logo:
@@ -113,8 +113,18 @@ def generar_reporte_pdf(resumen, labels, values, descripcion_amenazas, fig=None,
     if fig is not None:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmpfile:
             fig.savefig(tmpfile.name, bbox_inches='tight')
-            pdf.image(tmpfile.name, x=30, w=150)
-            os.unlink(tmpfile.name)
+            tmpfile_path = tmpfile.name
+        
+        # Añadir imagen al PDF
+        pdf.image(tmpfile_path, x=30, w=150)
+        
+        # Cerrar figura y limpiar archivo temporal
+        plt.close(fig)
+        try:
+            os.unlink(tmpfile_path)
+        except PermissionError:
+            pass  # Si Windows aún tiene el archivo bloqueado, ignorar
+        
         pdf.ln(5)
 
     # Tabla de resultados
