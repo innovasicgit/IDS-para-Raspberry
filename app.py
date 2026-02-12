@@ -35,7 +35,12 @@ if "authenticated" not in st.session_state:
 # ==================== AUTENTICACIÓN Y NAVEGACIÓN ====================
 
 # Requerir autenticación para todas las páginas
-ensure_auth()
+# ensure_auth()  # DESHABILITADO TEMPORALMENTE
+
+# Simular usuario autenticado para desarrollo
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = True
+    st.session_state.username = "admin"
 
 with st.sidebar:
     # Logo
