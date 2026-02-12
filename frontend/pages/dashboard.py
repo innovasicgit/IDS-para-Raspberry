@@ -31,8 +31,13 @@ from backend.capture_utils import (
 )
 from backend.predict import predecir, mostrar_metricas
 from frontend.pdf_report import generar_reporte_pdf, DESCRIPCIONES_AMENAZAS
+from frontend.analysis_explanations import (
+    explicar_distribucion,
+    explicar_metricas_rendimiento,
+    explicar_patron_trafico,
+    generar_resumen_general
+)
 import metricas
-
 # Detectar si estamos en Streamlit Cloud o local
 def is_streamlit_cloud():
     """Detecta si la app está corriendo en Streamlit Cloud"""
@@ -223,6 +228,24 @@ def show_dashboard_page():
                 fig_bar.update_layout(title='Distribución de Detecciones', title_x=0.5)
                 st.plotly_chart(fig_bar, use_container_width=True)
             
+            # Explicación inteligente de la distribución
+            with st.expander("🧠 Análisis Inteligente de Resultados", expanded=True):
+                model_used = st.session_state.get('model_option_used', 'IForest')
+                explicacion_dist = explicar_distribucion(resumen['labels'], resumen['values'], model_used)
+                st.markdown(explicacion_dist)
+            
+            # Resumen ejecutivo general
+            with st.expander("📋 Resumen Ejecutivo Completo"):
+                if 'metricas_rendimiento' in st.session_state:
+                    tiene_patron = 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None
+                    resumen_general = generar_resumen_general(
+                        resumen, 
+                        st.session_state['metricas_rendimiento'],
+                        model_used,
+                        tiene_patron
+                    )
+                    st.markdown(resumen_general)
+            
             # Mostrar paquetes capturados
             with st.expander("📊 Ver Paquetes Capturados"):
                 if 'data_prediccion' in st.session_state:
@@ -271,6 +294,13 @@ def show_dashboard_page():
                     st.metric("💾 % Memoria", f"{met['memoria']:.2f}%")
                 with met_cols[3]:
                     st.metric("📀 % Disco", f"{met['disco']:.2f}%")
+                
+                # Explicación inteligente de métricas de rendimiento
+                with st.expander("🔍 Interpretación de Métricas"):
+                    explicacion_metricas = explicar_metricas_rendimiento(
+                        met['tiempo'], met['cpu'], met['memoria'], met['disco']
+                    )
+                    st.markdown(explicacion_metricas)
             
             # Gráfica de Patrón de Tráfico y Anomalías
             # Usar datos de la predicción si existen, sino usar datos cargados
@@ -282,6 +312,12 @@ def show_dashboard_page():
             
             if datos_para_grafica is not None and len(datos_para_grafica) > 0:
                 st.markdown("### 📈 Patrón de Tráfico y Anomalías")
+                
+                # Explicación del patrón ANTES de la gráfica
+                explicacion_patron = explicar_patron_trafico(datos_para_grafica)
+                if explicacion_patron:
+                    with st.expander("📊 ¿Qué significa esta gráfica?", expanded=True):
+                        st.markdown(explicacion_patron)
                 
                 try:
                     # Seleccionar solo columnas numéricas para calcular el patrón de tráfico
