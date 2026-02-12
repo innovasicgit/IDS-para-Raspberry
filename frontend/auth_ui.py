@@ -217,30 +217,6 @@ def _login_ui(_set_qp_fn=None):
 
                 **© 2026 Innovasic | UCC**
                 """)
-                        
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        create = st.form_submit_button("✨ Crear Administrador", use_container_width=True, type="primary")
-                    
-                    if create:
-                        if not u or not p1 or not p2:
-                            st.error("❌ Todos los campos son obligatorios")
-                        elif len(p1) < 6:
-                            st.error("❌ La contraseña debe tener al menos 6 caracteres")
-                        elif p1 != p2:
-                            st.error("❌ Las contraseñas no coinciden")
-                        else:
-                            ok, msg = auth.create_admin(u, p1)
-                            if ok:
-                                st.success(f"✅ {msg}")
-                                st.balloons()
-                                st.info("👉 Ahora puede iniciar sesión en la pestaña 'Iniciar sesión'")
-                            else:
-                                st.error(f"❌ {msg}")
-            else:
-                col_warn1, col_warn2, col_warn3 = st.columns([1, 2, 1])
-                with col_warn2:
-                    st.warning(f"⚠️ Ya existe{'n' if admins > 1 else ''} **{admins}** administrador{'es' if admins > 1 else ''}.")
-                    st.info("ℹ️ Inicie sesión para gestionar usuarios desde el panel de administración.")
         
         # TAB: ACERCA DE
         with tabs[3]:
