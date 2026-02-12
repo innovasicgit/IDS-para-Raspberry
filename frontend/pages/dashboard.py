@@ -271,6 +271,96 @@ def show_dashboard_page():
                     st.metric("💾 % Memoria", f"{met['memoria']:.2f}%")
                 with met_cols[3]:
                     st.metric("📀 % Disco", f"{met['disco']:.2f}%")
+            
+            # Gráfica de Patrón de Tráfico y Anomalías
+            # Usar datos de la predicción si existen, sino usar datos cargados
+            datos_para_grafica = None
+            if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
+                datos_para_grafica = st.session_state['data_prediccion']
+            elif 'data' in st.session_state and st.session_state.data is not None:
+                datos_para_grafica = st.session_state.data
+            
+            if datos_para_grafica is not None and len(datos_para_grafica) > 0:
+                st.markdown("### 📈 Patrón de Tráfico y Anomalías")
+                
+                try:
+                    # Seleccionar solo columnas numéricas para calcular el patrón de tráfico
+                    numeric_data = datos_para_grafica.select_dtypes(include=[np.number])
+                    
+                    if numeric_data.empty or len(numeric_data.columns) == 0:
+                        st.warning("⚠️ No hay datos numéricos para visualizar el patrón de tráfico")
+                    else:
+                        # Calculate traffic metrics
+                        traffic_data = numeric_data.mean(axis=1)
+                        
+                        # Calculate ceiling and floor
+                        window = min(20, len(traffic_data) // 2) if len(traffic_data) > 1 else 1
+                        ceiling = traffic_data.rolling(window=window, min_periods=1).max()
+                        floor = traffic_data.rolling(window=window, min_periods=1).min()
+                        
+                        # Create traffic pattern figure
+                        fig_traffic = go.Figure()
+
+                        # Add main traffic line
+                        fig_traffic.add_trace(go.Scatter(
+                            x=list(range(len(traffic_data))),
+                            y=traffic_data,
+                            mode='lines',
+                            name='Tráfico',
+                            line=dict(color='#4B9FE1', width=1)
+                        ))
+
+                        # Add ceiling line
+                        fig_traffic.add_trace(go.Scatter(
+                            x=list(range(len(ceiling))),
+                            y=ceiling,
+                            mode='lines',
+                            name='Techo',
+                            line=dict(color='#00C853', width=2, dash='dash')
+                        ))
+
+                        # Add floor line
+                        fig_traffic.add_trace(go.Scatter(
+                            x=list(range(len(floor))),
+                            y=floor,
+                            mode='lines',
+                            name='Suelo',
+                            line=dict(color='#FFA726', width=2, dash='dash')
+                        ))
+
+                        # Update layout
+                        fig_traffic.update_layout(
+                            title="Patrón de Tráfico y Detección de Anomalías",
+                            title_x=0.5,
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color='white'),
+                            showlegend=True,
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01,
+                                bgcolor="rgba(0,0,0,0)"
+                            ),
+                            margin=dict(t=50, l=50, r=50, b=50),
+                            xaxis=dict(
+                                title="Muestras",
+                                showgrid=False,
+                                showline=True,
+                                linecolor='rgba(255,255,255,0.2)'
+                            ),
+                            yaxis=dict(
+                                title="Intensidad de Tráfico",
+                                showgrid=True,
+                                gridcolor='rgba(255,255,255,0.1)',
+                                zeroline=False
+                            )
+                        )
+
+                        st.plotly_chart(fig_traffic, use_container_width=True)
+                except Exception as e:
+                    st.error(f"❌ Error al generar visualización de tráfico: {str(e)}")
     
     # Interfaz Usuario Panel de Control
     with col1:
@@ -627,95 +717,3 @@ def show_dashboard_page():
                 run_prediction_on_data(data)
             else:
                 st.warning("⚠ Por favor capture paquetes o cargue un archivo CSV antes de realizar la predicción.")
-        
-    
-    # Mostrar visualización de tráfico si hay datos disponibles
-    # Usar datos de la predicción si existen, sino usar datos cargados
-    datos_para_grafica = None
-    if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
-        datos_para_grafica = st.session_state['data_prediccion']
-    elif 'data' in st.session_state and st.session_state.data is not None:
-        datos_para_grafica = st.session_state.data
-    
-    if datos_para_grafica is not None and len(datos_para_grafica) > 0:
-        st.markdown("### 📈 Patrón de Tráfico y Anomalías")
-        
-        try:
-            # Seleccionar solo columnas numéricas para calcular el patrón de tráfico
-            numeric_data = datos_para_grafica.select_dtypes(include=[np.number])
-            
-            if numeric_data.empty or len(numeric_data.columns) == 0:
-                st.warning("⚠️ No hay datos numéricos para visualizar el patrón de tráfico")
-            else:
-                # Calculate traffic metrics
-                traffic_data = numeric_data.mean(axis=1)
-                
-                # Calculate ceiling and floor
-                window = min(20, len(traffic_data) // 2) if len(traffic_data) > 1 else 1
-                ceiling = traffic_data.rolling(window=window, min_periods=1).max()
-                floor = traffic_data.rolling(window=window, min_periods=1).min()
-                
-                # Create traffic pattern figure
-                fig_traffic = go.Figure()
-
-                # Add main traffic line
-                fig_traffic.add_trace(go.Scatter(
-                    x=list(range(len(traffic_data))),
-                    y=traffic_data,
-                    mode='lines',
-                    name='Tráfico',
-                    line=dict(color='#4B9FE1', width=1)
-                ))
-
-                # Add ceiling line
-                fig_traffic.add_trace(go.Scatter(
-                    x=list(range(len(ceiling))),
-                    y=ceiling,
-                    mode='lines',
-                    name='Techo',
-                    line=dict(color='#00C853', width=2, dash='dash')
-                ))
-
-                # Add floor line
-                fig_traffic.add_trace(go.Scatter(
-                    x=list(range(len(floor))),
-                    y=floor,
-                    mode='lines',
-                    name='Suelo',
-                    line=dict(color='#FFA726', width=2, dash='dash')
-                ))
-
-                # Update layout
-                fig_traffic.update_layout(
-                    title="Patrón de Tráfico y Detección de Anomalías",
-                    title_x=0.5,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white'),
-                    showlegend=True,
-                    legend=dict(
-                        yanchor="top",
-                        y=0.99,
-                        xanchor="left",
-                        x=0.01,
-                        bgcolor="rgba(0,0,0,0)"
-                    ),
-                    margin=dict(t=50, l=50, r=50, b=50),
-                    xaxis=dict(
-                        title="Muestras",
-                        showgrid=False,
-                        showline=True,
-                        linecolor='rgba(255,255,255,0.2)'
-                    ),
-                    yaxis=dict(
-                        title="Intensidad de Tráfico",
-                        showgrid=True,
-                        gridcolor='rgba(255,255,255,0.1)',
-                        zeroline=False
-                    )
-                )
-
-                st.plotly_chart(fig_traffic, use_container_width=True)
-        except Exception as e:
-            st.error(f"❌ Error al generar visualización de tráfico: {str(e)}")
-
