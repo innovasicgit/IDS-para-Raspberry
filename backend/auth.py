@@ -219,3 +219,7 @@ def get_current_code() -> tuple[str | None, datetime | None]:
         return code, datetime.strptime(expires_at_str, "%Y-%m-%d %H:%M:%S")
     finally:
         conn.close()
+
+
+# Inicializar la base de datos automáticamente al importar el módulo
+init_db()
