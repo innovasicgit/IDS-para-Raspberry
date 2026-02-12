@@ -188,6 +188,38 @@ def show_dashboard_page():
             'last_cycle_result': None,
         }
 
+    # CSS para scroll independiente en cada columna
+    st.markdown("""
+        <style>
+        /* Contenedores con scroll independiente */
+        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
+            height: 75vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 10px;
+        }
+        
+        /* Scrollbar personalizado para mejor apariencia */
+        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # Diseño responsivo: columnas se adaptan al tamaño de pantalla
     # En móvil, las columnas se apilan verticalmente automáticamente
     col1, col2 = st.columns([1, 2], gap="medium")
