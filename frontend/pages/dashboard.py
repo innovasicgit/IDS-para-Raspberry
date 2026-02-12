@@ -912,3 +912,19 @@ def show_dashboard_page():
                 run_prediction_on_data(data)
             else:
                 st.warning("⚠ Por favor capture paquetes o cargue un archivo CSV antes de realizar la predicción.")
+        
+        # Botón para limpiar y volver a predecir
+        if st.session_state.get('prediccion_realizada', False):
+            if st.button('🔄 Volver a Predecir', key='reset_prediction', use_container_width=True, type="secondary"):
+                # Limpiar todos los estados de predicción
+                st.session_state['prediccion_realizada'] = False
+                st.session_state['resumen_prediccion'] = None
+                st.session_state['data_prediccion'] = None
+                st.session_state['y_pred'] = None
+                st.session_state['scores'] = None
+                st.session_state['pp3'] = None
+                st.session_state['model_option_used'] = None
+                st.session_state['metric_option_used'] = None
+                st.session_state['metricas_rendimiento'] = None
+                st.success("✅ Predicción limpiada. Puedes realizar una nueva predicción.")
+                st.rerun()
