@@ -281,22 +281,181 @@ def show_dashboard_page():
                 else:
                     st.info("Las métricas internas requieren al menos dos clases en la predicción.")
             
-            # Métricas de Rendimiento
+            # Métricas de Rendimiento con gráficos dinámicos
             if 'metricas_rendimiento' in st.session_state:
-                st.markdown("### ⚙️ Métricas de Rendimiento")
+                st.markdown("### ⚙️ Métricas de Rendimiento del Sistema")
                 met = st.session_state['metricas_rendimiento']
-                met_cols = st.columns(4, gap="small")
-                with met_cols[0]:
-                    st.metric("⏱️ Tiempo (s)", f"{met['tiempo']:.2f}")
-                with met_cols[1]:
-                    st.metric("🖥️ % CPU", f"{met['cpu']:.2f}%")
-                with met_cols[2]:
-                    st.metric("💾 % Memoria", f"{met['memoria']:.2f}%")
-                with met_cols[3]:
-                    st.metric("📀 % Disco", f"{met['disco']:.2f}%")
+                
+                # Crear 2 filas de métricas con gauges
+                # Primera fila: CPU y Memoria
+                col_gauge1, col_gauge2 = st.columns(2, gap="medium")
+                
+                with col_gauge1:
+                    # Gauge de CPU
+                    cpu_color = "#00C853" if met['cpu'] < 60 else "#FFA726" if met['cpu'] < 85 else "#FF5252"
+                    fig_cpu = go.Figure(go.Indicator(
+                        mode="gauge+number+delta",
+                        value=met['cpu'],
+                        domain={'x': [0, 1], 'y': [0, 1]},
+                        title={'text': "🖥️ Uso de CPU", 'font': {'size': 20, 'color': 'white'}},
+                        number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
+                        delta={'reference': 50, 'increasing': {'color': "#FF5252"}, 'decreasing': {'color': "#00C853"}},
+                        gauge={
+                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
+                            'bar': {'color': cpu_color, 'thickness': 0.75},
+                            'bgcolor': "rgba(0,0,0,0)",
+                            'borderwidth': 2,
+                            'bordercolor': "white",
+                            'steps': [
+                                {'range': [0, 60], 'color': 'rgba(0, 200, 83, 0.2)'},
+                                {'range': [60, 85], 'color': 'rgba(255, 167, 38, 0.2)'},
+                                {'range': [85, 100], 'color': 'rgba(255, 82, 82, 0.2)'}
+                            ],
+                            'threshold': {
+                                'line': {'color': "white", 'width': 4},
+                                'thickness': 0.75,
+                                'value': 85
+                            }
+                        }
+                    ))
+                    fig_cpu.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font={'color': "white"},
+                        height=250,
+                        margin=dict(l=20, r=20, t=50, b=20)
+                    )
+                    st.plotly_chart(fig_cpu, use_container_width=True)
+                    # Estado textual
+                    cpu_status = "✅ Normal" if met['cpu'] < 60 else "⚠️ Alto" if met['cpu'] < 85 else "🔥 Crítico"
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {cpu_status}</div>", unsafe_allow_html=True)
+                
+                with col_gauge2:
+                    # Gauge de Memoria
+                    mem_color = "#00C853" if met['memoria'] < 70 else "#FFA726" if met['memoria'] < 85 else "#FF5252"
+                    fig_mem = go.Figure(go.Indicator(
+                        mode="gauge+number+delta",
+                        value=met['memoria'],
+                        domain={'x': [0, 1], 'y': [0, 1]},
+                        title={'text': "💾 Uso de Memoria RAM", 'font': {'size': 20, 'color': 'white'}},
+                        number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
+                        delta={'reference': 50, 'increasing': {'color': "#FF5252"}, 'decreasing': {'color': "#00C853"}},
+                        gauge={
+                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
+                            'bar': {'color': mem_color, 'thickness': 0.75},
+                            'bgcolor': "rgba(0,0,0,0)",
+                            'borderwidth': 2,
+                            'bordercolor': "white",
+                            'steps': [
+                                {'range': [0, 70], 'color': 'rgba(0, 200, 83, 0.2)'},
+                                {'range': [70, 85], 'color': 'rgba(255, 167, 38, 0.2)'},
+                                {'range': [85, 100], 'color': 'rgba(255, 82, 82, 0.2)'}
+                            ],
+                            'threshold': {
+                                'line': {'color': "white", 'width': 4},
+                                'thickness': 0.75,
+                                'value': 85
+                            }
+                        }
+                    ))
+                    fig_mem.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font={'color': "white"},
+                        height=250,
+                        margin=dict(l=20, r=20, t=50, b=20)
+                    )
+                    st.plotly_chart(fig_mem, use_container_width=True)
+                    # Estado textual
+                    mem_status = "✅ Normal" if met['memoria'] < 70 else "⚠️ Alto" if met['memoria'] < 85 else "🚨 Crítico"
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {mem_status}</div>", unsafe_allow_html=True)
+                
+                # Segunda fila: Disco y Tiempo
+                col_gauge3, col_gauge4 = st.columns(2, gap="medium")
+                
+                with col_gauge3:
+                    # Gauge de Disco
+                    disk_color = "#00C853" if met['disco'] < 70 else "#FFA726" if met['disco'] < 85 else "#FF5252"
+                    fig_disk = go.Figure(go.Indicator(
+                        mode="gauge+number",
+                        value=met['disco'],
+                        domain={'x': [0, 1], 'y': [0, 1]},
+                        title={'text': "📀 Uso de Disco", 'font': {'size': 20, 'color': 'white'}},
+                        number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
+                        gauge={
+                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
+                            'bar': {'color': disk_color, 'thickness': 0.75},
+                            'bgcolor': "rgba(0,0,0,0)",
+                            'borderwidth': 2,
+                            'bordercolor': "white",
+                            'steps': [
+                                {'range': [0, 70], 'color': 'rgba(0, 200, 83, 0.2)'},
+                                {'range': [70, 85], 'color': 'rgba(255, 167, 38, 0.2)'},
+                                {'range': [85, 100], 'color': 'rgba(255, 82, 82, 0.2)'}
+                            ],
+                            'threshold': {
+                                'line': {'color': "white", 'width': 4},
+                                'thickness': 0.75,
+                                'value': 85
+                            }
+                        }
+                    ))
+                    fig_disk.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font={'color': "white"},
+                        height=250,
+                        margin=dict(l=20, r=20, t=50, b=20)
+                    )
+                    st.plotly_chart(fig_disk, use_container_width=True)
+                    # Estado textual
+                    disk_status = "✅ Espacio OK" if met['disco'] < 70 else "⚠️ Considerar limpieza" if met['disco'] < 85 else "🚨 Casi lleno"
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {disk_status}</div>", unsafe_allow_html=True)
+                
+                with col_gauge4:
+                    # Indicador de Tiempo (diferente estilo - más simple)
+                    tiempo_color = "#00C853" if met['tiempo'] < 5 else "#FFA726" if met['tiempo'] < 15 else "#FF5252"
+                    # Calcular un porcentaje relativo (máximo esperado: 30 segundos)
+                    tiempo_pct = min((met['tiempo'] / 30) * 100, 100)
+                    
+                    fig_time = go.Figure(go.Indicator(
+                        mode="number+gauge",
+                        value=met['tiempo'],
+                        domain={'x': [0, 1], 'y': [0, 1]},
+                        title={'text': "⏱️ Tiempo de Análisis", 'font': {'size': 20, 'color': 'white'}},
+                        number={'suffix': " seg", 'font': {'size': 40, 'color': 'white'}},
+                        gauge={
+                            'axis': {'range': [None, 30], 'tickwidth': 1, 'tickcolor': "white"},
+                            'bar': {'color': tiempo_color, 'thickness': 0.75},
+                            'bgcolor': "rgba(0,0,0,0)",
+                            'borderwidth': 2,
+                            'bordercolor': "white",
+                            'steps': [
+                                {'range': [0, 5], 'color': 'rgba(0, 200, 83, 0.2)'},
+                                {'range': [5, 15], 'color': 'rgba(255, 167, 38, 0.2)'},
+                                {'range': [15, 30], 'color': 'rgba(255, 82, 82, 0.2)'}
+                            ],
+                            'threshold': {
+                                'line': {'color': "white", 'width': 4},
+                                'thickness': 0.75,
+                                'value': 15
+                            }
+                        }
+                    ))
+                    fig_time.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font={'color': "white"},
+                        height=250,
+                        margin=dict(l=20, r=20, t=50, b=20)
+                    )
+                    st.plotly_chart(fig_time, use_container_width=True)
+                    # Estado textual
+                    time_status = "⚡ Excelente" if met['tiempo'] < 5 else "✅ Bueno" if met['tiempo'] < 15 else "🐌 Lento"
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Velocidad:</b> {time_status}</div>", unsafe_allow_html=True)
                 
                 # Explicación inteligente de métricas de rendimiento
-                with st.expander("🔍 Interpretación de Métricas"):
+                with st.expander("🔍 Interpretación Detallada de Métricas"):
                     explicacion_metricas = explicar_metricas_rendimiento(
                         met['tiempo'], met['cpu'], met['memoria'], met['disco']
                     )
