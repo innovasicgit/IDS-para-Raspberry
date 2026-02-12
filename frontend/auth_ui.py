@@ -251,3 +251,12 @@ def _login_ui(_set_qp_fn=None):
                 **© 2026 Innovasic | UCC**
                 """)
 
+
+def ensure_auth():
+    """
+    Asegura que el usuario esté autenticado.
+    Si no lo está, muestra la interfaz de login y detiene la ejecución.
+    """
+    if not st.session_state.get("authenticated", False):
+        _login_ui()
+        st.stop()
