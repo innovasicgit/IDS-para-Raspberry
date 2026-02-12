@@ -7,7 +7,9 @@ import hmac
 import secrets
 from datetime import datetime, timedelta
 
-DB_PATH = Path(__file__).parent / "auth.db"
+# En Streamlit Cloud, solo /tmp/ tiene permisos de escritura
+# Usar variable de entorno para permitir override local
+DB_PATH = Path(os.getenv("AUTH_DB_PATH", "/tmp/auth.db"))
 
 
 def _get_conn():
