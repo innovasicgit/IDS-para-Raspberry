@@ -141,9 +141,9 @@ streamlit run app_cloud.py
 curl -fsSL https://tailscale.com/install.sh | sh
 sudo tailscale up
 
-# Obtén tu IP
+# Mi IP es:
 tailscale ip -4
-# Ejemplo: 100.68.42.17
+100.96.121.76
 ```
 
 Usa en Streamlit Cloud secrets:
