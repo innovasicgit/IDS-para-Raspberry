@@ -191,30 +191,29 @@ def show_dashboard_page():
     # CSS para scroll independiente en cada columna
     st.markdown("""
         <style>
-        /* Contenedores con scroll independiente */
-        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
-            height: 75vh;
+        /* Hacer que las columnas tengan scroll independiente */
+        [data-testid="column"] {
+            height: 80vh;
             overflow-y: auto;
             overflow-x: hidden;
-            padding-right: 10px;
         }
         
-        /* Scrollbar personalizado para mejor apariencia */
-        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
-            width: 8px;
+        /* Scrollbar personalizado */
+        [data-testid="column"]::-webkit-scrollbar {
+            width: 10px;
         }
         
-        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar-track {
+        [data-testid="column"]::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 10px;
         }
         
-        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb {
+        [data-testid="column"]::-webkit-scrollbar-thumb {
             background: #888;
             border-radius: 10px;
         }
         
-        [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb:hover {
+        [data-testid="column"]::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
         </style>
