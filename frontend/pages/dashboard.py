@@ -616,24 +616,31 @@ def show_dashboard_page():
             st.warning("⚠ Primero debes capturar tráfico o hacer una predicción antes de descargar el reporte.") 
         
     
-    # Mostrar visualización de tráfico solo si hay datos cargados
-    if data is not None:
+    # Mostrar visualización de tráfico si hay datos disponibles
+    # Usar datos de la predicción si existen, sino usar datos cargados
+    datos_para_grafica = None
+    if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
+        datos_para_grafica = st.session_state['data_prediccion']
+    elif data is not None:
+        datos_para_grafica = data
+    
+    if datos_para_grafica is not None and len(datos_para_grafica) > 0:
         st.markdown("### 📈 Patrón de Tráfico y Anomalías")
         
         try:
             # Seleccionar solo columnas numéricas para calcular el patrón de tráfico
-            numeric_data = data.select_dtypes(include=[np.number])
+            numeric_data = datos_para_grafica.select_dtypes(include=[np.number])
             
-            if numeric_data.empty:
+            if numeric_data.empty or len(numeric_data.columns) == 0:
                 st.warning("⚠️ No hay datos numéricos para visualizar el patrón de tráfico")
             else:
                 # Calculate traffic metrics
                 traffic_data = numeric_data.mean(axis=1)
                 
                 # Calculate ceiling and floor
-                window = 20
-                ceiling = traffic_data.rolling(window=window).max()
-                floor = traffic_data.rolling(window=window).min()
+                window = min(20, len(traffic_data) // 2) if len(traffic_data) > 1 else 1
+                ceiling = traffic_data.rolling(window=window, min_periods=1).max()
+                floor = traffic_data.rolling(window=window, min_periods=1).min()
                 
                 # Create traffic pattern figure
                 fig_traffic = go.Figure()
