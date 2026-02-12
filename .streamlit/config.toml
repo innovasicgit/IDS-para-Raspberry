@@ -1,0 +1,5 @@
+# Streamlit cloud configuration
+# This file tells Streamlit Cloud where to find the requirements file
+
+[deploy]
+requirements = "streamlit-cloud-deploy/requirements.txt"
