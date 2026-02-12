@@ -12,6 +12,8 @@ import time
 import matplotlib.pyplot as plt
 from collections import Counter
 import psutil
+import os
+import requests
 
 from backend.constants import (
     IFOREST_MODEL_PATHS,
@@ -30,6 +32,95 @@ from backend.capture_utils import (
 from backend.predict import predecir, mostrar_metricas
 from frontend.pdf_report import generar_reporte_pdf, DESCRIPCIONES_AMENAZAS
 import metricas
+
+# Detectar si estamos en Streamlit Cloud o local
+def is_streamlit_cloud():
+    """Detecta si la app está corriendo en Streamlit Cloud"""
+    return os.getenv('STREAMLIT_SHARING_MODE') is not None or \
+           os.path.exists('/mount/src')
+
+# URL del backend API (debe configurarse en secrets o .env)
+def get_backend_url():
+    """Obtiene la URL del backend desde secrets o variable de entorno"""
+    # Primero intentar desde secrets de Streamlit
+    try:
+        return st.secrets.get("BACKEND_URL", "https://reviewed-sailing-grid-clinic.trycloudflare.com")
+    except:
+        # Fallback a variable de entorno o URL por defecto
+        return os.getenv("BACKEND_URL", "https://reviewed-sailing-grid-clinic.trycloudflare.com")
+
+def capture_via_api(duration_sec, backend_url):
+    """
+    Captura paquetes usando el backend API
+    
+    Args:
+        duration_sec: Duración de la captura en segundos
+        backend_url: URL del backend API
+        
+    Returns:
+        DataFrame con los paquetes capturados o None si hay error
+    """
+    try:
+        response = requests.post(
+            f"{backend_url}/capture",
+            json={
+                "duration": duration_sec,
+                "arp_filter_mode": "none"
+            },
+            timeout=duration_sec + 30  # Timeout mayor a la duración
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result['status'] == 'success' and result['data']:
+                df = pd.DataFrame(result['data'])
+                return df
+            else:
+                st.error(f"No se capturaron paquetes")
+                return None
+        else:
+            st.error(f"Error en la captura: {response.status_code} - {response.text}")
+            return None
+            
+    except requests.exceptions.Timeout:
+        st.error("⏱️ Timeout: La captura tomó demasiado tiempo")
+        return None
+    except requests.exceptions.ConnectionError:
+        st.error("🔌 Error de conexión: No se pudo conectar al backend. Verifica que el backend esté corriendo y la URL sea correcta.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Error en la captura: {str(e)}")
+        return None
+
+def capture_local(duration_sec, comm_arg):
+    """
+    Captura paquetes usando tshark local (solo para ejecución local)
+    
+    Args:
+        duration_sec: Duración de la captura en segundos
+        comm_arg: Comando tshark construido
+        
+    Returns:
+        DataFrame con los paquetes capturados
+    """
+    process = capturing_packets(comm_arg)
+    captured_data = None
+    start_ts = time.time()
+    end_ts = start_ts + duration_sec
+    
+    while time.time() < end_ts:
+        packet_str = process.stdout.readline().strip()
+        if packet_str:
+            packet_list = packet_str.split('\t')
+            type_packet_data = type_packet(packet_list)
+            captured_data = packet_df(type_packet_data, captured_data)
+    
+    try:
+        process.terminate()
+    except Exception:
+        pass
+        
+    return captured_data
 
 def show_dashboard_page():
     """Página principal del dashboard."""
@@ -324,47 +415,71 @@ def show_dashboard_page():
             with col_man_a:
                 manual_packets = st.number_input('Paquetes a capturar (manual)', min_value=10, max_value=50000, value=100, step=10)
             with col_man_b:
-                manual_duration_min = st.number_input('Duración máx. (min) (manual)', min_value=0, max_value=1440, value=0, step=1)
+                manual_duration_min = st.number_input('Duración máx. (min) (manual)', min_value=1, max_value=1440, value=1, step=1)
             manual_duration = int(manual_duration_min * 60)
            
             if st.button("🚀 Iniciar Captura", key="btn_manual_capture"):
-                process = capturing_packets(comm_arg)
-                st.write("📡 Capturando paquetes...")
+                # Detectar si estamos en Cloud o local
+                use_api = is_streamlit_cloud()
+                
+                if use_api:
+                    # Usar backend API (Streamlit Cloud)
+                    st.info("🌐 Capturando desde backend remoto...")
+                    backend_url = get_backend_url()
+                    progress_bar = st.progress(0, text="Esperando respuesta del backend...")
+                    
+                    captured_data = capture_via_api(manual_duration, backend_url)
+                    progress_bar.empty()
+                    
+                    if captured_data is not None and len(captured_data) > 0:
+                        st.success(f"✅ Captura finalizada: {len(captured_data)} paquetes capturados")
+                    else:
+                        st.warning("⚠️ No se capturaron paquetes")
+                else:
+                    # Usar tshark local
+                    st.info("💻 Capturando desde interfaz local...")
+                    process = capturing_packets(comm_arg)
+                    
+                    # Inicializamos el DataFrame
+                    captured_data = None
+                    progress_bar = st.progress(0, text="Capturando paquetes...")
+                    total_packets = manual_packets
+                    start_ts = time.time()
 
-                # Inicializamos el DataFrame
-                captured_data = None
-                progress_bar = st.progress(0, text="Capturando paquetes...")
-                total_packets = manual_packets
-                start_ts = time.time()
+                    i = 0
+                    while i < total_packets:
+                        # Parar por tiempo si está configurado
+                        if manual_duration and (time.time() - start_ts) >= manual_duration:
+                            break
+                        packet_str = process.stdout.readline().strip()
+                        if packet_str:
+                            packet_list = packet_str.split("\t")
+                            type_packet_data = type_packet(packet_list)
+                            captured_data = packet_df(type_packet_data, captured_data)
+                            i += 1
+                            progress_bar.progress(i / total_packets, text=f"Paquetes capturados: {i}/{total_packets}")
 
-                i = 0
-                while i < total_packets:
-                    # Parar por tiempo si está configurado
-                    if manual_duration and (time.time() - start_ts) >= manual_duration:
-                        break
-                    packet_str = process.stdout.readline().strip()
-                    if packet_str:
-                        packet_list = packet_str.split("\t")
-                        type_packet_data = type_packet(packet_list)
-                        captured_data = packet_df(type_packet_data, captured_data)
-                        i += 1
-                        progress_bar.progress(i / total_packets, text=f"Paquetes capturados: {i}/{total_packets}")
-
-                try:
-                    process.terminate()
-                except Exception:
-                    pass
-                progress_bar.empty()
-                st.success("✅ Captura finalizada.")
+                    try:
+                        process.terminate()
+                    except Exception:
+                        pass
+                    progress_bar.empty()
+                    st.success("✅ Captura finalizada.")
 
                 # Mostrar el DataFrame capturado y permitir guardar
-                if captured_data is not None and list(captured_data.columns) != ['value']:
-                    st.write("📊 *Paquetes capturados:*")
-                    st.dataframe(captured_data, use_container_width=True)
-                    st.session_state.data = captured_data
-                    st.success("Datos capturados listos para predicción")
-                    if st.button("💾 Guardar en CSV"):
-                        save_packet_csv(captured_data, "captura_paquetes.csv")
+                if captured_data is not None and len(captured_data) > 0:
+                    # Verificar que no sea un DataFrame vacío o con una sola columna 'value'
+                    if not (list(captured_data.columns) == ['value'] and len(captured_data) == 0):
+                        st.write("📊 *Paquetes capturados:*")
+                        st.dataframe(captured_data, use_container_width=True)
+                        st.session_state.data = captured_data
+                        st.success("Datos capturados listos para predicción")
+                        if st.button("💾 Guardar en CSV"):
+                            save_packet_csv(captured_data, "captura_paquetes.csv")
+                    else:
+                        st.warning("⚠️ No se capturaron paquetes válidos")
+                else:
+                    st.warning("⚠️ No se capturaron datos")
 
         # ---------------- Pestaña: Captura automática ----------------
         with tab_auto:
@@ -374,31 +489,37 @@ def show_dashboard_page():
                 if due:
                     st.session_state.auto_capture['is_capturing'] = True
                     st.info('🚀 Ejecutando captura automática...')
-                    process = capturing_packets(comm_arg)
-
+                    
                     captured_data = None
                     duration_sec = int(st.session_state.auto_capture['duration_sec'])
                     if duration_sec <= 0:
                         duration_sec = 60
-                    start_ts = time.time()
-                    end_ts = start_ts + duration_sec
-                    prog = st.progress(0, text='Capturando (automática)...')
-                    while time.time() < end_ts:
-                        if st.session_state.auto_capture['stop_requested']:
-                            break
-                        packet_str = process.stdout.readline().strip()
-                        if packet_str:
-                            packet_list = packet_str.split('\t')
-                            type_packet_data = type_packet(packet_list)
-                            captured_data = packet_df(type_packet_data, captured_data)
-                        elapsed = time.time() - start_ts
-                        frac = min(1.0, elapsed / duration_sec)
-                        prog.progress(frac, text=f"Tiempo transcurrido: {int(elapsed)}s / {duration_sec}s")
-                    try:
-                        process.terminate()
-                    except Exception:
-                        pass
-                    prog.empty()
+                    
+                    # Detectar si estamos en Cloud o local
+                    use_api = is_streamlit_cloud()
+                    
+                    if use_api:
+                        # Usar backend API (Streamlit Cloud)
+                        st.info("🌐 Capturando desde backend remoto...")
+                        backend_url = get_backend_url()
+                        prog = st.progress(0, text='Esperando respuesta del backend...')
+                        
+                        # Simular progreso mientras esperamos
+                        for i in range(10):
+                            if st.session_state.auto_capture['stop_requested']:
+                                break
+                            prog.progress(i / 10, text=f'Capturando en backend... {i*10}%')
+                            time.sleep(duration_sec / 10)
+                        
+                        captured_data = capture_via_api(duration_sec, backend_url)
+                        prog.empty()
+                    else:
+                        # Usar tshark local
+                        st.info("💻 Capturando desde interfaz local...")
+                        start_ts = time.time()
+                        prog = st.progress(0, text='Capturando (automática)...')
+                        captured_data = capture_local(duration_sec, comm_arg)
+                        prog.empty()
 
                     if st.session_state.auto_capture['stop_requested']:
                         st.warning('⏹️ Captura automática detenida por el usuario.')
@@ -406,10 +527,12 @@ def show_dashboard_page():
                         st.session_state.auto_capture['is_capturing'] = False
                         st.session_state.auto_capture['next_run_ts'] = None
                     else:
-                        if captured_data is not None and list(captured_data.columns) != ['value']:
-                            st.success('✅ Captura automática finalizada. Ejecutando predicción...')
+                        if captured_data is not None and len(captured_data) > 0:
+                            st.success(f'✅ Captura automática finalizada: {len(captured_data)} paquetes. Ejecutando predicción...')
                             st.session_state.data = captured_data
                             run_prediction_on_data(captured_data)
+                        else:
+                            st.warning('⚠️ No se capturaron paquetes en este ciclo.')
                         # Programar siguiente ciclo y relanzar el countdown
                         st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
                         st.session_state.auto_capture['is_capturing'] = False

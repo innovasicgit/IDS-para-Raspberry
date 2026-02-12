@@ -4,6 +4,9 @@ entorno_servidor/
 venv/
 .env
 
+## Secrets de Streamlit
+.streamlit/secrets.toml
+
 ## Archivos binarios/instaladores
 *.zip
 *.exe
