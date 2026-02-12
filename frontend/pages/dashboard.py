@@ -124,7 +124,47 @@ def capture_local(duration_sec, comm_arg):
 
 def show_dashboard_page():
     """Página principal del dashboard."""
-    st.title('🎯 Panel de Control de Detección')
+    
+    # Título con botón de descarga PDF en la misma línea
+    col_title, col_pdf = st.columns([3, 1])
+    with col_title:
+        st.title('🎯 Panel de Control de Detección')
+    with col_pdf:
+        # Botón de descarga PDF en la esquina superior derecha
+        if st.session_state.get('prediccion_realizada') and 'resumen_prediccion' in st.session_state:
+            resumen = st.session_state['resumen_prediccion']
+            # Crear gráfica de barras para el PDF
+            fig_bar, ax = plt.subplots(figsize=(6, 3.5))
+            bar_colors = [('#00C853' if (str(lbl).lower() == 'normal') else '#FF5252') for lbl in resumen['labels']]
+            ax.bar(resumen['labels'], resumen['values'], color=bar_colors)
+            ax.set_title('Distribución de Detecciones')
+            ax.set_ylabel('Cantidad')
+            for i, v in enumerate(resumen['values']):
+                ax.text(i, v + 0.1, str(v), ha='center', va='bottom', fontsize=10)
+            plt.tight_layout()
+
+            pdf_bytes = generar_reporte_pdf(
+                resumen=resumen['texto'],
+                labels=resumen['labels'],
+                values=resumen['values'],
+                descripcion_amenazas=DESCRIPCIONES_AMENAZAS,
+                fig=fig_bar
+            )
+            st.download_button(
+                label="📄 Descargar PDF",
+                data=pdf_bytes,
+                file_name="reporte_prediccion_IDS.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+            plt.close(fig_bar)
+        else:
+            st.button(
+                "📄 Descargar PDF",
+                disabled=True,
+                use_container_width=True,
+                help="⚠ Primero debes capturar tráfico o hacer una predicción antes de descargar el reporte."
+            )
 
     # Inicializa el flag una sola vez
     if 'prediccion_realizada' not in st.session_state:
@@ -246,8 +286,8 @@ def show_dashboard_page():
             help="Cada modelo utiliza diferentes técnicas para detectar anomalías"
         )
 
-        # Pestañas justo debajo del formulario (Automática por defecto, Manual)
-        tab_auto, tab_manual = st.tabs(["🚀 Captura automática", "🖐️ Captura manual"])
+        # Pestañas: Captura Automática, Captura Manual y Cargar CSV
+        tab_auto, tab_manual, tab_csv = st.tabs(["🚀 Captura automática", "🖐️ Captura manual", "📂 Cargar archivo CSV"])
 
         # ---------------- Captura automática (en pestaña) ----------------
         with tab_auto:
@@ -538,82 +578,55 @@ def show_dashboard_page():
                         st.session_state.auto_capture['is_capturing'] = False
                         st.rerun()
 
-        # Sección de carga de archivo CSV
-        uploaded_file = None  # Evita UnboundLocalError si no se usa el cargador
-        with st.container():
+        # ---------------- Pestaña: Cargar archivo CSV ----------------
+        with tab_csv:
+            st.title("📂 Cargar archivo CSV")
             st.markdown("### 📊 Cargar Datos para Predicción")
             
-            # Si hay datos capturados, mostrar mensaje
-            if 'data' in st.session_state and st.session_state.data is not None:
-                st.info("✅ Usando datos de la captura de paquetes")
-                data = st.session_state.data
-                st.markdown('<div class="notification" style="background-color: #4CAF50; color: white;">✅ Datos capturados listos para predicción</div>', unsafe_allow_html=True)
-            else:
-                # De lo contrario, mostrar el cargador de archivo CSV
-                uploaded_file = st.file_uploader(
-                    "📂 Cargar archivo CSV",
-                    type="csv",
-                    help="Cargue sus datos de red en formato CSV",
-                    key="csv_uploader_1"
-                )
-                
-                if uploaded_file is not None:
-                    try:
-                        data = pd.read_csv(uploaded_file)
-                        if data.empty or data.shape[1] == 0:
-                            st.error("❌ El archivo CSV está vacío o no contiene columnas válidas.")
-                            data = None
-                        else:
-                            st.markdown('<div class="notification" style="background-color: #4CAF50; color: white;">✅ Datos cargados exitosamente</div>', unsafe_allow_html=True)
-                            
-                            with st.expander("📊 Vista previa de datos"):
-                                st.dataframe(data.head(), use_container_width=True)
-                                st.info(f"Dimensiones del dataset: {data.shape[0]} filas, {data.shape[1]} columnas")
-                    except pd.errors.EmptyDataError:
-                        st.error("❌ El archivo CSV está vacío o no tiene columnas válidas.")
+            uploaded_file = st.file_uploader(
+                "📂 Cargar archivo CSV",
+                type="csv",
+                help="Cargue sus datos de red en formato CSV",
+                key="csv_uploader_1"
+            )
+            
+            if uploaded_file is not None:
+                try:
+                    data = pd.read_csv(uploaded_file)
+                    if data.empty or data.shape[1] == 0:
+                        st.error("❌ El archivo CSV está vacío o no contiene columnas válidas.")
                         data = None
-                    except Exception as e:
-                        st.error(f"❌ Error al cargar el archivo: {str(e)}")
-                        data = None
-                else:
+                    else:
+                        st.success("✅ Datos cargados exitosamente")
+                        
+                        with st.expander("📊 Vista previa de datos"):
+                            st.dataframe(data.head(), use_container_width=True)
+                            st.info(f"📏 Dimensiones del dataset: {data.shape[0]} filas, {data.shape[1]} columnas")
+                        
+                        # Guardar en session_state
+                        st.session_state.data = data
+                except pd.errors.EmptyDataError:
+                    st.error("❌ El archivo CSV está vacío o no tiene columnas válidas.")
                     data = None
+                except Exception as e:
+                    st.error(f"❌ Error al cargar el archivo: {str(e)}")
+                    data = None
+            else:
+                st.info("⬆️ Selecciona un archivo CSV para cargar los datos")
 
-        if st.button('🚀 Realizar Predicción', key='predict'):
+        # Botón de predicción fuera de las pestañas (común para todas)
+        st.markdown("---")
+        
+        # Determinar qué datos usar para la predicción
+        data = None
+        if 'data' in st.session_state and st.session_state.data is not None:
+            data = st.session_state.data
+
+        if st.button('🚀 Realizar Predicción', key='predict', use_container_width=True):
             if data is not None:
                 run_prediction_on_data(data)
             else:
                 st.warning("⚠ Por favor capture paquetes o cargue un archivo CSV antes de realizar la predicción.")
-
-        # Descargar reporte PDF de la última predicción
-        st.markdown("### 📄 Descargar Reporte PDF")
-        if st.session_state.get('prediccion_realizada') and 'resumen_prediccion' in st.session_state:
-            resumen = st.session_state['resumen_prediccion']
-            # Crear gráfica de barras solo para el PDF (no afecta la UI de torta)
-            fig_bar, ax = plt.subplots(figsize=(6, 3.5))
-            bar_colors = [('#00C853' if (str(lbl).lower() == 'normal') else '#FF5252') for lbl in resumen['labels']]
-            ax.bar(resumen['labels'], resumen['values'], color=bar_colors)
-            ax.set_title('Distribución de Detecciones')
-            ax.set_ylabel('Cantidad')
-            for i, v in enumerate(resumen['values']):
-                ax.text(i, v + 0.1, str(v), ha='center', va='bottom', fontsize=10)
-            plt.tight_layout()
-
-            pdf_bytes = generar_reporte_pdf(
-                resumen=resumen['texto'],
-                labels=resumen['labels'],
-                values=resumen['values'],
-                descripcion_amenazas=DESCRIPCIONES_AMENAZAS,
-                fig=fig_bar
-            )
-            st.download_button(
-                label="📄 Descargar reporte PDF",
-                data=pdf_bytes,
-                file_name="reporte_prediccion_IDS.pdf",
-                mime="application/pdf"
-            )
-            plt.close(fig_bar)
-        else:
-            st.warning("⚠ Primero debes capturar tráfico o hacer una predicción antes de descargar el reporte.") 
         
     
     # Mostrar visualización de tráfico si hay datos disponibles
@@ -621,8 +634,8 @@ def show_dashboard_page():
     datos_para_grafica = None
     if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
         datos_para_grafica = st.session_state['data_prediccion']
-    elif data is not None:
-        datos_para_grafica = data
+    elif 'data' in st.session_state and st.session_state.data is not None:
+        datos_para_grafica = st.session_state.data
     
     if datos_para_grafica is not None and len(datos_para_grafica) > 0:
         st.markdown("### 📈 Patrón de Tráfico y Anomalías")
