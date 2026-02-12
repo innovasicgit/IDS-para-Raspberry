@@ -16,6 +16,7 @@ from del_columns import del_columns
 # Imports de frontend
 from frontend.style import setup_page_and_style
 from frontend.auth_ui import ensure_auth
+from frontend.home_page import show_home_page
 from frontend.pages.dashboard import show_dashboard_page
 from frontend.pages.compare import show_compare_page
 from frontend.pages.guia import show_guia_page
@@ -28,7 +29,7 @@ _dm.EuclideanDistance = DistanceMetric.get_metric("euclidean").__class__
 
 # Inicializar estado de sesión
 if "page" not in st.session_state:
-    st.session_state.page = "dashboard"
+    st.session_state.page = "home"  # Página de inicio por defecto
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
@@ -58,13 +59,15 @@ with st.sidebar:
     # Menú de navegación
     selected = option_menu(
         "Navegación",
-        ["Guía del Sistema", "Panel de Control", "Comparar Modelos"],
-        icons=["book", "graph-up", "bar-chart"],
+        ["Inicio", "Guía del Sistema", "Panel de Control", "Comparar Modelos"],
+        icons=["house", "book", "graph-up", "bar-chart"],
         menu_icon="cast",
-        default_index=1
+        default_index=0
     )
 
-    if selected == "Guía del Sistema":
+    if selected == "Inicio":
+        st.session_state.page = "home"
+    elif selected == "Guía del Sistema":
         st.session_state.page = "guia"
     elif selected == "Panel de Control":
         st.session_state.page = "dashboard"
@@ -103,7 +106,9 @@ with st.sidebar:
 
 # ==================== RENDERIZADO DE PÁGINAS ====================
 
-if st.session_state.page == "guia":
+if st.session_state.page == "home":
+    show_home_page()
+elif st.session_state.page == "guia":
     show_guia_page()
 elif st.session_state.page == "dashboard":
     show_dashboard_page()
@@ -111,7 +116,7 @@ elif st.session_state.page == "compare":
     show_compare_page()
 else:
     # Página por defecto
-    show_dashboard_page()
+    show_home_page()
 
 # ==================== FOOTER ====================
 
