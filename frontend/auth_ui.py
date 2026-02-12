@@ -7,9 +7,9 @@ from frontend.home_page import show_home_page
 
 
 def _get_image_base64(image_path):
-        _login_ui(_set_qp)
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
+
 def _login_ui(_set_qp_fn=None):
     logo_path = Path(__file__).resolve().parent.parent / "img" / "logo.gif"
     gif_path = Path(__file__).resolve().parent.parent / "img" / "Fondo-Tecnologico.gif"
