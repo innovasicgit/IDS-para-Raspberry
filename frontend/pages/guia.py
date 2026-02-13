@@ -1172,18 +1172,43 @@ def show_guia_page():
         """, unsafe_allow_html=True)
 
     # ==================== FOOTER DE LA GUÍA ====================
+    img1_url = "app/static/img1.jpg"
     
     st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #0C4A6E 0%, #1383A7 100%); 
-                border-radius: 15px; margin: 2rem 0;">
-        <h2 style="color: white; margin-bottom: 1rem;">🎓 ¡Felicitaciones!</h2>
-        <p style="color: #F0FAFE; font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem;">
-            Ahora tienes todo el conocimiento necesario para usar este sistema de detección de intrusiones 
-            de manera efectiva y proteger tu red IoT.
-        </p>
-        <p style="color: white; font-size: 1.1rem;">
-            🚀 <strong>Estás listo para comenzar. ¡Ve al Panel de Control y empieza a proteger tu red!</strong>
-        </p>
+    st.markdown(f"""
+    <style>
+        .guia-footer {{
+            position: relative;
+            text-align: center;
+            padding: 3rem 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            overflow: hidden;
+            background: url('{img1_url}') center center / cover no-repeat;
+        }}
+        .guia-footer::before {{
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            z-index: 1;
+        }}
+        .guia-footer-content {{
+            position: relative;
+            z-index: 2;
+        }}
+    </style>
+    <div class="guia-footer">
+        <div class="guia-footer-content">
+            <h2 style="color: white; margin-bottom: 1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">🎓 ¡Felicitaciones!</h2>
+            <p style="color: #F0FAFE; font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
+                Ahora tienes todo el conocimiento necesario para usar este sistema de detección de intrusiones 
+                de manera efectiva y proteger tu red IoT.
+            </p>
+            <p style="color: white; font-size: 1.1rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
+                🚀 <strong>Estás listo para comenzar. ¡Ve al Panel de Control y empieza a proteger tu red!</strong>
+            </p>
+        </div>
     </div>
     """, unsafe_allow_html=True)
