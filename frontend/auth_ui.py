@@ -36,7 +36,7 @@ def _login_ui(_set_qp_fn=None):
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, rgba(12, 74, 110, 0.70), rgba(16, 78, 99, 0.65));
             border-radius: 15px;
             z-index: 1;
         }}
@@ -47,15 +47,15 @@ def _login_ui(_set_qp_fn=None):
             margin-bottom: 0.5rem;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }}
-        .login-header p {{ color: #ddd; font-size: 1.1rem; }}
+        .login-header p {{ color: #F0FAFE; font-size: 1.1rem; }}
         .logo-container {{
             position: absolute;
             top: 1rem; left: 1rem;
             z-index: 3;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(240, 250, 254, 0.88);
             padding: 0.3rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(12, 74, 110, 0.25);
             width: fit-content;
         }}
         .stTabs [data-baseweb="tab-list"] {{ gap: 2rem; justify-content: center; }}

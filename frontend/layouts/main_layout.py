@@ -26,7 +26,7 @@ def render_sidebar_header():
     st.markdown(
         f"""
         <div style="
-            background: linear-gradient(135deg, {theme.colors.primary} 0%, {theme.colors.secondary} 100%);
+            background: linear-gradient(135deg, {theme.colors.primary_dark} 0%, {theme.colors.primary} 100%);
             padding: {theme.spacing.lg};
             border-radius: {theme.radius.lg};
             text-align: center;

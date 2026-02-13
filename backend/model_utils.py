@@ -44,13 +44,11 @@ except ImportError:
 def load_model(model_path):
     try:
         absolute_path = os.path.abspath(model_path)
-        st.write(f"Intentando cargar desde: {absolute_path}")
         if not os.path.exists(absolute_path):
             raise FileNotFoundError(f"El archivo {absolute_path} no se encuentra.")
         
         # Cargar el modelo con el contexto correcto
         model = joblib.load(absolute_path)
-        st.write(f"Tipo del modelo cargado: {type(model)}")
         
         # Verificar si el modelo está fitted
         from sklearn.utils.validation import check_is_fitted
@@ -60,7 +58,6 @@ def load_model(model_path):
                     check_is_fitted(step)
             else:
                 check_is_fitted(model)
-            st.success("✓ Modelo cargado y verificado correctamente")
         except Exception as fit_error:
             st.warning(f"⚠ Advertencia: El modelo podría no estar entrenado correctamente: {fit_error}")
         

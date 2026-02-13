@@ -1,5 +1,12 @@
 # Streamlit cloud configuration
 # This file tells Streamlit Cloud where to find the requirements file
 
-[deploy]
-requirements = "streamlit-cloud-deploy/requirements.txt"
+# [deploy]
+# requirements = "streamlit-cloud-deploy/requirements.txt"
+
+[theme]
+primaryColor = "#1383A7"
+backgroundColor = "#070D1A"
+secondaryBackgroundColor = "#0C1B2E"
+textColor = "#F0FAFE"
+font = "sans serif"

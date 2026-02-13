@@ -78,7 +78,16 @@ with st.sidebar:
     st.divider()
     try:
         with st.popover("⚙️ Opciones de desarrollador"):
-            st.caption(f"sklearn: {getattr(sklearn, '__version__', 'N/A')}")
+            st.markdown("""
+            <div style="margin-bottom: 12px; padding: 8px 12px; 
+                        background: linear-gradient(135deg, rgba(19,131,167,0.15) 0%, rgba(16,78,99,0.10) 100%); 
+                        border-radius: 8px; border-left: 3px solid #1383A7;">
+                <span style="font-size: 0.8rem; color: #F0FAFE;">🔧 Configuración Avanzada</span>
+            </div>
+            """, unsafe_allow_html=True)
+            st.caption(f"📦 sklearn: `{getattr(sklearn, '__version__', 'N/A')}`")
+            
+            st.markdown("##### 🤖 Autoencoder")
             st.session_state.ae_normal_threshold = st.slider(
                 "Umbral Normal (Autoencoder)", 
                 min_value=0.0, max_value=1.0, value=0.60, step=0.01,
@@ -89,13 +98,15 @@ with st.sidebar:
                 min_value=0.0, max_value=1.0, value=0.02, step=0.001,
                 help="Si el error de reconstrucción es menor o igual al umbral, se considera normal."
             )
+            
+            st.markdown("##### 🔵 OCSVM")
             st.session_state.ocsvm_use_sign = st.toggle(
-                "OCSVM: usar predicción por signo",
+                "Predicción por signo",
                 value=True,
                 help="Usa labels del OCSVM (1=inlier, -1=outlier)."
             )
             st.session_state.ocsvm_percentile = st.slider(
-                "OCSVM percentil umbral", 
+                "Percentil umbral", 
                 min_value=0.0, max_value=1.0, value=0.45, step=0.01,
                 help="Clasifica como normal si el score ≥ percentil seleccionado."
             )

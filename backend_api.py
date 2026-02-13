@@ -299,13 +299,8 @@ async def predict_anomalies(request: PredictRequest):
         # Limpiar datos
         df_clean = clean_data(df)
         
-        # Simular session_state para compatibilidad
-        import streamlit as st
-        if not hasattr(st, 'session_state'):
-            st.session_state = prepare_session_state_for_prediction(request.config)
-        else:
-            for key, value in request.config.items():
-                st.session_state[key] = value
+        # La función predecir no debería necesitar st.session_state
+        # Si lo necesita, pasamos un diccionario simple en su lugar
         
         # Obtener modelo
         model = MODELS_CACHE[request.model_name]

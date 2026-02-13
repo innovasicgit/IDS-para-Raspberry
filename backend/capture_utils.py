@@ -1,16 +1,41 @@
 import shlex
+import subprocess
 from subprocess import PIPE, Popen
 import pandas as pd
 
 
+def _detect_active_interface():
+    """Detecta la interfaz de red activa (con estado UP y carrier)."""
+    try:
+        result = subprocess.run(
+            ['ip', '-o', 'link', 'show'],
+            capture_output=True, text=True, timeout=5
+        )
+        # Prioridad: wlan0 > eth0 > cualquier otra
+        for iface_name in ['wlan0', 'eth0']:
+            for line in result.stdout.strip().split('\n'):
+                if iface_name in line and 'state UP' in line:
+                    return iface_name
+        # Fallback: primera interfaz UP que no sea lo/docker/tailscale
+        for line in result.stdout.strip().split('\n'):
+            if 'state UP' in line:
+                parts = line.split(':')
+                if len(parts) >= 2:
+                    name = parts[1].strip()
+                    if name not in ('lo', 'docker0', 'tailscale0'):
+                        return name
+    except Exception:
+        pass
+    return 'wlan0'  # Default
+
+
 def build_tshark_command() -> list:
+    iface = _detect_active_interface()
     comm_arg = (
-        "sudo /usr/local/bin/tshark "
-        "-i eth0 -i wlan0 "
+        f"/usr/local/bin/tshark "
+        f"-i {iface} "
         "-l "
-        "-Y 'eth.type != 0x8899' "
-        "-f \"tcp or udp or arp\" "
-        "-f \"arp or icmp or (udp and not port 53 and not port 5353) or (tcp and not port 443)\" "
+        "-f \"tcp or udp or arp or icmp\" "
         "-T fields -E separator=/t "
         "-e frame.time_delta "
         "-e _ws.col.Protocol "

@@ -86,7 +86,7 @@ def data_source_selector() -> Optional[pd.DataFrame]:
     if has_session_data:
         st.info("✅ Usando datos de la captura de paquetes")
         st.markdown(
-            '<div class="notification" style="background-color: #4CAF50; color: white;">'
+            '<div class="notification" style="background-color: #10B981; color: white;">'
             '✅ Datos capturados listos para predicción</div>',
             unsafe_allow_html=True
         )

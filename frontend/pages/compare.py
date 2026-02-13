@@ -27,11 +27,11 @@ def show_compare_page():
     st.title('📊 Comparar Modelos')
     st.markdown(
         """
-        <div style="background: rgba(255,255,255,0.06); padding: 1rem 1.2rem; border-radius: 12px; margin: .6rem 0 1rem 0;">
-        <p style="margin:0; font-size: .95rem; line-height:1.5;">
+        <div style="background: linear-gradient(160deg, rgba(19,131,167,0.08) 0%, rgba(12,74,110,0.04) 100%); padding: 1rem 1.2rem; border-radius: 14px; margin: .6rem 0 1rem 0; border: 1px solid rgba(19,131,167,0.12);">
+        <p style="margin:0; font-size: .95rem; line-height:1.5; color: rgba(240,250,254,0.75);">
         • Seleccione uno o varios modelos para ejecutar la misma predicción sobre un único conjunto de datos (última captura o un CSV).<br/>
-        • <strong>Internas</strong>: calcula Silhouette, Calinski y Davies sobre las representaciones del pipeline si hay ≥2 clases predichas.<br/>
-        • <strong>Externas</strong>: requiere una columna con etiquetas reales; para modelos multiclase (KMEANS/Autoencoder) se resume a <em>Normal</em> vs <em>Ataque</em> para AUC/ROC.<br/>
+        • <strong style="color: #1CA8D4;">Internas</strong>: calcula Silhouette, Calinski y Davies sobre las representaciones del pipeline si hay ≥2 clases predichas.<br/>
+        • <strong style="color: #1CA8D4;">Externas</strong>: requiere una columna con etiquetas reales; para modelos multiclase (KMEANS/Autoencoder) se resume a <em>Normal</em> vs <em>Ataque</em> para AUC/ROC.<br/>
         • El gráfico "Normal vs Ataques" suma todas las categorías de ataque (p. ej., DDoS_TCP/UDP, Reconnaissance).
         </p>
         </div>
@@ -298,8 +298,8 @@ def _display_results(filas, metric_compare):
             ataques += res_df[col].fillna(0).values
     
     fig = go.Figure()
-    fig.add_trace(go.Bar(name='Normal', x=modelos, y=normales, marker_color='#00C853'))
-    fig.add_trace(go.Bar(name='Ataques', x=modelos, y=ataques, marker_color='#FF5252'))
+    fig.add_trace(go.Bar(name='Normal', x=modelos, y=normales, marker_color='#10B981'))
+    fig.add_trace(go.Bar(name='Ataques', x=modelos, y=ataques, marker_color='#EF4444'))
     fig.update_layout(
         barmode='group', 
         title='Normal vs Ataques por modelo', 
@@ -313,6 +313,6 @@ def _display_results(filas, metric_compare):
     # Gráfico de tiempos
     if 'Tiempo (s)' in res_df.columns:
         st.markdown('### ⏱️ Tiempos de predicción por modelo')
-        figt = go.Figure(data=[go.Bar(x=res_df['Modelo'], y=res_df['Tiempo (s)'], marker_color='#4B9FE1')])
+        figt = go.Figure(data=[go.Bar(x=res_df['Modelo'], y=res_df['Tiempo (s)'], marker_color='#1383A7')])
         figt.update_layout(title='Tiempo de predicción (s)', title_x=0.5)
         st.plotly_chart(figt, use_container_width=True)

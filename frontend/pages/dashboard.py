@@ -140,7 +140,7 @@ def show_dashboard_page():
             resumen = st.session_state['resumen_prediccion']
             # Crear gráfica de barras para el PDF
             fig_bar, ax = plt.subplots(figsize=(6, 3.5))
-            bar_colors = [('#00C853' if (str(lbl).lower() == 'normal') else '#FF5252') for lbl in resumen['labels']]
+            bar_colors = [('#10B981' if (str(lbl).lower() == 'normal') else '#EF4444') for lbl in resumen['labels']]
             ax.bar(resumen['labels'], resumen['values'], color=bar_colors)
             ax.set_title('Distribución de Detecciones')
             ax.set_ylabel('Cantidad')
@@ -181,97 +181,76 @@ def show_dashboard_page():
             'active': False,
             'is_capturing': False,
             'stop_requested': False,
-            'interval_sec': 120,  # Intervalo entre cada captura (cada cuánto capturar)
+            'interval_sec': 120,
             'packets_per_capture': 100,
-            'total_duration_sec': 600,  # Duración TOTAL de la sesión completa (10 min)
+            'total_duration_sec': 300,
             'next_run_ts': None,
             'last_cycle_result': None,
-            'total_cycles': 0,  # Contador de ciclos completados
-            'start_time': None,  # Tiempo de inicio de la sesión automática
-            'end_time': None,  # Tiempo cuando debe terminar la sesión
+            'total_cycles': 0,
+            'start_time': None,
+            'end_time': None,
         }
 
-    # CSS para scroll independiente en cada columna y animaciones
+    # CSS: scroll independiente por columna y animaciones
     st.markdown("""
         <style>
-        /* Hacer que las columnas tengan scroll independiente */
-        [data-testid="column"] {
-            height: 80vh;
-            overflow-y: auto;
-            overflow-x: hidden;
+        /* ══════ HEADER COMPACTO (título + PDF) ══════ */
+        [data-testid="stMain"] h1 {
+            padding-top: 0.3rem !important;
+            margin-top: 0 !important;
+            margin-bottom: 0.2rem !important;
+            font-size: 1.6rem !important;
         }
-        
+
+        /* ══════ SCROLL INDEPENDIENTE POR COLUMNA ══════ */
+        /* Bloque principal de 2 columnas: altura fija */
+        section[data-testid="stMain"] [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stHorizontalBlock"] [data-testid="column"]) {
+            max-height: 100vh;
+        }
+
+        /* Cada columna del dashboard: scroll propio */
+        section[data-testid="stMain"] [data-testid="column"] {
+            height: calc(100vh - 80px) !important;
+            max-height: calc(100vh - 80px) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+
         /* Scrollbar personalizado */
-        [data-testid="column"]::-webkit-scrollbar {
-            width: 10px;
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar {
+            width: 8px;
         }
-        
-        [data-testid="column"]::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-track {
+            background: #0C1B2E;
             border-radius: 10px;
         }
-        
-        [data-testid="column"]::-webkit-scrollbar-thumb {
-            background: #888;
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb {
+            background: #0F2237;
             border-radius: 10px;
+            border: 2px solid rgba(19,131,167,0.2);
         }
-        
-        [data-testid="column"]::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb:hover {
+            background: #1383A7;
         }
-        
-        /* Animaciones suaves para elementos */
+
+        /* Animaciones suaves */
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
         @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.6;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
-        
-        /* Aplicar animación a elementos principales */
         [data-testid="stMarkdownContainer"] {
             animation: fadeIn 0.5s ease-out;
         }
-        
-        /* Estilo para cards con gradiente */
-        .gradient-card {
-            animation: fadeIn 0.6s ease-out;
-        }
-        
-        /* Animación de pulso para indicadores activos */
-        .pulse-animation {
-            animation: pulse 2s ease-in-out infinite;
-        }
-        }
+        .gradient-card { animation: fadeIn 0.6s ease-out; }
+        .pulse-animation { animation: pulse 2s ease-in-out infinite; }
         </style>
     """, unsafe_allow_html=True)
 
-    # Diseño responsivo: columnas se adaptan al tamaño de pantalla
-    # En móvil, las columnas se apilan verticalmente automáticamente
+    # Columnas principales del dashboard
     col1, col2 = st.columns([1, 2], gap="medium")
 
     # Columna derecha: bienvenida, captura en vivo, o resumen tras predicción
@@ -302,9 +281,9 @@ def show_dashboard_page():
             
             # Información adicional
             st.markdown("""
-            <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white; text-align: center;">
-                <h3 style="margin: 0; color: white;">⚡ Captura Activa</h3>
-                <p style="margin: 10px 0 0 0; color: white;">Los resultados aparecerán automáticamente al finalizar</p>
+            <div style="padding: 20px; background: linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(19,131,167,0.10) 100%); border-radius: 14px; color: white; text-align: center; border: 1px solid rgba(16,185,129,0.25); box-shadow: 0 4px 20px rgba(16,185,129,0.08);">
+                <h3 style="margin: 0; color: #10B981;">⚡ Captura Activa</h3>
+                <p style="margin: 10px 0 0 0; color: rgba(240,250,254,0.7);">Los resultados aparecerán automáticamente al finalizar</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -325,11 +304,11 @@ def show_dashboard_page():
                     values=resumen['values'],
                     color=resumen['labels'],
                     color_discrete_map={
-                        'Normal': '#00C853',
-                        'Anómalo': '#FF5252',
-                        'DDOS_TCP': '#FF5252',
-                        'DDOS_UDP': '#FFA726',
-                        'Reconnaissance': '#42A5F5'
+                        'Normal': '#10B981',
+                        'Anómalo': '#EF4444',
+                        'DDOS_TCP': '#EF4444',
+                        'DDOS_UDP': '#F59E0B',
+                        'Reconnaissance': '#1383A7'
                     },
                     title="Distribución porcentual"
                 )
@@ -338,7 +317,7 @@ def show_dashboard_page():
             
             with col_graf2:
                 # Gráfica de barras
-                bar_colors = [('#00C853' if (str(lbl).lower() == 'normal') else '#FF5252') for lbl in resumen['labels']]
+                bar_colors = [('#10B981' if (str(lbl).lower() == 'normal') else '#EF4444') for lbl in resumen['labels']]
                 fig_bar = go.Figure(data=[go.Bar(x=resumen['labels'], y=resumen['values'], text=resumen['values'], textposition='auto', marker_color=bar_colors)])
                 fig_bar.update_layout(title='Distribución de Detecciones', title_x=0.5)
                 st.plotly_chart(fig_bar, use_container_width=True)
@@ -361,11 +340,6 @@ def show_dashboard_page():
                     )
                     st.markdown(resumen_general)
             
-            # Mostrar paquetes capturados
-            with st.expander("📊 Ver Paquetes Capturados"):
-                if 'data_prediccion' in st.session_state:
-                    st.dataframe(st.session_state['data_prediccion'], use_container_width=True)
-            
             # Diagnóstico OCSVM
             if st.session_state.get('model_option_used') == 'OCSVM' and 'scores' in st.session_state:
                 scores = st.session_state['scores']
@@ -376,9 +350,9 @@ def show_dashboard_page():
                             pct = float(st.session_state.get('ocsvm_percentile', 0.45))
                             thr = np.percentile(scores, 100 * pct)
                         hist_fig = go.Figure()
-                        hist_fig.add_trace(go.Histogram(x=scores, nbinsx=30, marker_color='#4B9FE1', name='decision_function'))
+                        hist_fig.add_trace(go.Histogram(x=scores, nbinsx=30, marker_color='#1383A7', name='decision_function'))
                         if thr is not None:
-                            hist_fig.add_shape(type='line', x0=thr, x1=thr, y0=0, y1=1, xref='x', yref='paper', line=dict(color='#FF5252', width=2))
+                            hist_fig.add_shape(type='line', x0=thr, x1=thr, y0=0, y1=1, xref='x', yref='paper', line=dict(color='#EF4444', width=2))
                             hist_fig.add_annotation(x=thr, y=1, yref='paper', text=f"Umbral={thr:.3f}", showarrow=True, arrowhead=1)
                         hist_fig.update_layout(title='OCSVM: distribución de decision_function', title_x=0.5)
                         st.plotly_chart(hist_fig, use_container_width=True)
@@ -407,14 +381,14 @@ def show_dashboard_page():
                 
                 with col_gauge1:
                     # Gauge de CPU
-                    cpu_color = "#00C853" if met['cpu'] < 60 else "#FFA726" if met['cpu'] < 85 else "#FF5252"
+                    cpu_color = "#10B981" if met['cpu'] < 60 else "#F59E0B" if met['cpu'] < 85 else "#EF4444"
                     fig_cpu = go.Figure(go.Indicator(
                         mode="gauge+number+delta",
                         value=met['cpu'],
                         domain={'x': [0, 1], 'y': [0, 1]},
                         title={'text': "🖥️ Uso de CPU", 'font': {'size': 20, 'color': 'white'}},
                         number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
-                        delta={'reference': 50, 'increasing': {'color': "#FF5252"}, 'decreasing': {'color': "#00C853"}},
+                        delta={'reference': 50, 'increasing': {'color': "#EF4444"}, 'decreasing': {'color': "#10B981"}},
                         gauge={
                             'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
                             'bar': {'color': cpu_color, 'thickness': 0.75},
@@ -447,14 +421,14 @@ def show_dashboard_page():
                 
                 with col_gauge2:
                     # Gauge de Memoria
-                    mem_color = "#00C853" if met['memoria'] < 70 else "#FFA726" if met['memoria'] < 85 else "#FF5252"
+                    mem_color = "#10B981" if met['memoria'] < 70 else "#F59E0B" if met['memoria'] < 85 else "#EF4444"
                     fig_mem = go.Figure(go.Indicator(
                         mode="gauge+number+delta",
                         value=met['memoria'],
                         domain={'x': [0, 1], 'y': [0, 1]},
                         title={'text': "💾 Uso de Memoria RAM", 'font': {'size': 20, 'color': 'white'}},
                         number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
-                        delta={'reference': 50, 'increasing': {'color': "#FF5252"}, 'decreasing': {'color': "#00C853"}},
+                        delta={'reference': 50, 'increasing': {'color': "#EF4444"}, 'decreasing': {'color': "#10B981"}},
                         gauge={
                             'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
                             'bar': {'color': mem_color, 'thickness': 0.75},
@@ -462,9 +436,9 @@ def show_dashboard_page():
                             'borderwidth': 2,
                             'bordercolor': "white",
                             'steps': [
-                                {'range': [0, 70], 'color': 'rgba(0, 200, 83, 0.2)'},
-                                {'range': [70, 85], 'color': 'rgba(255, 167, 38, 0.2)'},
-                                {'range': [85, 100], 'color': 'rgba(255, 82, 82, 0.2)'}
+                                {'range': [0, 70], 'color': 'rgba(16, 185, 129, 0.2)'},
+                                {'range': [70, 85], 'color': 'rgba(245, 158, 11, 0.2)'},
+                                {'range': [85, 100], 'color': 'rgba(239, 68, 68, 0.2)'}
                             ],
                             'threshold': {
                                 'line': {'color': "white", 'width': 4},
@@ -490,7 +464,7 @@ def show_dashboard_page():
                 
                 with col_gauge3:
                     # Gauge de Disco
-                    disk_color = "#00C853" if met['disco'] < 70 else "#FFA726" if met['disco'] < 85 else "#FF5252"
+                    disk_color = "#10B981" if met['disco'] < 70 else "#F59E0B" if met['disco'] < 85 else "#EF4444"
                     fig_disk = go.Figure(go.Indicator(
                         mode="gauge+number",
                         value=met['disco'],
@@ -504,9 +478,9 @@ def show_dashboard_page():
                             'borderwidth': 2,
                             'bordercolor': "white",
                             'steps': [
-                                {'range': [0, 70], 'color': 'rgba(0, 200, 83, 0.2)'},
-                                {'range': [70, 85], 'color': 'rgba(255, 167, 38, 0.2)'},
-                                {'range': [85, 100], 'color': 'rgba(255, 82, 82, 0.2)'}
+                                {'range': [0, 70], 'color': 'rgba(16, 185, 129, 0.2)'},
+                                {'range': [70, 85], 'color': 'rgba(245, 158, 11, 0.2)'},
+                                {'range': [85, 100], 'color': 'rgba(239, 68, 68, 0.2)'}
                             ],
                             'threshold': {
                                 'line': {'color': "white", 'width': 4},
@@ -529,7 +503,7 @@ def show_dashboard_page():
                 
                 with col_gauge4:
                     # Indicador de Tiempo (diferente estilo - más simple)
-                    tiempo_color = "#00C853" if met['tiempo'] < 5 else "#FFA726" if met['tiempo'] < 15 else "#FF5252"
+                    tiempo_color = "#10B981" if met['tiempo'] < 5 else "#F59E0B" if met['tiempo'] < 15 else "#EF4444"
                     # Calcular un porcentaje relativo (máximo esperado: 30 segundos)
                     tiempo_pct = min((met['tiempo'] / 30) * 100, 100)
                     
@@ -617,7 +591,7 @@ def show_dashboard_page():
                             y=traffic_data,
                             mode='lines',
                             name='Tráfico',
-                            line=dict(color='#4B9FE1', width=1)
+                            line=dict(color='#1383A7', width=1)
                         ))
 
                         # Add ceiling line
@@ -626,7 +600,7 @@ def show_dashboard_page():
                             y=ceiling,
                             mode='lines',
                             name='Techo',
-                            line=dict(color='#00C853', width=2, dash='dash')
+                            line=dict(color='#10B981', width=2, dash='dash')
                         ))
 
                         # Add floor line
@@ -635,7 +609,7 @@ def show_dashboard_page():
                             y=floor,
                             mode='lines',
                             name='Suelo',
-                            line=dict(color='#FFA726', width=2, dash='dash')
+                            line=dict(color='#F59E0B', width=2, dash='dash')
                         ))
 
                         # Update layout
@@ -671,19 +645,32 @@ def show_dashboard_page():
                         st.plotly_chart(fig_traffic, use_container_width=True)
                 except Exception as e:
                     st.error(f"❌ Error al generar visualización de tráfico: {str(e)}")
+            
+            # Tabla de paquetes capturados (siempre visible debajo de la gráfica de tráfico)
+            if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
+                st.markdown("### 📊 Paquetes Capturados")
+                st.dataframe(st.session_state['data_prediccion'], use_container_width=True)
+        
+        # Mostrar tabla de paquetes capturados (captura manual completada, aún sin predicción)
+        elif st.session_state.get('captura_manual_lista', False):
+            st.markdown("### 📊 Paquetes Capturados")
+            # Mensaje temporal "Datos listos" (3s)
+            msg_listos = st.empty()
+            msg_listos.success("✅ Datos capturados listos para predicción")
+            if 'data' in st.session_state and st.session_state.data is not None:
+                # Mensaje temporal con conteo (6s)
+                msg_info = st.empty()
+                msg_info.info(f"📏 **{len(st.session_state.data)}** paquetes capturados · Presiona **Realizar Predicción** en el panel izquierdo para analizar.")
+                st.dataframe(st.session_state.data, use_container_width=True)
+                time.sleep(3)
+                msg_listos.empty()
+                time.sleep(3)
+                msg_info.empty()
+            else:
+                st.warning("⚠️ No hay datos disponibles")
         
         # Mostrar mensaje de bienvenida si no hay captura ni predicción
         else:
-            st.markdown("## 👋 Bienvenido al Panel IDS")
-            
-            # Card de bienvenida con estilo
-            st.markdown("""
-            <div style="padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; text-align: center; margin: 20px 0;">
-                <h2 style="margin: 0; color: white;">🛡️ Sistema de Detección de Intrusos</h2>
-                <p style="margin: 15px 0 0 0; font-size: 1.1em; color: white;">Monitoreo de red en tiempo real con IA</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
             st.markdown("### 🚀 Comenzar")
             st.info("""
             **Pasos para usar el sistema:**
@@ -698,33 +685,6 @@ def show_dashboard_page():
             
             Los resultados aparecerán aquí con gráficas interactivas y análisis detallado.
             """)
-            
-            # Características destacadas
-            col_feat1, col_feat2, col_feat3 = st.columns(3, gap="medium")
-            with col_feat1:
-                st.markdown("""
-                <div style="text-align: center; padding: 20px; background: #f0f2f6; border-radius: 10px;">
-                    <h3 style="margin: 0;">⚡</h3>
-                    <p style="margin: 10px 0 0 0;"><strong>Tiempo Real</strong></p>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Captura y análisis instantáneo</p>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_feat2:
-                st.markdown("""
-                <div style="text-align: center; padding: 20px; background: #f0f2f6; border-radius: 10px;">
-                    <h3 style="margin: 0;">🤖</h3>
-                    <p style="margin: 10px 0 0 0;"><strong>IA Avanzada</strong></p>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">4 modelos de Machine Learning</p>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_feat3:
-                st.markdown("""
-                <div style="text-align: center; padding: 20px; background: #f0f2f6; border-radius: 10px;">
-                    <h3 style="margin: 0;">📊</h3>
-                    <p style="margin: 10px 0 0 0;"><strong>Visualización</strong></p>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Gráficas interactivas y reportes</p>
-                </div>
-                """, unsafe_allow_html=True)
     
     # Interfaz Usuario Panel de Control
     with col1:
@@ -811,8 +771,10 @@ def show_dashboard_page():
                 if st.button('⏹️ Detener automática', use_container_width=True, disabled=not st.session_state.auto_capture['active']):
                     st.session_state.auto_capture['stop_requested'] = True
                     st.session_state.auto_capture['active'] = False
+                    st.session_state.auto_capture['is_capturing'] = False
                     st.session_state.auto_capture['next_run_ts'] = None
                     st.session_state.auto_capture['end_time'] = None
+                    st.rerun()
 
             # Visualización del estado actual con barra de progreso mejorada
             if st.session_state.auto_capture['active']:
@@ -823,12 +785,9 @@ def show_dashboard_page():
                     st.session_state.auto_capture['is_capturing'] = False
                     st.session_state.auto_capture['next_run_ts'] = None
                     st.balloons()
-                    time.sleep(2)
-                    st.rerun()
                 elif st.session_state.auto_capture['is_capturing']:
                     # Mostrar spinner animado durante captura
-                    with st.spinner('🔄 **Capturando paquetes de red...**'):
-                        pass
+                    st.info('🔄 **Capturando paquetes de red... por favor espera.**')
                 elif not st.session_state.auto_capture['is_capturing']:
                     if st.session_state.auto_capture['next_run_ts'] is not None:
                         remaining = max(0, int(st.session_state.auto_capture['next_run_ts'] - time.time()))
@@ -842,15 +801,9 @@ def show_dashboard_page():
                             
                             # Barra de progreso animada
                             st.progress(progress_pct, text=f"⏳ Próxima captura en: **{m:02d}:{s:02d}** (min:seg)")
-                            
-                            # Refrescar automáticamente cada segundo
-                            time.sleep(1)
-                            st.rerun()
                         else:
                             # Momento justo antes de iniciar captura
-                            st.success("✅ Iniciando captura ahora...")
-                            time.sleep(0.5)
-                            st.rerun()
+                            st.progress(1.0, text="🚀 Iniciando captura...")
         
         
         # Comando y utilidades de captura desde backend.capture_utils
@@ -864,6 +817,10 @@ def show_dashboard_page():
         # Auxiliar: ejecutar predicción y mostrar resultado (manual/automática)
         def run_prediction_on_data(data_df):
             try:
+                if data_df is None or len(data_df) == 0:
+                    st.error('❌ No se capturaron paquetes. Verifica que haya tráfico de red.')
+                    return
+                
                 model = None
                 if model_option == 'IForest':
                     model = load_model(IFOREST_MODEL_PATHS)
@@ -940,6 +897,7 @@ def show_dashboard_page():
                 # Guardar estado completo para el panel derecho (col2)
                 tiempo_total = time.time() - start_time
                 st.session_state['prediccion_realizada'] = True
+                st.session_state['captura_manual_lista'] = False  # Limpiar flag de captura manual
                 st.session_state['resumen_prediccion'] = {'texto': resumen_text, 'labels': labels, 'values': values}
                 st.session_state['data_prediccion'] = data_df
                 st.session_state['y_pred'] = y_pred
@@ -960,6 +918,63 @@ def show_dashboard_page():
             except Exception as e:
                 st.error(f"❌ Error en la predicción: {str(e)}")
 
+        # ============ EJECUCIÓN AUTOMÁTICA (fuera de tabs, se ejecuta siempre) ============
+        # FASE 2: Ejecutar captura si is_capturing está activo
+        if st.session_state.auto_capture['active'] and st.session_state.auto_capture['is_capturing']:
+            current_cycle = st.session_state.auto_capture.get('total_cycles', 0) + 1
+            
+            captured_data = None
+            duration_sec = 30
+            
+            use_api = is_streamlit_cloud()
+            
+            if use_api:
+                backend_url = get_backend_url()
+                captured_data = capture_via_api(duration_sec, backend_url)
+            else:
+                auto_comm_arg = build_tshark_command()
+                captured_data = capture_local(duration_sec, auto_comm_arg)
+            
+            # Actualizar contador de ciclos
+            st.session_state.auto_capture['total_cycles'] = current_cycle
+            st.session_state.auto_capture['is_capturing'] = False
+            
+            if captured_data is not None and len(captured_data) > 0:
+                st.session_state.data = captured_data
+                
+                # Programar siguiente ciclo o finalizar
+                time_remaining = st.session_state.auto_capture['end_time'] - time.time()
+                if time_remaining < st.session_state.auto_capture['interval_sec']:
+                    st.session_state.auto_capture['active'] = False
+                    st.session_state.auto_capture['next_run_ts'] = None
+                else:
+                    st.session_state.auto_capture['next_run_ts'] = time.time() + st.session_state.auto_capture['interval_sec']
+                
+                # Ejecutar predicción (esto hace st.rerun() al final si tiene éxito)
+                run_prediction_on_data(captured_data)
+            else:
+                # No se capturaron datos, programar siguiente ciclo
+                st.warning("⚠️ No se capturaron paquetes en este ciclo.")
+                time_remaining = st.session_state.auto_capture['end_time'] - time.time()
+                if time_remaining < st.session_state.auto_capture['interval_sec']:
+                    st.session_state.auto_capture['active'] = False
+                    st.session_state.auto_capture['next_run_ts'] = None
+                else:
+                    st.session_state.auto_capture['next_run_ts'] = time.time() + st.session_state.auto_capture['interval_sec']
+                st.rerun()
+        
+        # FASE 1: Programar captura si es momento (due)
+        elif st.session_state.auto_capture['active'] and not st.session_state.auto_capture['is_capturing']:
+            # Verificar si se acabó el tiempo total
+            if st.session_state.auto_capture['end_time'] and time.time() >= st.session_state.auto_capture['end_time']:
+                pass  # La UI en tab_auto maneja el mensaje de completado
+            else:
+                due = st.session_state.auto_capture['next_run_ts'] is not None and time.time() >= st.session_state.auto_capture['next_run_ts']
+                if due:
+                    # Activar captura y hacer rerun para que col2 muestre panel en vivo
+                    st.session_state.auto_capture['is_capturing'] = True
+                    st.rerun()
+
         # Streamlit UI (contenido de pestañas)
         data = None  # Inicializamos el DataFrame
 
@@ -974,8 +989,22 @@ def show_dashboard_page():
             with col_man_b:
                 manual_duration_min = st.number_input('Duración máx. (min) (manual)', min_value=1, max_value=1440, value=1, step=1)
             manual_duration = int(manual_duration_min * 60)
-           
-            if st.button("🚀 Iniciar Captura", key="btn_manual_capture"):
+
+            # Botones de acción: misma fila, mismo ancho que los inputs
+            col_btn_cap, col_btn_save = st.columns(2, gap="medium")
+            with col_btn_cap:
+                btn_capture = st.button("🚀 Iniciar Captura", key="btn_manual_capture", use_container_width=True, type="primary")
+            with col_btn_save:
+                # Botón de guardar CSV (solo habilitado si hay datos capturados)
+                has_manual_data = 'data' in st.session_state and st.session_state.data is not None
+                if has_manual_data:
+                    if st.button("💾 Guardar en CSV", key="btn_save_csv", use_container_width=True):
+                        save_packet_csv(st.session_state.data, "captura_paquetes.csv")
+                else:
+                    st.button("💾 Guardar en CSV", key="btn_save_csv_disabled", use_container_width=True, disabled=True,
+                              help="Primero captura paquetes para poder guardarlos")
+
+            if btn_capture:
                 # Detectar si estamos en Cloud o local
                 use_api = is_streamlit_cloud()
                 
@@ -983,7 +1012,7 @@ def show_dashboard_page():
                     # Usar backend API (Streamlit Cloud)
                     st.info("🌐 Capturando desde backend remoto...")
                     backend_url = get_backend_url()
-                    progress_bar = st.progress(0, text="Esperando respuesta del backend...")
+                    progress_bar = st.progress(0, text="⏳ Esperando respuesta del backend...")
                     
                     captured_data = capture_via_api(manual_duration, backend_url)
                     progress_bar.empty()
@@ -994,12 +1023,13 @@ def show_dashboard_page():
                         st.warning("⚠️ No se capturaron paquetes")
                 else:
                     # Usar tshark local
-                    st.info("💻 Capturando desde interfaz local...")
+                    info_placeholder = st.empty()
+                    info_placeholder.info("💻 Capturando desde interfaz local...")
                     process = capturing_packets(comm_arg)
                     
                     # Inicializamos el DataFrame
                     captured_data = None
-                    progress_bar = st.progress(0, text="Capturando paquetes...")
+                    progress_bar = st.progress(0, text="🌐 Preparando captura de paquetes...")
                     total_packets = manual_packets
                     start_ts = time.time()
 
@@ -1014,126 +1044,32 @@ def show_dashboard_page():
                             type_packet_data = type_packet(packet_list)
                             captured_data = packet_df(type_packet_data, captured_data)
                             i += 1
-                            progress_bar.progress(i / total_packets, text=f"Paquetes capturados: {i}/{total_packets}")
+                            pct = i / total_packets
+                            progress_bar.progress(pct, text=f"📡 Capturando paquetes: **{i}/{total_packets}** ({pct*100:.0f}%)")
 
                     try:
                         process.terminate()
                     except Exception:
                         pass
                     progress_bar.empty()
-                    st.success("✅ Captura finalizada.")
+                    # Desaparece el mensaje de "Capturando desde interfaz local..."
+                    info_placeholder.empty()
+                    # Mensaje temporal "Captura finalizada" (2.5s)
+                    finalizado_placeholder = st.empty()
+                    finalizado_placeholder.success("✅ Captura finalizada.")
+                    time.sleep(2.5)
+                    finalizado_placeholder.empty()
 
-                # Mostrar el DataFrame capturado y permitir guardar
+                # Guardar datos capturados y refrescar para mostrar en col2
                 if captured_data is not None and len(captured_data) > 0:
-                    # Verificar que no sea un DataFrame vacío o con una sola columna 'value'
                     if not (list(captured_data.columns) == ['value'] and len(captured_data) == 0):
-                        st.write("📊 *Paquetes capturados:*")
-                        st.dataframe(captured_data, use_container_width=True)
                         st.session_state.data = captured_data
-                        st.success("Datos capturados listos para predicción")
-                        if st.button("💾 Guardar en CSV"):
-                            save_packet_csv(captured_data, "captura_paquetes.csv")
+                        st.session_state['captura_manual_lista'] = True
+                        st.rerun()
                     else:
                         st.warning("⚠️ No se capturaron paquetes válidos")
                 else:
                     st.warning("⚠️ No se capturaron datos")
-
-        # ---------------- Pestaña: Captura automática ----------------
-        with tab_auto:
-            # Ejecución automática si está activa y toca ciclo
-            if st.session_state.auto_capture['active'] and not st.session_state.auto_capture['is_capturing']:
-                # Verificar si se acabó el tiempo total
-                if st.session_state.auto_capture['end_time'] and time.time() >= st.session_state.auto_capture['end_time']:
-                    st.rerun()  # Dejar que la UI maneje el mensaje de completado
-                
-                due = st.session_state.auto_capture['next_run_ts'] is not None and time.time() >= st.session_state.auto_capture['next_run_ts']
-                if due:
-                    st.session_state.auto_capture['is_capturing'] = True
-                    
-                    # Mostrar información del ciclo actual
-                    current_cycle = st.session_state.auto_capture.get('total_cycles', 0) + 1
-                    st.info(f'🚀 **Ejecutando captura automática - Ciclo #{current_cycle}**')
-                    
-                    captured_data = None
-                    # Duración fija de 30 segundos por captura (rápida)
-                    duration_sec = 30
-                    
-                    # Detectar si estamos en Cloud o local
-                    use_api = is_streamlit_cloud()
-                    
-                    # Crear contenedor para animación de carga
-                    loading_placeholder = st.empty()
-                    
-                    if use_api:
-                        # Usar backend API (Streamlit Cloud)
-                        with loading_placeholder:
-                            with st.spinner('🌐 **Capturando paquetes desde backend remoto...** 📡'):
-                                backend_url = get_backend_url()
-                                captured_data = capture_via_api(duration_sec, backend_url)
-                        
-                    else:
-                        # Usar tshark local
-                        with loading_placeholder:
-                            with st.spinner('💻 **Capturando paquetes desde interfaz local...** 📡'):
-                                captured_data = capture_local(duration_sec, comm_arg)
-
-                    # Limpiar animación
-                    loading_placeholder.empty()
-
-                    if st.session_state.auto_capture['stop_requested']:
-                        st.warning('⏹️ **Captura automática detenida por el usuario.**')
-                        st.session_state.auto_capture['active'] = False
-                        st.session_state.auto_capture['is_capturing'] = False
-                        st.session_state.auto_capture['next_run_ts'] = None
-                        st.session_state.auto_capture['end_time'] = None
-                    else:
-                        if captured_data is not None and len(captured_data) > 0:
-                            st.success(f'✅ **Captura #{current_cycle} finalizada:** {len(captured_data)} paquetes capturados')
-                            st.session_state.data = captured_data
-                            
-                            # Incrementar contador de ciclos ANTES de la predicción
-                            st.session_state.auto_capture['total_cycles'] = current_cycle
-                            
-                            # Marcar que ya no está capturando ANTES de la predicción
-                            st.session_state.auto_capture['is_capturing'] = False
-                            
-                            # Verificar si queda tiempo para otro ciclo y programarlo ANTES de la predicción
-                            time_remaining = st.session_state.auto_capture['end_time'] - time.time()
-                            if time_remaining < st.session_state.auto_capture['interval_sec']:
-                                # No hay tiempo suficiente para otro ciclo completo
-                                st.info(f'⏰ Tiempo insuficiente para otro ciclo. Finalizando sesión...')
-                                st.session_state.auto_capture['active'] = False
-                                st.session_state.auto_capture['next_run_ts'] = None
-                            else:
-                                # Programar siguiente ciclo
-                                st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
-                            
-                            # Ejecutar predicción automáticamente (esto hace st.rerun() al final)
-                            st.info('🔄 Procesando predicción...')
-                            run_prediction_on_data(captured_data)
-                            # IMPORTANTE: run_prediction_on_data() hace st.rerun() al final
-                            # Por eso todo el estado debe estar actualizado ANTES de llamarlo
-                            
-                        else:
-                            st.warning(f'⚠️ **Ciclo #{current_cycle}:** No se capturaron paquetes.')
-                            # Aún así incrementar el contador
-                            st.session_state.auto_capture['total_cycles'] = current_cycle
-                            
-                            # Marcar que ya no está capturando
-                            st.session_state.auto_capture['is_capturing'] = False
-                            
-                            # Programar siguiente ciclo
-                            time_remaining = st.session_state.auto_capture['end_time'] - time.time()
-                            if time_remaining < st.session_state.auto_capture['interval_sec']:
-                                st.info(f'⏰ Tiempo insuficiente para otro ciclo. Finalizando sesión...')
-                                st.session_state.auto_capture['active'] = False
-                                st.session_state.auto_capture['next_run_ts'] = None
-                                time.sleep(1)
-                                st.rerun()
-                            else:
-                                st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
-                                time.sleep(1)
-                                st.rerun()
 
         # ---------------- Pestaña: Cargar archivo CSV ----------------
         with tab_csv:
@@ -1199,4 +1135,13 @@ def show_dashboard_page():
                 st.session_state['metric_option_used'] = None
                 st.session_state['metricas_rendimiento'] = None
                 st.success("✅ Predicción limpiada. Puedes realizar una nueva predicción.")
+                st.rerun()
+
+    # ============ AUTO-REFRESH para cuenta regresiva (fuera de col1/col2) ============
+    # Si la captura automática está activa y esperando el siguiente ciclo, refrescar cada segundo
+    if st.session_state.auto_capture.get('active', False) and not st.session_state.auto_capture.get('is_capturing', False):
+        if st.session_state.auto_capture.get('next_run_ts') is not None:
+            remaining = st.session_state.auto_capture['next_run_ts'] - time.time()
+            if remaining > 0:
+                time.sleep(1)
                 st.rerun()

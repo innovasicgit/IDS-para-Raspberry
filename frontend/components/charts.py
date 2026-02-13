@@ -21,11 +21,11 @@ def create_pie_chart(labels: List[str], values: List[int], title: str = "Distrib
         Figura de Plotly
     """
     color_map = {
-        'Normal': '#00C853',
-        'Anómalo': '#FF5252',
-        'DDOS_TCP': '#FF5252',
-        'DDOS_UDP': '#FFA726',
-        'Reconnaissance': '#42A5F5'
+        'Normal': '#10B981',
+        'Anómalo': '#EF4444',
+        'DDOS_TCP': '#EF4444',
+        'DDOS_UDP': '#F59E0B',
+        'Reconnaissance': '#1383A7'
     }
     
     fig = px.pie(
@@ -43,8 +43,8 @@ def create_bar_chart(
     labels: List[str], 
     values: List[int], 
     title: str = "Distribución de Detecciones",
-    color_normal: str = '#00C853',
-    color_attack: str = '#FF5252'
+    color_normal: str = '#10B981',
+    color_attack: str = '#EF4444'
 ) -> go.Figure:
     """
     Crear gráfico de barras con colores según tipo (Normal vs Ataque).
@@ -99,7 +99,7 @@ def create_histogram(
     fig.add_trace(go.Histogram(
         x=data, 
         nbinsx=nbins, 
-        marker_color='#4B9FE1', 
+        marker_color='#1383A7', 
         name='Distribución'
     ))
     
@@ -109,7 +109,7 @@ def create_histogram(
             x0=threshold, x1=threshold, 
             y0=0, y1=1, 
             xref='x', yref='paper', 
-            line=dict(color='#FF5252', width=2)
+            line=dict(color='#EF4444', width=2)
         )
         fig.add_annotation(
             x=threshold, y=1, 
@@ -154,7 +154,7 @@ def create_traffic_pattern_chart(
         y=traffic_data,
         mode='lines',
         name='Tráfico',
-        line=dict(color='#4B9FE1', width=1)
+        line=dict(color='#1383A7', width=1)
     ))
 
     # Línea de techo
@@ -163,7 +163,7 @@ def create_traffic_pattern_chart(
         y=ceiling,
         mode='lines',
         name='Techo',
-        line=dict(color='#00C853', width=2, dash='dash')
+        line=dict(color='#10B981', width=2, dash='dash')
     ))
 
     # Línea de suelo
@@ -172,7 +172,7 @@ def create_traffic_pattern_chart(
         y=floor,
         mode='lines',
         name='Suelo',
-        line=dict(color='#FFA726', width=2, dash='dash')
+        line=dict(color='#F59E0B', width=2, dash='dash')
     ))
 
     # Puntos de anomalías
@@ -182,7 +182,7 @@ def create_traffic_pattern_chart(
             y=traffic_data[anomaly_indices],
             mode='markers',
             name='Anomalías',
-            marker=dict(color='#FF5252', size=8, symbol='circle')
+            marker=dict(color='#EF4444', size=8, symbol='circle')
         ))
 
     # Layout
@@ -191,7 +191,7 @@ def create_traffic_pattern_chart(
         title_x=0.5,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
+        font=dict(color='#F0FAFE'),
         showlegend=True,
         legend=dict(
             yanchor="top", y=0.99,
@@ -203,12 +203,12 @@ def create_traffic_pattern_chart(
             title="Muestras",
             showgrid=False,
             showline=True,
-            linecolor='rgba(255,255,255,0.2)'
+            linecolor='rgba(19, 131, 167, 0.3)'
         ),
         yaxis=dict(
             title="Intensidad de Tráfico",
             showgrid=True,
-            gridcolor='rgba(255,255,255,0.1)',
+            gridcolor='rgba(19, 131, 167, 0.10)',
             zeroline=False
         )
     )
@@ -237,13 +237,13 @@ def create_comparison_bar_chart(
         name='Normal', 
         x=models, 
         y=normal_counts, 
-        marker_color='#00C853'
+        marker_color='#10B981'
     ))
     fig.add_trace(go.Bar(
         name='Ataques', 
         x=models, 
         y=attack_counts, 
-        marker_color='#FF5252'
+        marker_color='#EF4444'
     ))
     fig.update_layout(
         barmode='group', 

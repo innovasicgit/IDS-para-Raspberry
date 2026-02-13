@@ -57,7 +57,7 @@ def show_guia_page():
                        text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">
                 📚 Guía Completa del Sistema IDS
             </h1>
-            <h3 style="color: #E0E7FF; font-weight: 300; margin-bottom: 0; font-size: 1.3rem;">
+            <h3 style="color: #F0FAFE; font-weight: 300; margin-bottom: 0; font-size: 1.3rem;">
                 Todo lo que necesitas saber para proteger tu red IoT
             </h3>
         </div>
@@ -69,10 +69,10 @@ def show_guia_page():
     st.markdown("## 🔰 ¿Qué es un Sistema de Detección de Intrusiones (IDS)?")
     
     st.markdown("""
-    <div style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.05) 100%); 
-                padding: 2rem; border-radius: 15px; border-left: 5px solid #4CAF50; margin: 1.5rem 0;">
+    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%); 
+                padding: 2rem; border-radius: 15px; border-left: 5px solid #10B981; margin: 1.5rem 0;">
         
-    <h3 style="color: #4CAF50; margin-top: 0;">💡 Explicación Simple</h3>
+    <h3 style="color: #10B981; margin-top: 0;">💡 Explicación Simple</h3>
     
     <p style="font-size: 1.15rem; line-height: 1.9; text-align: justify; margin-bottom: 1.5rem;">
         Imagina que tu red de dispositivos conectados (IoT) es como tu casa. Un <strong>Sistema de Detección 
@@ -86,7 +86,7 @@ def show_guia_page():
         para identificar si son "visitantes normales" (tráfico legítimo) o "intrusos" (amenazas de seguridad).
     </p>
     
-    <h3 style="color: #4CAF50; margin-top: 2rem;">🎯 ¿Por qué es importante?</h3>
+    <h3 style="color: #10B981; margin-top: 2rem;">🎯 ¿Por qué es importante?</h3>
     
     <p style="font-size: 1.15rem; line-height: 1.9; text-align: justify;">
         Los dispositivos IoT (cámaras, sensores, termostatos inteligentes, etc.) son objetivos atractivos 
@@ -114,9 +114,9 @@ def show_guia_page():
     
     with tab1:
         st.markdown("""
-        <div style="padding: 1.5rem; background: rgba(66, 165, 245, 0.1); border-radius: 12px; margin: 1rem 0;">
+        <div style="padding: 1.5rem; background: rgba(19, 131, 167, 0.1); border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: #42A5F5;">📡 Captura de Tráfico de Red</h3>
+        <h3 style="color: #1383A7;">📡 Captura de Tráfico de Red</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
             <strong>¿Qué es?</strong><br>
@@ -149,9 +149,9 @@ def show_guia_page():
     
     with tab2:
         st.markdown("""
-        <div style="padding: 1.5rem; background: rgba(255, 167, 38, 0.1); border-radius: 12px; margin: 1rem 0;">
+        <div style="padding: 1.5rem; background: rgba(245, 158, 11, 0.1); border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: #FFA726;">🔬 Análisis y Preprocesamiento</h3>
+        <h3 style="color: #F59E0B;">🔬 Análisis y Preprocesamiento</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
             <strong>¿Qué sucede aquí?</strong><br>
@@ -187,9 +187,9 @@ def show_guia_page():
     
     with tab3:
         st.markdown("""
-        <div style="padding: 1.5rem; background: rgba(156, 39, 176, 0.1); border-radius: 12px; margin: 1rem 0;">
+        <div style="padding: 1.5rem; background: rgba(16, 78, 99, 0.1); border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: #9C27B0;">🧠 Detección con Inteligencia Artificial</h3>
+        <h3 style="color: #104E63;">🧠 Detección con Inteligencia Artificial</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
             <strong>¿Cómo detecta amenazas?</strong><br>
@@ -208,11 +208,11 @@ def show_guia_page():
                 diferente es el tráfico actual de lo esperado</li>
             <li><strong>Clasificación</strong>: Decide si el tráfico es:
                 <ul style="margin-top: 0.5rem;">
-                    <li>✅ <span style="color: #4CAF50;"><strong>Normal</strong></span>: 
+                    <li>✅ <span style="color: #10B981;"><strong>Normal</strong></span>: 
                         Comportamiento esperado y seguro</li>
-                    <li>⚠️ <span style="color: #FF9800;"><strong>Sospechoso</strong></span>: 
+                    <li>⚠️ <span style="color: #F59E0B;"><strong>Sospechoso</strong></span>: 
                         Algo inusual pero no necesariamente peligroso</li>
-                    <li>🚨 <span style="color: #F44336;"><strong>Ataque</strong></span>: 
+                    <li>🚨 <span style="color: #EF4444;"><strong>Ataque</strong></span>: 
                         Amenaza identificada (DDoS, Reconnaissance, etc.)</li>
                 </ul>
             </li>
@@ -229,9 +229,9 @@ def show_guia_page():
     
     with tab4:
         st.markdown("""
-        <div style="padding: 1.5rem; background: rgba(244, 67, 54, 0.1); border-radius: 12px; margin: 1rem 0;">
+        <div style="padding: 1.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: #F44336;">🚨 Generación de Alertas y Reportes</h3>
+        <h3 style="color: #EF4444;">🚨 Generación de Alertas y Reportes</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
             <strong>¿Qué pasa cuando se detecta una amenaza?</strong><br>
@@ -272,9 +272,9 @@ def show_guia_page():
     # IForest
     with st.expander("🌳 **IForest (Isolation Forest)** - El Detective de Patrones Extraños", expanded=False):
         st.markdown("""
-        <div style="padding: 1rem; background: rgba(76, 175, 80, 0.08); border-radius: 10px;">
+        <div style="padding: 1rem; background: rgba(16, 185, 129, 0.08); border-radius: 10px;">
         
-        <h4 style="color: #4CAF50;">🎯 ¿Qué es y cómo funciona?</h4>
+        <h4 style="color: #10B981;">🎯 ¿Qué es y cómo funciona?</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>Isolation Forest</strong> funciona con un principio simple pero poderoso: 
@@ -289,7 +289,7 @@ def show_guia_page():
             persona de la fiesta para notar que el dinosaurio es diferente.
         </p>
         
-        <h4 style="color: #4CAF50; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+        <h4 style="color: #10B981; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Construcción de árboles</strong>: Crea múltiples "árboles de decisión" aleatorios</li>
@@ -303,7 +303,7 @@ def show_guia_page():
             <li><strong>Puntuación de anomalía</strong>: Calcula un score promedio de todos los árboles</li>
         </ol>
         
-        <h4 style="color: #4CAF50; margin-top: 1.5rem;">✅ Ventajas</h4>
+        <h4 style="color: #10B981; margin-top: 1.5rem;">✅ Ventajas</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>⚡ <strong>Muy rápido</strong>: Excelente para grandes volúmenes de datos</li>
             <li>💪 <strong>Eficiente con alta dimensionalidad</strong>: Funciona bien con muchas características</li>
@@ -311,13 +311,13 @@ def show_guia_page():
             <li>🔄 <strong>Bajo uso de memoria</strong>: Ideal para dispositivos con recursos limitados</li>
         </ul>
         
-        <h4 style="color: #FFA726; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
+        <h4 style="color: #F59E0B; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>No clasifica <strong>tipos específicos</strong> de ataques (solo detecta "normal" vs "anómalo")</li>
             <li>Puede tener <strong>falsos positivos</strong> si el tráfico normal tiene mucha variación</li>
         </ul>
         
-        <h4 style="color: #42A5F5; margin-top: 1.5rem;">🎯 Mejor uso</h4>
+        <h4 style="color: #1383A7; margin-top: 1.5rem;">🎯 Mejor uso</h4>
         <p style="font-size: 1.05rem; line-height: 1.8;">
             Ideal para <strong>detección general de anomalías</strong> cuando tienes grandes volúmenes de tráfico 
             y necesitas respuestas rápidas. Perfecto como primera línea de defensa.
@@ -331,7 +331,7 @@ def show_guia_page():
         st.markdown("""
         <div style="padding: 1rem; background: rgba(33, 150, 243, 0.08); border-radius: 10px;">
         
-        <h4 style="color: #2196F3;">🎯 ¿Qué es y cómo funciona?</h4>
+        <h4 style="color: #1383A7;">🎯 ¿Qué es y cómo funciona?</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>One-Class SVM</strong> aprende a crear una "frontera" o "perímetro de seguridad" 
@@ -345,7 +345,7 @@ def show_guia_page():
             o potencial intruso.
         </p>
         
-        <h4 style="color: #2196F3; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+        <h4 style="color: #1383A7; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Aprendizaje de la normalidad</strong>: Estudia solo ejemplos de tráfico legítimo</li>
@@ -362,7 +362,7 @@ def show_guia_page():
             </li>
         </ol>
         
-        <h4 style="color: #2196F3; margin-top: 1.5rem;">✅ Ventajas</h4>
+        <h4 style="color: #1383A7; margin-top: 1.5rem;">✅ Ventajas</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>🎯 <strong>Alta precisión</strong>: Excelente para definir límites claros de normalidad</li>
             <li>🔧 <strong>Flexible con kernels</strong>: Puede adaptarse a patrones complejos</li>
@@ -370,14 +370,14 @@ def show_guia_page():
             <li>📊 <strong>Puntuación de confianza</strong>: Proporciona un score que indica "qué tan anómalo" es algo</li>
         </ul>
         
-        <h4 style="color: #FFA726; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
+        <h4 style="color: #F59E0B; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>🐌 <strong>Más lento</strong> que IForest en conjuntos de datos grandes</li>
             <li>⚙️ <strong>Requiere ajuste de parámetros</strong>: Necesita configuración cuidadosa</li>
             <li>💾 <strong>Uso de memoria</strong>: Puede requerir más recursos computacionales</li>
         </ul>
         
-        <h4 style="color: #42A5F5; margin-top: 1.5rem;">🎯 Mejor uso</h4>
+        <h4 style="color: #1383A7; margin-top: 1.5rem;">🎯 Mejor uso</h4>
         <p style="font-size: 1.05rem; line-height: 1.8;">
             Perfecto cuando necesitas <strong>alta precisión</strong> y tienes un buen conjunto de datos 
             de tráfico normal. Ideal para redes con patrones de tráfico bien definidos y estables.
@@ -389,9 +389,9 @@ def show_guia_page():
     # K-MEANS
     with st.expander("🎨 **K-MEANS** - El Organizador Inteligente", expanded=False):
         st.markdown("""
-        <div style="padding: 1rem; background: rgba(255, 152, 0, 0.08); border-radius: 10px;">
+        <div style="padding: 1rem; background: rgba(245, 158, 11, 0.08); border-radius: 10px;">
         
-        <h4 style="color: #FF9800;">🎯 ¿Qué es y cómo funciona?</h4>
+        <h4 style="color: #F59E0B;">🎯 ¿Qué es y cómo funciona?</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>K-MEANS</strong> es un algoritmo de agrupamiento (clustering) que organiza el tráfico 
@@ -406,7 +406,7 @@ def show_guia_page():
             Si aparece algo extraño (como una piedra), quedará en un grupo aparte o muy lejos de los demás.
         </p>
         
-        <h4 style="color: #FF9800; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+        <h4 style="color: #F59E0B; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Inicialización de centroides</strong>: Elige K puntos centrales aleatorios 
@@ -437,7 +437,7 @@ def show_guia_page():
             <li>🔵 <strong>Reconnaissance</strong>: Escaneo y reconocimiento de red</li>
         </ul>
         
-        <h4 style="color: #FF9800; margin-top: 1.5rem;">✅ Ventajas</h4>
+        <h4 style="color: #F59E0B; margin-top: 1.5rem;">✅ Ventajas</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>🎯 <strong>Clasificación detallada</strong>: Identifica tipos específicos de ataques</li>
             <li>⚡ <strong>Simple y rápido</strong>: Fácil de entender e implementar</li>
@@ -445,14 +445,14 @@ def show_guia_page():
             <li>🔄 <strong>Adaptable</strong>: Puede descubrir nuevos patrones automáticamente</li>
         </ul>
         
-        <h4 style="color: #FFA726; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
+        <h4 style="color: #F59E0B; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>🎲 <strong>Sensible a inicialización</strong>: Resultados pueden variar entre ejecuciones</li>
             <li>🔢 <strong>Requiere definir K</strong>: Debes especificar cuántos grupos buscar</li>
             <li>⭕ <strong>Asume clusters esféricos</strong>: Puede tener problemas con formas irregulares</li>
         </ul>
         
-        <h4 style="color: #42A5F5; margin-top: 1.5rem;">🎯 Mejor uso</h4>
+        <h4 style="color: #1383A7; margin-top: 1.5rem;">🎯 Mejor uso</h4>
         <p style="font-size: 1.05rem; line-height: 1.8;">
             Ideal cuando necesitas <strong>clasificar tipos específicos de amenazas</strong> y entender 
             exactamente qué tipo de ataque está ocurriendo. Excelente para análisis forense y generación 
@@ -465,9 +465,9 @@ def show_guia_page():
     # AUTOENCODER
     with st.expander("🧬 **AUTOENCODER Multiclase** - El Experto en Patrones Profundos", expanded=False):
         st.markdown("""
-        <div style="padding: 1rem; background: rgba(156, 39, 176, 0.08); border-radius: 10px;">
+        <div style="padding: 1rem; background: rgba(16, 78, 99, 0.08); border-radius: 10px;">
         
-        <h4 style="color: #9C27B0;">🎯 ¿Qué es y cómo funciona?</h4>
+        <h4 style="color: #104E63;">🎯 ¿Qué es y cómo funciona?</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             Un <strong>Autoencoder</strong> es una red neuronal profunda (Deep Learning) que aprende a 
@@ -486,7 +486,7 @@ def show_guia_page():
             </ul>
         </p>
         
-        <h4 style="color: #9C27B0; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+        <h4 style="color: #104E63; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             El Autoencoder tiene dos partes principales:
@@ -516,7 +516,7 @@ def show_guia_page():
             </li>
         </ol>
         
-        <h4 style="color: #9C27B0; margin-top: 1.5rem;">🎯 Proceso de detección:</h4>
+        <h4 style="color: #104E63; margin-top: 1.5rem;">🎯 Proceso de detección:</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Análisis de error de reconstrucción</strong>:
@@ -535,7 +535,7 @@ def show_guia_page():
             </li>
         </ol>
         
-        <h4 style="color: #9C27B0; margin-top: 1.5rem;">✅ Ventajas</h4>
+        <h4 style="color: #104E63; margin-top: 1.5rem;">✅ Ventajas</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>🧠 <strong>Aprendizaje profundo</strong>: Captura patrones muy complejos y sutiles</li>
             <li>🎯 <strong>Clasificación multiclase precisa</strong>: Identifica tipos específicos de ataques</li>
@@ -545,7 +545,7 @@ def show_guia_page():
             <li>💪 <strong>Robusto</strong>: Funciona bien con datos ruidosos o incompletos</li>
         </ul>
         
-        <h4 style="color: #FFA726; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
+        <h4 style="color: #F59E0B; margin-top: 1.5rem;">⚠️ Limitaciones</h4>
         <ul style="font-size: 1.05rem; line-height: 1.7;">
             <li>🐌 <strong>Más lento</strong>: Requiere más procesamiento que otros modelos</li>
             <li>💾 <strong>Uso de recursos</strong>: Necesita más memoria y CPU</li>
@@ -553,7 +553,7 @@ def show_guia_page():
             <li>📚 <strong>Necesita muchos datos</strong>: Funciona mejor con grandes conjuntos de entrenamiento</li>
         </ul>
         
-        <h4 style="color: #42A5F5; margin-top: 1.5rem;">🎯 Mejor uso</h4>
+        <h4 style="color: #1383A7; margin-top: 1.5rem;">🎯 Mejor uso</h4>
         <p style="font-size: 1.05rem; line-height: 1.8;">
             El modelo más <strong>potente y preciso</strong> del sistema. Ideal cuando necesitas la máxima 
             precisión, clasificación detallada de amenazas, y tienes recursos computacionales suficientes. 
@@ -572,11 +572,11 @@ def show_guia_page():
     
     with col1:
         st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.05) 100%); 
-                    padding: 1.5rem; border-radius: 15px; border-left: 5px solid #F44336; margin: 1rem 0; height: 100%;">
+        <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%); 
+                    padding: 1.5rem; border-radius: 15px; border-left: 5px solid #EF4444; margin: 1rem 0; height: 100%;">
         
-        <h3 style="color: #F44336;">🔴 DDoS TCP</h3>
-        <h4 style="color: #FF5252; font-size: 1.1rem;">Ataque de Denegación de Servicio vía TCP</h4>
+        <h3 style="color: #EF4444;">🔴 DDoS TCP</h3>
+        <h4 style="color: #EF4444; font-size: 1.1rem;">Ataque de Denegación de Servicio vía TCP</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>¿Qué es?</strong><br>
@@ -615,11 +615,11 @@ def show_guia_page():
     
     with col2:
         st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(255, 152, 0, 0.15) 0%, rgba(255, 152, 0, 0.05) 100%); 
-                    padding: 1.5rem; border-radius: 15px; border-left: 5px solid #FF9800; margin: 1rem 0; height: 100%;">
+        <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%); 
+                    padding: 1.5rem; border-radius: 15px; border-left: 5px solid #F59E0B; margin: 1rem 0; height: 100%;">
         
-        <h3 style="color: #FF9800;">🟠 DDoS UDP</h3>
-        <h4 style="color: #FFA726; font-size: 1.1rem;">Ataque de Denegación de Servicio vía UDP</h4>
+        <h3 style="color: #F59E0B;">🟠 DDoS UDP</h3>
+        <h4 style="color: #F59E0B; font-size: 1.1rem;">Ataque de Denegación de Servicio vía UDP</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>¿Qué es?</strong><br>
@@ -660,10 +660,10 @@ def show_guia_page():
     # Reconnaissance
     st.markdown("""
     <div style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%); 
-                padding: 1.5rem; border-radius: 15px; border-left: 5px solid #2196F3; margin: 1rem 0;">
+                padding: 1.5rem; border-radius: 15px; border-left: 5px solid #1383A7; margin: 1rem 0;">
     
-    <h3 style="color: #2196F3;">🔵 Reconnaissance (Reconocimiento)</h3>
-    <h4 style="color: #42A5F5; font-size: 1.1rem;">Escaneo y Mapeo de Red</h4>
+    <h3 style="color: #1383A7;">🔵 Reconnaissance (Reconocimiento)</h3>
+    <h4 style="color: #1383A7; font-size: 1.1rem;">Escaneo y Mapeo de Red</h4>
     
     <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
         <strong>¿Qué es?</strong><br>
@@ -1017,14 +1017,14 @@ def show_guia_page():
     
     for idx, step in enumerate(steps, 1):
         color_map = {
-            1: "#4CAF50",
-            2: "#2196F3",
-            3: "#FF9800",
-            4: "#9C27B0",
-            5: "#F44336",
-            6: "#00BCD4"
+            1: "#10B981",
+            2: "#1383A7",
+            3: "#F59E0B",
+            4: "#104E63",
+            5: "#EF4444",
+            6: "#1383A7"
         }
-        color = color_map.get(idx, "#673AB7")
+        color = color_map.get(idx, "#0C4A6E")
         
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, {color}15 0%, {color}05 100%); 
@@ -1154,9 +1154,9 @@ def show_guia_page():
     
     with col1:
         st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.05) 100%); 
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%); 
                     padding: 1.5rem; border-radius: 12px; height: 100%;">
-            <h3 style="color: #4CAF50;">✅ Buenas Prácticas</h3>
+            <h3 style="color: #10B981;">✅ Buenas Prácticas</h3>
             <ul style="font-size: 1.05rem; line-height: 1.8;">
                 <li><strong>Establece una línea base</strong>: Ejecuta el sistema durante varios días en tráfico normal para entender qué es "normal" en tu red</li>
                 <li><strong>Monitoreo regular</strong>: Configura capturas automáticas para vigilancia continua</li>
@@ -1170,9 +1170,9 @@ def show_guia_page():
     
     with col2:
         st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.05) 100%); 
+        <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%); 
                     padding: 1.5rem; border-radius: 12px; height: 100%;">
-            <h3 style="color: #F44336;">❌ Errores Comunes</h3>
+            <h3 style="color: #EF4444;">❌ Errores Comunes</h3>
             <ul style="font-size: 1.05rem; line-height: 1.8;">
                 <li><strong>Capturar muy pocos datos</strong>: < 100 paquetes no son representativos</li>
                 <li><strong>Ignorar el contexto</strong>: Una "anomalía" puede ser simplemente un patrón nuevo legítimo</li>
@@ -1188,10 +1188,10 @@ def show_guia_page():
     
     st.markdown("---")
     st.markdown("""
-    <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #0C4A6E 0%, #1383A7 100%); 
                 border-radius: 15px; margin: 2rem 0;">
         <h2 style="color: white; margin-bottom: 1rem;">🎓 ¡Felicitaciones!</h2>
-        <p style="color: #E0E7FF; font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem;">
+        <p style="color: #F0FAFE; font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem;">
             Ahora tienes todo el conocimiento necesario para usar este sistema de detección de intrusiones 
             de manera efectiva y proteger tu red IoT.
         </p>
