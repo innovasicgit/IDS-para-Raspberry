@@ -181,13 +181,14 @@ def show_dashboard_page():
             'active': False,
             'is_capturing': False,
             'stop_requested': False,
-            'interval_sec': 300,
+            'interval_sec': 120,  # Intervalo entre cada captura (cada cuánto capturar)
             'packets_per_capture': 100,
-            'duration_sec': 60,  # Duración de cada captura individual
+            'total_duration_sec': 600,  # Duración TOTAL de la sesión completa (10 min)
             'next_run_ts': None,
             'last_cycle_result': None,
             'total_cycles': 0,  # Contador de ciclos completados
             'start_time': None,  # Tiempo de inicio de la sesión automática
+            'end_time': None,  # Tiempo cuando debe terminar la sesión
         }
 
     # CSS para scroll independiente en cada columna
@@ -614,21 +615,33 @@ def show_dashboard_page():
             # Configuración de parámetros
             col_auto_a, col_auto_b = st.columns(2, gap="medium")
             with col_auto_a:
-                _default_dur_min = max(1, int(st.session_state.auto_capture['duration_sec'] // 60))
-                _val_dur_min = st.number_input(
-                    'Duración de captura (minutos)', min_value=1, max_value=1440, value=_default_dur_min, step=1,
-                    help='⏱️ Tiempo que durará CADA captura individual',
+                _default_total_min = max(1, int(st.session_state.auto_capture['total_duration_sec'] // 60))
+                _val_total_min = st.number_input(
+                    '⏱️ Duración total de la sesión (minutos)', 
+                    min_value=1, max_value=1440, value=_default_total_min, step=1,
+                    help='⏱️ Tiempo TOTAL que durará toda la sesión de captura automática',
                     disabled=st.session_state.auto_capture['active']
                 )
-                st.session_state.auto_capture['duration_sec'] = int(_val_dur_min * 60)
+                st.session_state.auto_capture['total_duration_sec'] = int(_val_total_min * 60)
             with col_auto_b:
-                _default_minutes = max(1, int(st.session_state.auto_capture['interval_sec'] // 60))
-                _val_minutes = st.number_input(
-                    'Intervalo entre capturas (minutos)', min_value=1, max_value=1440, value=_default_minutes, step=1,
-                    help='⏸️ Tiempo de PAUSA entre cada captura',
+                _default_interval_min = max(1, int(st.session_state.auto_capture['interval_sec'] // 60))
+                _val_interval_min = st.number_input(
+                    '🔄 Intervalo entre capturas (minutos)', 
+                    min_value=1, max_value=1440, value=_default_interval_min, step=1,
+                    help='🔄 Cada cuántos minutos se realizará UNA captura',
                     disabled=st.session_state.auto_capture['active']
                 )
-                st.session_state.auto_capture['interval_sec'] = int(_val_minutes * 60)
+                st.session_state.auto_capture['interval_sec'] = int(_val_interval_min * 60)
+
+            # Calcular ciclos esperados
+            if st.session_state.auto_capture['active']:
+                expected_cycles = int(st.session_state.auto_capture['total_duration_sec'] / st.session_state.auto_capture['interval_sec'])
+            else:
+                expected_cycles = int(_val_total_min * 60 / (_val_interval_min * 60))
+            
+            # Mostrar información de la configuración
+            if not st.session_state.auto_capture['active']:
+                st.info(f"📊 **Configuración:** La sesión durará **{_val_total_min} minuto(s)** con capturas cada **{_val_interval_min} minuto(s)**. Se realizarán aproximadamente **{expected_cycles} capturas** en total.")
 
             # Estado y métricas de la sesión
             col_status_a, col_status_b, col_status_c = st.columns(3, gap="small")
@@ -637,15 +650,17 @@ def show_dashboard_page():
                 st.metric('Estado', auto_status)
             with col_status_b:
                 cycles = st.session_state.auto_capture.get('total_cycles', 0)
-                st.metric('Ciclos completados', f"{cycles}")
+                st.metric('Ciclos completados', f"{cycles} / {expected_cycles}")
             with col_status_c:
                 if st.session_state.auto_capture.get('start_time'):
                     elapsed = int(time.time() - st.session_state.auto_capture['start_time'])
-                    hours, remainder = divmod(elapsed, 3600)
+                    # Tiempo restante hasta completar la duración total
+                    remaining_total = max(0, st.session_state.auto_capture['total_duration_sec'] - elapsed)
+                    hours, remainder = divmod(remaining_total, 3600)
                     minutes, seconds = divmod(remainder, 60)
-                    st.metric('Tiempo transcurrido', f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+                    st.metric('Tiempo restante', f"{hours:02d}:{minutes:02d}:{seconds:02d}")
                 else:
-                    st.metric('Tiempo transcurrido', "00:00:00")
+                    st.metric('Tiempo restante', "00:00:00")
 
             # Botones de control
             col_btn_a, col_btn_b = st.columns(2, gap="small")
@@ -655,6 +670,7 @@ def show_dashboard_page():
                     st.session_state.auto_capture['stop_requested'] = False
                     st.session_state.auto_capture['total_cycles'] = 0
                     st.session_state.auto_capture['start_time'] = time.time()
+                    st.session_state.auto_capture['end_time'] = time.time() + st.session_state.auto_capture['total_duration_sec']
                     # Ejecutar inmediatamente la primera captura
                     st.session_state.auto_capture['next_run_ts'] = time.time()
                     st.rerun()
@@ -663,11 +679,23 @@ def show_dashboard_page():
                     st.session_state.auto_capture['stop_requested'] = True
                     st.session_state.auto_capture['active'] = False
                     st.session_state.auto_capture['next_run_ts'] = None
+                    st.session_state.auto_capture['end_time'] = None
 
             # Visualización del estado actual con barra de progreso mejorada
             if st.session_state.auto_capture['active']:
-                if st.session_state.auto_capture['is_capturing']:
-                    st.info("🔄 **Capturando paquetes en progreso...**")
+                # Verificar si ya se completó el tiempo total
+                if st.session_state.auto_capture['end_time'] and time.time() >= st.session_state.auto_capture['end_time']:
+                    st.success(f"🎉 **Sesión completada!** Se realizaron {st.session_state.auto_capture['total_cycles']} capturas en total.")
+                    st.session_state.auto_capture['active'] = False
+                    st.session_state.auto_capture['is_capturing'] = False
+                    st.session_state.auto_capture['next_run_ts'] = None
+                    st.balloons()
+                    time.sleep(2)
+                    st.rerun()
+                elif st.session_state.auto_capture['is_capturing']:
+                    # Mostrar spinner animado durante captura
+                    with st.spinner('🔄 **Capturando paquetes de red...**'):
+                        pass
                 elif not st.session_state.auto_capture['is_capturing']:
                     if st.session_state.auto_capture['next_run_ts'] is not None:
                         remaining = max(0, int(st.session_state.auto_capture['next_run_ts'] - time.time()))
@@ -881,6 +909,10 @@ def show_dashboard_page():
         with tab_auto:
             # Ejecución automática si está activa y toca ciclo
             if st.session_state.auto_capture['active'] and not st.session_state.auto_capture['is_capturing']:
+                # Verificar si se acabó el tiempo total
+                if st.session_state.auto_capture['end_time'] and time.time() >= st.session_state.auto_capture['end_time']:
+                    st.rerun()  # Dejar que la UI maneje el mensaje de completado
+                
                 due = st.session_state.auto_capture['next_run_ts'] is not None and time.time() >= st.session_state.auto_capture['next_run_ts']
                 if due:
                     st.session_state.auto_capture['is_capturing'] = True
@@ -890,77 +922,37 @@ def show_dashboard_page():
                     st.info(f'🚀 **Ejecutando captura automática - Ciclo #{current_cycle}**')
                     
                     captured_data = None
-                    duration_sec = int(st.session_state.auto_capture['duration_sec'])
-                    if duration_sec <= 0:
-                        duration_sec = 60
+                    # Duración fija de 30 segundos por captura (rápida)
+                    duration_sec = 30
                     
                     # Detectar si estamos en Cloud o local
                     use_api = is_streamlit_cloud()
                     
-                    # Crear contenedor para barra de progreso
-                    progress_container = st.empty()
-                    status_container = st.empty()
+                    # Crear contenedor para animación de carga
+                    loading_placeholder = st.empty()
                     
                     if use_api:
                         # Usar backend API (Streamlit Cloud)
-                        status_container.info("🌐 **Capturando desde backend remoto...**")
-                        
-                        # Barra de progreso en tiempo real
-                        start_capture_time = time.time()
-                        
-                        # Simulamos progreso mientras esperamos respuesta del backend
-                        for i in range(101):
-                            if st.session_state.auto_capture['stop_requested']:
-                                break
-                            
-                            elapsed = time.time() - start_capture_time
-                            remaining = max(0, duration_sec - elapsed)
-                            m, s = divmod(int(remaining), 60)
-                            
-                            progress_pct = min(i / 100, elapsed / duration_sec)
-                            progress_container.progress(
-                                progress_pct, 
-                                text=f'📡 Capturando... {int(progress_pct * 100)}% | Tiempo restante: {m:02d}:{s:02d}'
-                            )
-                            
-                            time.sleep(duration_sec / 100)
-                        
-                        backend_url = get_backend_url()
-                        captured_data = capture_via_api(duration_sec, backend_url)
+                        with loading_placeholder:
+                            with st.spinner('🌐 **Capturando paquetes desde backend remoto...** 📡'):
+                                backend_url = get_backend_url()
+                                captured_data = capture_via_api(duration_sec, backend_url)
                         
                     else:
                         # Usar tshark local
-                        status_container.info("💻 **Capturando desde interfaz local...**")
-                        start_capture_time = time.time()
-                        
-                        # Barra de progreso en tiempo real durante captura local
-                        for i in range(101):
-                            if st.session_state.auto_capture['stop_requested']:
-                                break
-                            
-                            elapsed = time.time() - start_capture_time
-                            remaining = max(0, duration_sec - elapsed)
-                            m, s = divmod(int(remaining), 60)
-                            
-                            progress_pct = min(i / 100, elapsed / duration_sec)
-                            progress_container.progress(
-                                progress_pct,
-                                text=f'📡 Capturando paquetes... {int(progress_pct * 100)}% | Tiempo restante: {m:02d}:{s:02d}'
-                            )
-                            
-                            time.sleep(duration_sec / 100)
-                        
-                        captured_data = capture_local(duration_sec, comm_arg)
+                        with loading_placeholder:
+                            with st.spinner('💻 **Capturando paquetes desde interfaz local...** 📡'):
+                                captured_data = capture_local(duration_sec, comm_arg)
 
-                    # Limpiar barras de progreso
-                    progress_container.empty()
-                    status_container.empty()
+                    # Limpiar animación
+                    loading_placeholder.empty()
 
                     if st.session_state.auto_capture['stop_requested']:
                         st.warning('⏹️ **Captura automática detenida por el usuario.**')
                         st.session_state.auto_capture['active'] = False
                         st.session_state.auto_capture['is_capturing'] = False
                         st.session_state.auto_capture['next_run_ts'] = None
+                        st.session_state.auto_capture['end_time'] = None
                     else:
                         if captured_data is not None and len(captured_data) > 0:
                             st.success(f'✅ **Captura #{current_cycle} finalizada:** {len(captured_data)} paquetes capturados')
@@ -975,16 +967,28 @@ def show_dashboard_page():
                         else:
                             st.warning(f'⚠️ **Ciclo #{current_cycle}:** No se capturaron paquetes.')
                         
-                        # Programar siguiente ciclo
-                        st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
-                        st.session_state.auto_capture['is_capturing'] = False
-                        
-                        # Mostrar mensaje de próximo ciclo
-                        next_minutes = st.session_state.auto_capture['interval_sec'] // 60
-                        st.info(f'⏸️ Esperando {next_minutes} minuto(s) para el próximo ciclo...')
-                        
-                        time.sleep(2)  # Breve pausa para que el usuario vea el mensaje
-                        st.rerun()
+                        # Verificar si queda tiempo para otro ciclo
+                        time_remaining = st.session_state.auto_capture['end_time'] - time.time()
+                        if time_remaining < st.session_state.auto_capture['interval_sec']:
+                            # No hay tiempo suficiente para otro ciclo completo
+                            st.info(f'⏰ Tiempo insuficiente para otro ciclo. Finalizando sesión...')
+                            st.session_state.auto_capture['active'] = False
+                            st.session_state.auto_capture['is_capturing'] = False
+                            st.session_state.auto_capture['next_run_ts'] = None
+                            st.balloons()
+                            time.sleep(2)
+                            st.rerun()
+                        else:
+                            # Programar siguiente ciclo
+                            st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
+                            st.session_state.auto_capture['is_capturing'] = False
+                            
+                            # Mostrar mensaje de próximo ciclo
+                            next_minutes = st.session_state.auto_capture['interval_sec'] // 60
+                            st.info(f'⏸️ Esperando {next_minutes} minuto(s) para el próximo ciclo...')
+                            
+                            time.sleep(2)  # Breve pausa para que el usuario vea el mensaje
+                            st.rerun()
 
         # ---------------- Pestaña: Cargar archivo CSV ----------------
         with tab_csv:
