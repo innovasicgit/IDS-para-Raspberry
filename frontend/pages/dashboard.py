@@ -659,9 +659,6 @@ def show_dashboard_page():
                     hours, remainder = divmod(remaining_total, 3600)
                     minutes, seconds = divmod(remainder, 60)
                     st.metric('⏱️ Sesión termina en', f"{hours:02d}:{minutes:02d}:{seconds:02d}")
-                else:
-                    # Solo mostrar cuando no está activa
-                    st.metric('Duración configurada', f"{_val_total_min} min")
 
             # Botones de control
             col_btn_a, col_btn_b = st.columns(2, gap="small")
@@ -962,39 +959,46 @@ def show_dashboard_page():
                             # Incrementar contador de ciclos ANTES de la predicción
                             st.session_state.auto_capture['total_cycles'] = current_cycle
                             
-                            # Ejecutar predicción automáticamente
-                            with st.spinner('🔄 Procesando predicción...'):
-                                run_prediction_on_data(captured_data)
+                            # Marcar que ya no está capturando ANTES de la predicción
+                            st.session_state.auto_capture['is_capturing'] = False
                             
-                            # Forzar actualización para mostrar resultados en col2
-                            time.sleep(0.5)
+                            # Verificar si queda tiempo para otro ciclo y programarlo ANTES de la predicción
+                            time_remaining = st.session_state.auto_capture['end_time'] - time.time()
+                            if time_remaining < st.session_state.auto_capture['interval_sec']:
+                                # No hay tiempo suficiente para otro ciclo completo
+                                st.info(f'⏰ Tiempo insuficiente para otro ciclo. Finalizando sesión...')
+                                st.session_state.auto_capture['active'] = False
+                                st.session_state.auto_capture['next_run_ts'] = None
+                            else:
+                                # Programar siguiente ciclo
+                                st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
+                            
+                            # Ejecutar predicción automáticamente (esto hace st.rerun() al final)
+                            st.info('🔄 Procesando predicción...')
+                            run_prediction_on_data(captured_data)
+                            # IMPORTANTE: run_prediction_on_data() hace st.rerun() al final
+                            # Por eso todo el estado debe estar actualizado ANTES de llamarlo
+                            
                         else:
                             st.warning(f'⚠️ **Ciclo #{current_cycle}:** No se capturaron paquetes.')
                             # Aún así incrementar el contador
                             st.session_state.auto_capture['total_cycles'] = current_cycle
-                        
-                        # Verificar si queda tiempo para otro ciclo
-                        time_remaining = st.session_state.auto_capture['end_time'] - time.time()
-                        if time_remaining < st.session_state.auto_capture['interval_sec']:
-                            # No hay tiempo suficiente para otro ciclo completo
-                            st.info(f'⏰ Tiempo insuficiente para otro ciclo. Finalizando sesión...')
-                            st.session_state.auto_capture['active'] = False
+                            
+                            # Marcar que ya no está capturando
                             st.session_state.auto_capture['is_capturing'] = False
-                            st.session_state.auto_capture['next_run_ts'] = None
-                            st.balloons()
-                            time.sleep(2)
-                            st.rerun()
-                        else:
+                            
                             # Programar siguiente ciclo
-                            st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
-                            st.session_state.auto_capture['is_capturing'] = False
-                            
-                            # Mostrar mensaje de próximo ciclo
-                            next_minutes = st.session_state.auto_capture['interval_sec'] // 60
-                            st.info(f'⏸️ Esperando {next_minutes} minuto(s) para el próximo ciclo...')
-                            
-                            time.sleep(2)  # Breve pausa para que el usuario vea el mensaje
-                            st.rerun()
+                            time_remaining = st.session_state.auto_capture['end_time'] - time.time()
+                            if time_remaining < st.session_state.auto_capture['interval_sec']:
+                                st.info(f'⏰ Tiempo insuficiente para otro ciclo. Finalizando sesión...')
+                                st.session_state.auto_capture['active'] = False
+                                st.session_state.auto_capture['next_run_ts'] = None
+                                time.sleep(1)
+                                st.rerun()
+                            else:
+                                st.session_state.auto_capture['next_run_ts'] = time.time() + int(st.session_state.auto_capture['interval_sec'])
+                                time.sleep(1)
+                                st.rerun()
 
         # ---------------- Pestaña: Cargar archivo CSV ----------------
         with tab_csv:
