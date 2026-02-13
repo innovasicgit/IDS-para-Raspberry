@@ -652,15 +652,15 @@ def show_dashboard_page():
                 cycles = st.session_state.auto_capture.get('total_cycles', 0)
                 st.metric('Ciclos completados', f"{cycles} / {expected_cycles}")
             with col_status_c:
-                if st.session_state.auto_capture.get('start_time'):
+                if st.session_state.auto_capture.get('start_time') and st.session_state.auto_capture['active']:
                     elapsed = int(time.time() - st.session_state.auto_capture['start_time'])
                     # Tiempo restante hasta completar la duración total
                     remaining_total = max(0, st.session_state.auto_capture['total_duration_sec'] - elapsed)
                     hours, remainder = divmod(remaining_total, 3600)
                     minutes, seconds = divmod(remainder, 60)
-                    st.metric('Tiempo restante', f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+                    st.metric('⏱️ Sesión termina en', f"{hours:02d}:{minutes:02d}:{seconds:02d}")
                 else:
-                    st.metric('Tiempo restante', "00:00:00")
+                    st.metric('⏱️ Sesión termina en', "--:--:--")
 
             # Botones de control
             col_btn_a, col_btn_b = st.columns(2, gap="small")
