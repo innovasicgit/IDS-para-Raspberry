@@ -4,42 +4,30 @@ Explicación detallada y accesible de todos los conceptos, modelos y funcionalid
 """
 
 import streamlit as st
-import base64
-from pathlib import Path
-
-
-def _get_image_base64(image_path):
-    """Convierte una imagen a base64 para usar en HTML."""
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
 
 
 def show_guia_page():
     """Página educativa completa sobre el sistema IDS."""
     
-    # Cargar GIF de fondo
-    gif_path = Path(__file__).resolve().parent.parent.parent / "img" / "encabeza2.gif"
-    gif_base64 = _get_image_base64(gif_path)
+    # URL de imagen estática (servida por Streamlit static serving)
+    img3_url = "app/static/img3.png"
     
-    # Hero Section con GIF de fondo
+    # Hero Section con imagen de fondo
     st.markdown(f"""
     <style>
         .guia-header {{
             position: relative;
-            background: url('data:image/gif;base64,{gif_base64}') center center;
-            background-size: cover;
+            background: url('{img3_url}') center center / cover no-repeat;
             padding: 3rem 2rem;
             border-radius: 20px;
             margin-bottom: 2.5rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
         }}
         .guia-header::before {{
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             border-radius: 20px;
             z-index: 1;
@@ -50,7 +38,6 @@ def show_guia_page():
             text-align: center;
         }}
     </style>
-    
     <div class="guia-header">
         <div class="guia-header-content">
             <h1 style="color: white; font-size: 3rem; margin-bottom: 1rem; 
