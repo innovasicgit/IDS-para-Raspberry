@@ -191,7 +191,7 @@ def show_dashboard_page():
             'end_time': None,  # Tiempo cuando debe terminar la sesión
         }
 
-    # CSS para scroll independiente en cada columna
+    # CSS para scroll independiente en cada columna y animaciones
     st.markdown("""
         <style>
         /* Hacer que las columnas tengan scroll independiente */
@@ -219,6 +219,54 @@ def show_dashboard_page():
         [data-testid="column"]::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        
+        /* Animaciones suaves para elementos */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+        
+        /* Aplicar animación a elementos principales */
+        [data-testid="stMarkdownContainer"] {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Estilo para cards con gradiente */
+        .gradient-card {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        /* Animación de pulso para indicadores activos */
+        .pulse-animation {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -226,12 +274,45 @@ def show_dashboard_page():
     # En móvil, las columnas se apilan verticalmente automáticamente
     col1, col2 = st.columns([1, 2], gap="medium")
 
-    # Columna derecha: bienvenida o resumen tras predicción
+    # Columna derecha: bienvenida, captura en vivo, o resumen tras predicción
     with col2:
-        if 'prediccion_realizada' not in st.session_state or not st.session_state['prediccion_realizada']:
-            st.markdown("## 👋 Bienvenido al Panel IDS")
-            st.info("Aquí verás el resumen y visualización de los resultados una vez realices una predicción. Selecciona el modelo y las opciones en el panel de la izquierda, luego captura paquetes y realiza la predicción.")
-        else:
+        # Mostrar panel de captura en vivo si está capturando
+        if st.session_state.auto_capture.get('is_capturing', False):
+            st.markdown("## 🔴 CAPTURA EN VIVO")
+            
+            # Panel de estadísticas en tiempo real (ligero)
+            st.markdown("### 📊 Estadísticas en Tiempo Real")
+            
+            # Información del ciclo actual
+            current_cycle = st.session_state.auto_capture.get('total_cycles', 0) + 1
+            st.info(f"📍 **Ciclo #{current_cycle}** en progreso...")
+            
+            # Estadísticas básicas (simuladas durante captura)
+            col_stat1, col_stat2, col_stat3 = st.columns(3, gap="small")
+            with col_stat1:
+                st.metric("⏱️ Capturando", "~30 seg", help="Duración de captura individual")
+            with col_stat2:
+                st.metric("📦 Protocolo", "TCP/UDP/ICMP", help="Protocolos en captura")
+            with col_stat3:
+                st.metric("🎯 Estado", "Activo", delta="Procesando", help="Estado actual")
+            
+            # Indicador visual de progreso
+            st.markdown("### 🔄 Proceso de Captura")
+            st.progress(0.5, text="🌐 Capturando paquetes de red...")
+            
+            # Información adicional
+            st.markdown("""
+            <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white; text-align: center;">
+                <h3 style="margin: 0; color: white;">⚡ Captura Activa</h3>
+                <p style="margin: 10px 0 0 0; color: white;">Los resultados aparecerán automáticamente al finalizar</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.info("💡 **Tip:** Espera unos segundos mientras se captura el tráfico de red. Los resultados se mostrarán automáticamente con gráficas completas.")
+            
+        # Mostrar resultados si hay predicción completada
+        elif 'prediccion_realizada' in st.session_state and st.session_state['prediccion_realizada']:
             st.markdown("## 📄 Resumen de la Predicción")
             resumen = st.session_state['resumen_prediccion']
             st.success(resumen['texto'])
@@ -590,6 +671,60 @@ def show_dashboard_page():
                         st.plotly_chart(fig_traffic, use_container_width=True)
                 except Exception as e:
                     st.error(f"❌ Error al generar visualización de tráfico: {str(e)}")
+        
+        # Mostrar mensaje de bienvenida si no hay captura ni predicción
+        else:
+            st.markdown("## 👋 Bienvenido al Panel IDS")
+            
+            # Card de bienvenida con estilo
+            st.markdown("""
+            <div style="padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; text-align: center; margin: 20px 0;">
+                <h2 style="margin: 0; color: white;">🛡️ Sistema de Detección de Intrusos</h2>
+                <p style="margin: 15px 0 0 0; font-size: 1.1em; color: white;">Monitoreo de red en tiempo real con IA</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("### 🚀 Comenzar")
+            st.info("""
+            **Pasos para usar el sistema:**
+            
+            1. 📌 Selecciona un **modelo de detección** (IForest, OCSVM, KMEANS, AUTOENCODER)
+            2. 📊 Elige el tipo de **métrica** (Externas o Internas)
+            3. 🎯 Escoge tu método de captura:
+               - **🚀 Automática**: Capturas programadas en intervalos
+               - **🖐️ Manual**: Captura única bajo demanda
+               - **📂 CSV**: Carga un archivo de datos
+            4. 🔍 Presiona **"Realizar Predicción"** para analizar
+            
+            Los resultados aparecerán aquí con gráficas interactivas y análisis detallado.
+            """)
+            
+            # Características destacadas
+            col_feat1, col_feat2, col_feat3 = st.columns(3, gap="medium")
+            with col_feat1:
+                st.markdown("""
+                <div style="text-align: center; padding: 20px; background: #f0f2f6; border-radius: 10px;">
+                    <h3 style="margin: 0;">⚡</h3>
+                    <p style="margin: 10px 0 0 0;"><strong>Tiempo Real</strong></p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Captura y análisis instantáneo</p>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_feat2:
+                st.markdown("""
+                <div style="text-align: center; padding: 20px; background: #f0f2f6; border-radius: 10px;">
+                    <h3 style="margin: 0;">🤖</h3>
+                    <p style="margin: 10px 0 0 0;"><strong>IA Avanzada</strong></p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">4 modelos de Machine Learning</p>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_feat3:
+                st.markdown("""
+                <div style="text-align: center; padding: 20px; background: #f0f2f6; border-radius: 10px;">
+                    <h3 style="margin: 0;">📊</h3>
+                    <p style="margin: 10px 0 0 0;"><strong>Visualización</strong></p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Gráficas interactivas y reportes</p>
+                </div>
+                """, unsafe_allow_html=True)
     
     # Interfaz Usuario Panel de Control
     with col1:
