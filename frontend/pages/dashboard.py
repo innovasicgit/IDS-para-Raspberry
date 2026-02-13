@@ -652,7 +652,7 @@ def show_dashboard_page():
                 cycles = st.session_state.auto_capture.get('total_cycles', 0)
                 st.metric('Ciclos completados', f"{cycles} / {expected_cycles}")
             with col_status_c:
-                if st.session_state.auto_capture.get('start_time') and st.session_state.auto_capture['active']:
+                if st.session_state.auto_capture['active']:
                     elapsed = int(time.time() - st.session_state.auto_capture['start_time'])
                     # Tiempo restante hasta completar la duración total
                     remaining_total = max(0, st.session_state.auto_capture['total_duration_sec'] - elapsed)
@@ -660,7 +660,8 @@ def show_dashboard_page():
                     minutes, seconds = divmod(remainder, 60)
                     st.metric('⏱️ Sesión termina en', f"{hours:02d}:{minutes:02d}:{seconds:02d}")
                 else:
-                    st.metric('⏱️ Sesión termina en', "--:--:--")
+                    # Solo mostrar cuando no está activa
+                    st.metric('Duración configurada', f"{_val_total_min} min")
 
             # Botones de control
             col_btn_a, col_btn_b = st.columns(2, gap="small")
@@ -958,14 +959,19 @@ def show_dashboard_page():
                             st.success(f'✅ **Captura #{current_cycle} finalizada:** {len(captured_data)} paquetes capturados')
                             st.session_state.data = captured_data
                             
-                            # Incrementar contador de ciclos
+                            # Incrementar contador de ciclos ANTES de la predicción
                             st.session_state.auto_capture['total_cycles'] = current_cycle
                             
                             # Ejecutar predicción automáticamente
                             with st.spinner('🔄 Procesando predicción...'):
                                 run_prediction_on_data(captured_data)
+                            
+                            # Forzar actualización para mostrar resultados en col2
+                            time.sleep(0.5)
                         else:
                             st.warning(f'⚠️ **Ciclo #{current_cycle}:** No se capturaron paquetes.')
+                            # Aún así incrementar el contador
+                            st.session_state.auto_capture['total_cycles'] = current_cycle
                         
                         # Verificar si queda tiempo para otro ciclo
                         time_remaining = st.session_state.auto_capture['end_time'] - time.time()
