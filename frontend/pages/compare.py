@@ -35,7 +35,7 @@ def show_compare_page():
     # ==================== HEADER ====================
     st.markdown(f"""
     <style>
-        .compare-hero {{{{
+        .compare-hero {{
             position: relative;
             padding: 2.5rem 2rem;
             border-radius: 15px;
@@ -44,19 +44,19 @@ def show_compare_page():
             margin-bottom: 1.5rem;
             overflow: hidden;
             background: url('{img5_url}') center center / cover no-repeat;
-        }}}}
-        .compare-hero::before {{{{
+        }}
+        .compare-hero::before {{
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: {c.hero_overlay};
             border-radius: 15px;
             z-index: 1;
-        }}}}
-        .compare-hero-content {{{{
+        }}
+        .compare-hero-content {{
             position: relative;
             z-index: 2;
-        }}}}
+        }}
     </style>
     <div class="compare-hero">
         <div class="compare-hero-content">

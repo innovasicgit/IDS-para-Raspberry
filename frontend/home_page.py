@@ -20,7 +20,7 @@ def show_home_page():
     # Título principal con imagen de fondo (static serving)
     st.markdown(f"""
     <style>
-        .home-hero {{{{
+        .home-hero {{
             position: relative;
             padding: 50px 30px;
             border-radius: 15px;
@@ -29,19 +29,19 @@ def show_home_page():
             margin: 20px 0;
             overflow: hidden;
             background: url('{img2_url}') center center / cover no-repeat;
-        }}}}
-        .home-hero::before {{{{
+        }}
+        .home-hero::before {{
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: {c.hero_overlay};
             border-radius: 15px;
             z-index: 1;
-        }}}}
-        .home-hero-content {{{{
+        }}
+        .home-hero-content {{
             position: relative;
             z-index: 2;
-        }}}}
+        }}
     </style>
     <div class="home-hero">
         <div class="home-hero-content">
@@ -400,7 +400,7 @@ def show_home_page():
     st.markdown("---")
     st.markdown(f"""
     <style>
-        .home-cta {{{{
+        .home-cta {{
             position: relative;
             text-align: center;
             padding: 3rem 2rem 1rem 2rem;
@@ -408,19 +408,19 @@ def show_home_page():
             margin: 2rem 0;
             overflow: hidden;
             background: url('{img4_url}') center center / cover no-repeat;
-        }}}}
-        .home-cta::before {{{{
+        }}
+        .home-cta::before {{
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: {c.hero_overlay};
             border-radius: 15px;
             z-index: 1;
-        }}}}
-        .home-cta-content {{{{
+        }}
+        .home-cta-content {{
             position: relative;
             z-index: 2;
-        }}}}
+        }}
     </style>
     <div class="home-cta">
         <div class="home-cta-content">

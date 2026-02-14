@@ -258,18 +258,3 @@ elif st.session_state.page == "compare":
 else:
     # Página por defecto
     show_home_page()
-
-# ==================== FOOTER ====================
-
-st.markdown("---")
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    st.markdown(
-        f"""
-        <div style='text-align: center; color: {c.text_secondary};'>
-            <p>🛡 Sistema de Detección de Anomalías IoT</p>
-            <p>© 2026 Innovasic | UCC</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )

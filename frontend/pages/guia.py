@@ -19,7 +19,7 @@ def show_guia_page():
     # Hero Section con imagen de fondo
     st.markdown(f"""
     <style>
-        .guia-header {{{{
+        .guia-header {{
             position: relative;
             background: url('{img3_url}') center center / cover no-repeat;
             padding: 3rem 2rem;
@@ -27,20 +27,20 @@ def show_guia_page():
             margin-bottom: 2.5rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
-        }}}}
-        .guia-header::before {{{{
+        }}
+        .guia-header::before {{
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: {c.hero_overlay};
             border-radius: 20px;
             z-index: 1;
-        }}}}
-        .guia-header-content {{{{
+        }}
+        .guia-header-content {{
             position: relative;
             z-index: 2;
             text-align: center;
-        }}}}
+        }}
     </style>
     <div class="guia-header">
         <div class="guia-header-content">
@@ -1181,7 +1181,7 @@ def show_guia_page():
     st.markdown("---")
     st.markdown(f"""
     <style>
-        .guia-footer {{{{
+        .guia-footer {{
             position: relative;
             text-align: center;
             padding: 3rem 2rem;
@@ -1189,19 +1189,19 @@ def show_guia_page():
             margin: 2rem 0;
             overflow: hidden;
             background: url('{img1_url}') center center / cover no-repeat;
-        }}}}
-        .guia-footer::before {{{{
+        }}
+        .guia-footer::before {{
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: {c.hero_overlay};
             border-radius: 15px;
             z-index: 1;
-        }}}}
-        .guia-footer-content {{{{
+        }}
+        .guia-footer-content {{
             position: relative;
             z-index: 2;
-        }}}}
+        }}
     </style>
     <div class="guia-footer">
         <div class="guia-footer-content">

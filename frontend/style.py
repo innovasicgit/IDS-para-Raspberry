@@ -403,20 +403,58 @@ def generate_custom_css(theme=None) -> str:
 
     /* ═══════════════════════ SIDEBAR ═══════════════════════ */
     section[data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {colors.surface} 0%, {colors.background} 100%);
-        border-right: 1px solid {colors.border_subtle};
+        background: linear-gradient(180deg, {colors.surface} 0%, {colors.background} 100%) !important;
+        border-right: 1px solid {colors.border_subtle} !important;
+    }}
+
+    /* Sidebar inner container background */
+    section[data-testid="stSidebar"] > div {{
+        background-color: transparent !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
+        background-color: transparent !important;
+    }}
+
+    /* Sidebar text elements */
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] li,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] label {{
+        color: {colors.text_primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {{
+        color: {colors.text_secondary} !important;
+    }}
+
+    /* Sidebar dividers */
+    section[data-testid="stSidebar"] hr {{
+        background: linear-gradient(90deg, transparent, {colors.border_active}, transparent) !important;
     }}
 
     section[data-testid="stSidebar"] .stButton > button {{
-        background: transparent !important;
+        background: {colors.surface_variant} !important;
         border: 1px solid {colors.border} !important;
         color: {colors.text_primary} !important;
     }}
 
     section[data-testid="stSidebar"] .stButton > button:hover {{
-        background: {colors.surface_variant} !important;
+        background: {colors.surface_overlay} !important;
         border-color: {colors.primary} !important;
-        color: {colors.text_on_primary} !important;
+        color: {colors.primary} !important;
+    }}
+
+    /* Sidebar selectbox */
+    section[data-testid="stSidebar"] [data-baseweb="select"] > div {{
+        background-color: {colors.surface} !important;
+        border-color: {colors.border} !important;
+        color: {colors.text_primary} !important;
+    }}
+
+    /* Sidebar toggles/sliders labels */
+    section[data-testid="stSidebar"] .stSlider label,
+    section[data-testid="stSidebar"] .stCheckbox label,
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {{
+        color: {colors.text_primary} !important;
     }}
 
     /* option_menu styles */
@@ -434,6 +472,11 @@ def generate_custom_css(theme=None) -> str:
     section[data-testid="stSidebar"] .nav-link-selected {{
         background: {colors.gradient_primary} !important;
         color: {colors.text_on_primary} !important;
+    }}
+
+    /* option_menu container */
+    section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
+        background-color: transparent !important;
     }}
 
     /* ═══════════════════════ METRICS ═══════════════════════ */
@@ -659,14 +702,75 @@ def generate_custom_css(theme=None) -> str:
     [data-baseweb="select"] > div > div {{
         color: {colors.text_primary} !important;
     }}
+    /* Dropdown menu list */
+    [data-baseweb="popover"] {{
+        background-color: {colors.surface} !important;
+        border: 1px solid {colors.border} !important;
+    }}
+    [data-baseweb="popover"] [role="listbox"] {{
+        background-color: {colors.surface} !important;
+    }}
+    [data-baseweb="popover"] [role="option"] {{
+        background-color: {colors.surface} !important;
+        color: {colors.text_primary} !important;
+    }}
+    [data-baseweb="popover"] [role="option"]:hover {{
+        background-color: {colors.surface_variant} !important;
+    }}
+    [data-baseweb="popover"] [aria-selected="true"] {{
+        background-color: {colors.surface_variant} !important;
+    }}
 
-    /* Popover backgrounds */
+    /* Popover backgrounds (st.popover) */
     [data-testid="stPopover"] > div {{
         background-color: {colors.surface} !important;
         border: 1px solid {colors.border} !important;
     }}
     [data-testid="stPopoverBody"] {{
         background-color: {colors.surface} !important;
+    }}
+    [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] span {{
+        color: {colors.text_primary} !important;
+    }}
+    [data-testid="stPopoverBody"] [data-testid="stWidgetLabel"] label {{
+        color: {colors.text_primary} !important;
+    }}
+    [data-testid="stPopoverBody"] [data-testid="stCaptionContainer"] {{
+        color: {colors.text_secondary} !important;
+    }}
+
+    /* Text inputs in popovers */
+    [data-testid="stPopoverBody"] .stTextInput > div > div > input {{
+        background-color: {colors.surface} !important;
+        color: {colors.text_primary} !important;
+        border-color: {colors.border} !important;
+    }}
+
+    /* Slider track & labels */
+    .stSlider [data-baseweb="slider"] div {{
+        color: {colors.text_primary} !important;
+    }}
+
+    /* Toggle / checkbox */
+    .stCheckbox label span {{
+        color: {colors.text_primary} !important;
+    }}
+
+    /* Number input */
+    .stNumberInput [data-baseweb="input"] {{
+        background-color: {colors.surface} !important;
+        border-color: {colors.border} !important;
+    }}
+    .stNumberInput [data-baseweb="input"] input {{
+        color: {colors.text_primary} !important;
+    }}
+
+    /* Toast */
+    [data-testid="stToast"] {{
+        background-color: {colors.surface_elevated} !important;
+        color: {colors.text_primary} !important;
+        border: 1px solid {colors.border} !important;
     }}
 
     /* Alert/notification boxes override */
@@ -708,6 +812,12 @@ def generate_custom_css(theme=None) -> str:
     /* Caption text */
     [data-testid="stCaptionContainer"] {{
         color: {colors.text_secondary} !important;
+    }}
+
+    /* Widget labels (selectbox, slider, etc.) */
+    [data-testid="stWidgetLabel"] label,
+    [data-testid="stWidgetLabel"] p {{
+        color: {colors.text_primary} !important;
     }}
 </style>
     """
