@@ -300,10 +300,10 @@ def generate_custom_css(theme=None) -> str:
 
     /* ═══════════════════════ POPOVER (dev options) ═══════════════════════ */
     [data-testid="stPopover"] {{
-        background: {colors.surface} !important;
-        border: 1px solid {colors.border_active} !important;
+        background: {colors.popover_body_bg} !important;
+        border: 1px solid {colors.popover_body_border} !important;
         border-radius: {radius.xl} !important;
-        box-shadow: {theme.shadows.xl} !important;
+        box-shadow: {colors.popover_body_shadow} !important;
     }}
 
     /* Popover trigger buttons (the ⚙️ / 👤 buttons in sidebar) */
@@ -313,7 +313,7 @@ def generate_custom_css(theme=None) -> str:
         border: 1px solid {colors.popover_btn_border} !important;
         color: {colors.popover_btn_text} !important;
         font-weight: 500 !important;
-        border-radius: {radius.md} !important;
+        border-radius: {radius.lg} !important;
         padding: 0.5rem 1rem !important;
         width: 100% !important;
         transition: all {transitions.base} {transitions.ease} !important;
@@ -334,8 +334,10 @@ def generate_custom_css(theme=None) -> str:
     }}
 
     [data-testid="stPopoverBody"] {{
-        background: {colors.surface} !important;
+        background: {colors.popover_body_bg} !important;
+        border-radius: {radius.lg} !important;
         padding: {spacing.md} !important;
+        border: 1px solid {colors.popover_body_border} !important;
     }}
 
     /* ═══════════════════════ ALERTS ═══════════════════════ */
@@ -785,15 +787,21 @@ def generate_custom_css(theme=None) -> str:
 
     /* Popover backgrounds (st.popover) */
     [data-testid="stPopover"] > div {{
-        background-color: {colors.surface} !important;
-        border: 1px solid {colors.border} !important;
+        background-color: {colors.popover_body_bg} !important;
+        border: 1px solid {colors.popover_body_border} !important;
+        border-radius: {radius.lg} !important;
+        box-shadow: {colors.popover_body_shadow} !important;
     }}
     [data-testid="stPopoverBody"] {{
-        background-color: {colors.surface} !important;
+        background-color: {colors.popover_body_bg} !important;
+        border-radius: {radius.lg} !important;
     }}
     [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] p,
     [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] span {{
         color: {colors.text_primary} !important;
+    }}
+    [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] h5 {{
+        color: {colors.heading_secondary} !important;
     }}
     [data-testid="stPopoverBody"] [data-testid="stWidgetLabel"] label {{
         color: {colors.text_primary} !important;
@@ -802,11 +810,44 @@ def generate_custom_css(theme=None) -> str:
         color: {colors.text_secondary} !important;
     }}
 
+    /* Buttons inside popover body */
+    [data-testid="stPopoverBody"] .stButton > button {{
+        background: {colors.popover_btn_bg} !important;
+        border: 1px solid {colors.popover_btn_border} !important;
+        color: {colors.popover_btn_text} !important;
+        border-radius: {radius.md} !important;
+    }}
+    [data-testid="stPopoverBody"] .stButton > button:hover {{
+        background: {colors.popover_btn_hover_bg} !important;
+        border-color: {colors.popover_btn_hover_border} !important;
+        color: {colors.primary} !important;
+    }}
+
     /* Text inputs in popovers */
     [data-testid="stPopoverBody"] .stTextInput > div > div > input {{
-        background-color: {colors.surface} !important;
+        background-color: {colors.surface_elevated} !important;
         color: {colors.text_primary} !important;
         border-color: {colors.border} !important;
+        border-radius: {radius.md} !important;
+    }}
+    [data-testid="stPopoverBody"] .stTextInput > div > div > input:focus {{
+        border-color: {colors.primary} !important;
+        box-shadow: 0 0 0 3px {colors.primary_glow} !important;
+    }}
+
+    /* Toggle inside popover */
+    [data-testid="stPopoverBody"] .stToggle label span {{  
+        color: {colors.text_primary} !important;
+    }}
+
+    /* Selectbox inside popover */
+    [data-testid="stPopoverBody"] [data-baseweb="select"] > div {{
+        background-color: {colors.surface_elevated} !important;
+        border-color: {colors.border} !important;
+        border-radius: {radius.md} !important;
+    }}
+    [data-testid="stPopoverBody"] [data-baseweb="select"] > div > div {{
+        color: {colors.text_primary} !important;
     }}
 
     /* Slider track & labels */

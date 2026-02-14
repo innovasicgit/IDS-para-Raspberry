@@ -73,7 +73,8 @@ class ColorPalette:
     hero_subtitle: str = 'rgba(255, 255, 255, 0.85)'
 
     # Sidebar navigation (tema oscuro)
-    nav_bg: str = 'transparent'
+    nav_bg: str = 'rgba(19, 131, 167, 0.06)'
+    nav_border: str = 'rgba(19, 131, 167, 0.12)'
     nav_text: str = 'rgba(240, 250, 254, 0.65)'
     nav_hover: str = 'rgba(19, 131, 167, 0.08)'
     nav_selected_bg: str = 'linear-gradient(135deg, #0C4A6E 0%, #1383A7 100%)'
@@ -85,6 +86,11 @@ class ColorPalette:
     popover_btn_text: str = '#F0FAFE'
     popover_btn_hover_bg: str = 'rgba(19, 131, 167, 0.15)'
     popover_btn_hover_border: str = '#1383A7'
+
+    # Popover body (menú desplegado)
+    popover_body_bg: str = '#0C1B2E'
+    popover_body_border: str = 'rgba(19, 131, 167, 0.25)'
+    popover_body_shadow: str = '0 8px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(19,131,167,0.10)'
 
     # Gradientes predefinidos
     gradient_primary: str = 'linear-gradient(135deg, #0C4A6E 0%, #1383A7 100%)'
@@ -158,19 +164,25 @@ class LightColorPalette(ColorPalette):
     hero_title: str = '#FFFFFF'
     hero_subtitle: str = 'rgba(255, 255, 255, 0.90)'
 
-    # Sidebar navigation (tema claro)
-    nav_bg: str = 'rgba(4, 139, 168, 0.08)'
-    nav_text: str = '#2D5F6E'
-    nav_hover: str = 'rgba(4, 139, 168, 0.12)'
+    # Sidebar navigation (tema claro) — colores sólidos y visibles
+    nav_bg: str = '#E3F4F9'
+    nav_border: str = '#B8DDE8'
+    nav_text: str = '#1A4A5C'
+    nav_hover: str = '#D0EBF3'
     nav_selected_bg: str = 'linear-gradient(135deg, #048BA8 0%, #0C4A6E 100%)'
     nav_selected_text: str = '#FFFFFF'
 
-    # Popover trigger buttons (sidebar)
-    popover_btn_bg: str = 'rgba(4, 139, 168, 0.08)'
-    popover_btn_border: str = 'rgba(4, 139, 168, 0.25)'
+    # Popover trigger buttons (sidebar) — mismos colores que nav
+    popover_btn_bg: str = '#E3F4F9'
+    popover_btn_border: str = '#B8DDE8'
     popover_btn_text: str = '#0C4A6E'
-    popover_btn_hover_bg: str = 'rgba(4, 139, 168, 0.15)'
+    popover_btn_hover_bg: str = '#D0EBF3'
     popover_btn_hover_border: str = '#048BA8'
+
+    # Popover body (menú desplegado)
+    popover_body_bg: str = '#FFFFFF'
+    popover_body_border: str = '#B8DDE8'
+    popover_body_shadow: str = '0 8px 30px rgba(4, 139, 168, 0.15), 0 2px 8px rgba(0,0,0,0.08)'
 
     # Gradientes predefinidos
     gradient_primary: str = 'linear-gradient(135deg, #048BA8 0%, #0C4A6E 100%)'

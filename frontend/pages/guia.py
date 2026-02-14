@@ -44,7 +44,7 @@ def show_guia_page():
     </style>
     <div class="guia-header">
         <div class="guia-header-content">
-            <h1 style="color: white; font-size: 3rem; margin-bottom: 1rem; 
+            <h1 style="color: {c.hero_title}; font-size: 3rem; margin-bottom: 1rem; 
                        text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">
                 📚 Guía Completa del Sistema IDS
             </h1>

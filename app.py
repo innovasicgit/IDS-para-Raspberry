@@ -84,9 +84,10 @@ with st.sidebar:
         default_index=0,
         styles={
             "container": {
-                "padding": "0.5rem 0",
+                "padding": "0.6rem 0.5rem",
                 "background-color": c.nav_bg,
-                "border-radius": "12px",
+                "border-radius": "14px",
+                "border": f"1px solid {c.nav_border}",
             },
             "icon": {
                 "color": c.primary,
@@ -95,7 +96,7 @@ with st.sidebar:
             "nav-link": {
                 "font-size": "0.95rem",
                 "text-align": "left",
-                "margin": "4px 0",
+                "margin": "3px 0",
                 "padding": "0.6rem 1rem",
                 "border-radius": "10px",
                 "color": c.nav_text,
