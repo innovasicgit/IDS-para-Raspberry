@@ -13,6 +13,9 @@ import sklearn.metrics._dist_metrics as _dm
 # Importar del_columns para que joblib pueda deserializar los modelos
 from del_columns import del_columns
 
+# Imports de backend
+from backend.notifications_db import NotificationsDB
+
 # Imports de frontend
 from frontend.style import setup_page_and_style
 from frontend.auth_ui import ensure_auth
@@ -32,6 +35,17 @@ if "page" not in st.session_state:
     st.session_state.page = "home"  # Página de inicio por defecto
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
+if "notifications_db" not in st.session_state:
+    st.session_state.notifications_db = NotificationsDB()
+    # Cargar configuración guardada
+    db = st.session_state.notifications_db
+    email_config = db.load_email_config()
+    st.session_state.setdefault("user_email", email_config.get("recipient_email", ""))
+    st.session_state.setdefault("gmail_user", email_config.get("gmail_user", ""))
+    st.session_state.setdefault("gmail_app_password", email_config.get("gmail_app_password", ""))
+    st.session_state.setdefault("enable_email_notifications", db.load_preferences())
+if "arp_limit_mode" not in st.session_state:
+    st.session_state.arp_limit_mode = "medium"
 
 # ==================== AUTENTICACIÓN Y NAVEGACIÓN ====================
 
@@ -77,7 +91,7 @@ with st.sidebar:
     # Opciones avanzadas
     st.divider()
     try:
-        with st.popover("⚙️ Opciones de desarrollador"):
+        with st.popover("⚙️ Configuración avanzada"):
             st.markdown("""
             <div style="margin-bottom: 12px; padding: 8px 12px; 
                         background: linear-gradient(135deg, rgba(19,131,167,0.15) 0%, rgba(16,78,99,0.10) 100%); 
@@ -110,10 +124,77 @@ with st.sidebar:
                 min_value=0.0, max_value=1.0, value=0.45, step=0.01,
                 help="Clasifica como normal si el score ≥ percentil seleccionado."
             )
+
+        with st.popover("👤 Configuración de usuario"):
+            st.markdown("""
+            <div style="margin-bottom: 12px; padding: 8px 12px; 
+                        background: linear-gradient(135deg, rgba(19,131,167,0.15) 0%, rgba(16,78,99,0.10) 100%); 
+                        border-radius: 8px; border-left: 3px solid #1383A7;">
+                <span style="font-size: 0.8rem; color: #F0FAFE;">👤 Configuración de Usuario</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("##### 📧 Notificaciones por Email")
+            
+            db = st.session_state.notifications_db
+            
+            st.session_state.enable_email_notifications = st.toggle(
+                "Activar notificaciones por email",
+                value=st.session_state.get("enable_email_notifications", False),
+                help="Envía alertas por correo cuando se detectan anomalías en capturas automáticas."
+            )
+            
+            if st.session_state.enable_email_notifications:
+                st.session_state.user_email = st.text_input(
+                    "📬 Email de destino",
+                    value=st.session_state.get("user_email", ""),
+                    help="Correo donde recibirás las alertas."
+                )
+                st.session_state.gmail_user = st.text_input(
+                    "👤 Usuario Gmail (remitente)",
+                    value=st.session_state.get("gmail_user", ""),
+                    help="Cuenta Gmail que enviará los correos."
+                )
+                
+                col_save, col_clear = st.columns(2)
+                with col_save:
+                    if st.button("💾 Guardar", key="save_email_cfg", use_container_width=True):
+                        if st.session_state.user_email and st.session_state.gmail_user:
+                            success, msg = db.save_email_config(
+                                st.session_state.user_email,
+                                st.session_state.gmail_user,
+                                st.session_state.get("gmail_app_password", "")
+                            )
+                            db.save_preferences(True)
+                            st.toast(msg)
+                        else:
+                            st.toast("⚠️ Completa todos los campos")
+                with col_clear:
+                    if st.button("🗑️ Limpiar", key="clear_email_cfg", use_container_width=True):
+                        db.delete_email_config()
+                        st.session_state.user_email = ""
+                        st.session_state.gmail_user = ""
+                        st.session_state.gmail_app_password = ""
+                        st.session_state.enable_email_notifications = False
+                        db.save_preferences(False)
+                        st.toast("✅ Configuración eliminada")
+                        st.rerun()
+            else:
+                db.save_preferences(False)
+
+            st.markdown("---")
+            st.markdown("##### 🛡️ Filtro ARP")
+            st.session_state.arp_limit_mode = st.selectbox(
+                "Modo de límite ARP",
+                options=["low", "medium", "high", "none"],
+                index=["low", "medium", "high", "none"].index(
+                    st.session_state.get("arp_limit_mode", "medium")
+                ),
+                help="Controla cuántos paquetes ARP se permiten antes de alertar."
+            )
     except Exception:
-        with st.expander("⚙️ Opciones de desarrollador", expanded=False):
+        with st.expander("⚙️ Configuración avanzada", expanded=False):
             st.caption(f"sklearn: {getattr(sklearn, '__version__', 'N/A')}")
-            # ... mismo contenido que arriba ...
 
 # ==================== RENDERIZADO DE PÁGINAS ====================
 
