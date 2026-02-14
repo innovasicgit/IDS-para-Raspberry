@@ -763,11 +763,13 @@ def _display_results(filas, metric_compare):
                     dominant_attack = attack_labels.get(col, col)
 
         if dominant_attack and max_attack_count > 0:
+            attack_count_str = f"{int(max_attack_count):,}"
+            attack_recommendation = 'Revisa las reglas de firewall para mitigar este tipo de ataque.' if max_attack_count > 10 else 'Nivel bajo, mantén monitoreo regular.'
             st.markdown(f"""
             <div style="background: rgba(239,68,68,0.05); padding: 0.8rem 1rem; border-radius: 10px;
                         border-left: 3px solid {c.error}; font-size: 0.88rem; line-height: 1.6;">
                 <strong style="color: {c.error};">⚠️ Ataque predominante:</strong>
-                <strong>{dominant_attack}</strong> con {{int(max_attack_count):,}} detecciones totales.
-                {{'Revisa las reglas de firewall para mitigar este tipo de ataque.' if max_attack_count > 10 else 'Nivel bajo, mantén monitoreo regular.'}}
+                <strong>{dominant_attack}</strong> con {attack_count_str} detecciones totales.
+                {attack_recommendation}
             </div>
             """, unsafe_allow_html=True)

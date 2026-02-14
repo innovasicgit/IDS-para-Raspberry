@@ -1017,6 +1017,8 @@ def show_guia_page():
         }
         color = color_map.get(idx, c.quaternary)
         
+        details_html = ''.join([f'<li>{detail}</li>' for detail in step['details']])
+        
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, {color}15 0%, {color}05 100%); 
                     padding: 1.5rem; border-radius: 12px; border-left: 5px solid {color}; margin: 1rem 0;">
@@ -1028,7 +1030,8 @@ def show_guia_page():
                 {step['description']}
             </p>
             <ul style="font-size: 1.05rem; line-height: 1.7; margin-left: 1.5rem;">
-                {{''.join([f'<li>{detail}</li>' for detail in step['details']])}}
+                {details_html}
+            </ul>
             </ul>
             <div style="background: rgba(255, 235, 59, 0.15); padding: 1rem; border-radius: 8px; margin-top: 1rem; border-left: 3px solid {c.warning};">
                 <strong style="color: {c.warning};">💡 Consejo:</strong> {step['tip']}
