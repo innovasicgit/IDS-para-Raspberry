@@ -184,6 +184,8 @@ def show_compare_page():
 
 def _select_data_source():
     """Seleccionar origen de datos (captura o CSV)."""
+    t = get_current_theme()
+    c = t.colors
     src_col1, src_col2 = st.columns(2, gap="medium")
     data_source = None
 
@@ -400,6 +402,8 @@ def _run_comparison(data_source, selected_models, metric_compare, true_label_col
 
 def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
     """Generar explicación inteligente para la gráfica Normal vs Ataques."""
+    t = get_current_theme()
+    c = t.colors
     insights = []
 
     for i, modelo in enumerate(res_df['Modelo'].values):
@@ -455,6 +459,8 @@ def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
 
 def _generate_time_insight(res_df):
     """Generar explicación inteligente para la gráfica de tiempos."""
+    t = get_current_theme()
+    c = t.colors
     if 'Tiempo (s)' not in res_df.columns or len(res_df) == 0:
         return ""
 
@@ -494,6 +500,8 @@ def _generate_time_insight(res_df):
 
 def _display_results(filas, metric_compare):
     """Mostrar resultados de la comparación."""
+    t = get_current_theme()
+    c = t.colors
     res_df = pd.DataFrame(filas)
 
     st.markdown("---")
