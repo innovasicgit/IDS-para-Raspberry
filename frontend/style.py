@@ -1,10 +1,11 @@
 """
 Configuración de estilos y tema de la aplicación.
 CSS profesional con botones semánticos, glassmorphism y diseño atractivo.
+Soporta tema oscuro y claro dinámicamente.
 """
 
 import streamlit as st
-from config.theme import theme
+from config.theme import get_current_theme
 
 
 def setup_page_and_style():
@@ -15,12 +16,19 @@ def setup_page_and_style():
         layout="wide",
         initial_sidebar_state="expanded",
     )
-    css = generate_custom_css()
+    # Inicializar tema si no existe
+    if "theme_mode" not in st.session_state:
+        st.session_state.theme_mode = "dark"
+    
+    t = get_current_theme()
+    css = generate_custom_css(t)
     st.markdown(css, unsafe_allow_html=True)
 
 
-def generate_custom_css() -> str:
+def generate_custom_css(theme=None) -> str:
     """Generar CSS personalizado usando el sistema de tema."""
+    if theme is None:
+        theme = get_current_theme()
     colors = theme.colors
     typo = theme.typography
     spacing = theme.spacing
@@ -139,7 +147,7 @@ def generate_custom_css() -> str:
     .stButton > button:hover {{
         background: {colors.gradient_accent} !important;
         border-color: {colors.primary} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
         transform: translateY(-2px) !important;
         box-shadow: {theme.shadows.md}, {theme.shadows.glow} !important;
     }}
@@ -159,16 +167,16 @@ def generate_custom_css() -> str:
     .stButton > button[data-testid="baseButton-primary"] {{
         background: {colors.gradient_primary} !important;
         border: 1px solid {colors.primary} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
         font-weight: {typo.weight_semibold} !important;
     }}
 
     .stButton > button[kind="primary"]:hover,
     .stButton > button[data-testid="baseButton-primary"]:hover {{
-        background: linear-gradient(135deg, #1CA8D4 0%, #1383A7 100%) !important;
+        background: {colors.gradient_primary} !important;
         border-color: {colors.primary_light} !important;
-        color: #FFFFFF !important;
-        box-shadow: {theme.shadows.lg}, 0 0 25px rgba(19,131,167,0.3) !important;
+        color: {colors.text_on_primary} !important;
+        box-shadow: {theme.shadows.lg}, 0 0 25px {colors.primary_glow} !important;
     }}
 
     /* ── Botón Secondary ── */
@@ -181,9 +189,9 @@ def generate_custom_css() -> str:
 
     .stButton > button[kind="secondary"]:hover,
     .stButton > button[data-testid="baseButton-secondary"]:hover {{
-        background: rgba(19, 131, 167, 0.1) !important;
+        background: {colors.surface_overlay} !important;
         border-color: {colors.primary} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
     }}
 
     /* ═══════════════ BOTONES SEMÁNTICOS (por contenido) ═══════════════ */
@@ -197,15 +205,15 @@ def generate_custom_css() -> str:
     .stDownloadButton > button {{
         background: {colors.gradient_primary} !important;
         border: 1px solid {colors.primary} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
         border-radius: {radius.md} !important;
         font-weight: {typo.weight_medium} !important;
         transition: all {transitions.base} {transitions.ease} !important;
     }}
 
     .stDownloadButton > button:hover {{
-        background: linear-gradient(135deg, #1CA8D4 0%, #1383A7 100%) !important;
-        color: #FFFFFF !important;
+        background: {colors.gradient_primary} !important;
+        color: {colors.text_on_primary} !important;
         transform: translateY(-2px) !important;
         box-shadow: {theme.shadows.md}, {theme.shadows.glow} !important;
     }}
@@ -259,14 +267,14 @@ def generate_custom_css() -> str:
     /* Slider thumb */
     .stSlider div[data-baseweb="slider"] div[role="slider"] {{
         background: {colors.primary_light} !important;
-        border: 3px solid #FFFFFF !important;
+        border: 3px solid {colors.text_on_primary} !important;
         box-shadow: 0 0 12px {colors.primary_glow}, {theme.shadows.md} !important;
         width: 20px !important;
         height: 20px !important;
     }}
 
     .stSlider div[data-baseweb="slider"] div[role="slider"]:hover {{
-        background: #FFFFFF !important;
+        background: {colors.text_on_primary} !important;
         border-color: {colors.primary_light} !important;
         transform: scale(1.15) !important;
     }}
@@ -337,7 +345,7 @@ def generate_custom_css() -> str:
 
     .streamlit-expanderHeader:hover {{
         border-color: {colors.border_active} !important;
-        background-color: rgba(19, 131, 167, 0.12) !important;
+        background-color: {colors.surface_variant} !important;
     }}
 
     /* ═══════════════════════ ANIMACIONES ═══════════════════════ */
@@ -406,9 +414,9 @@ def generate_custom_css() -> str:
     }}
 
     section[data-testid="stSidebar"] .stButton > button:hover {{
-        background: rgba(19, 131, 167, 0.12) !important;
+        background: {colors.surface_variant} !important;
         border-color: {colors.primary} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
     }}
 
     /* option_menu styles */
@@ -420,12 +428,12 @@ def generate_custom_css() -> str:
 
     section[data-testid="stSidebar"] .nav-link:hover {{
         color: {colors.text_primary} !important;
-        background: rgba(19, 131, 167, 0.10) !important;
+        background: {colors.surface_overlay} !important;
     }}
 
     section[data-testid="stSidebar"] .nav-link-selected {{
         background: {colors.gradient_primary} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
     }}
 
     /* ═══════════════════════ METRICS ═══════════════════════ */
@@ -456,13 +464,13 @@ def generate_custom_css() -> str:
     }}
 
     .stTabs [data-baseweb="tab"]:hover {{
-        background-color: rgba(19, 131, 167, 0.10);
+        background-color: {colors.surface_overlay};
         color: {colors.text_primary} !important;
     }}
 
     .stTabs [aria-selected="true"] {{
         background: {colors.gradient_primary} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
         box-shadow: {theme.shadows.sm};
     }}
 
@@ -482,27 +490,27 @@ def generate_custom_css() -> str:
             90deg,
             {colors.primary_dark} 0%,
             {colors.primary} 25%,
-            rgba(240, 250, 254, 0.85) 50%,
+            {colors.text_primary} 50%,
             {colors.primary} 75%,
             {colors.primary_dark} 100%
         ) !important;
         background-size: 200% 100% !important;
         animation: progressShimmer 2s ease-in-out infinite !important;
         border-radius: {radius.full} !important;
-        box-shadow: 0 0 12px rgba(19, 131, 167, 0.4),
-                    0 0 4px rgba(240, 250, 254, 0.3) !important;
+        box-shadow: 0 0 12px {colors.primary_glow},
+                    0 0 4px {colors.primary_glow} !important;
     }}
 
     .stProgress > div > div {{
         background: {colors.surface_elevated} !important;
         border-radius: {radius.full} !important;
-        border: 1px solid rgba(19, 131, 167, 0.15) !important;
+        border: 1px solid {colors.border_subtle} !important;
         overflow: hidden !important;
     }}
 
     /* Texto de la progress bar */
     .stProgress p {{
-        color: rgba(240, 250, 254, 0.8) !important;
+        color: {colors.text_secondary} !important;
         font-weight: 500 !important;
     }}
 
@@ -516,7 +524,7 @@ def generate_custom_css() -> str:
 
     [data-testid="stFileUploader"]:hover {{
         border-color: {colors.primary} !important;
-        background: rgba(19, 131, 167, 0.06) !important;
+        background: {colors.surface_overlay} !important;
     }}
 
     /* ═══════════════════════ FORM ═══════════════════════ */
@@ -540,7 +548,7 @@ def generate_custom_css() -> str:
         background: {colors.gradient_primary} !important;
         border: none !important;
         border-radius: {radius.sm} !important;
-        color: #FFFFFF !important;
+        color: {colors.text_on_primary} !important;
     }}
 
     /* ═══════════════════════ TOOLTIPS ═══════════════════════ */
@@ -638,6 +646,68 @@ def generate_custom_css() -> str:
             background: white;
             color: black;
         }}
+    }}
+
+    /* ═══════════════════════ WIDGET OVERRIDES (config.toml) ═══════════════════════ */
+    /* Streamlit usa config.toml para colores base de widgets. Los sobreescribimos aquí. */
+
+    /* Selectbox / dropdown container */
+    [data-baseweb="select"] > div {{
+        background-color: {colors.surface} !important;
+        border-color: {colors.border} !important;
+    }}
+    [data-baseweb="select"] > div > div {{
+        color: {colors.text_primary} !important;
+    }}
+
+    /* Popover backgrounds */
+    [data-testid="stPopover"] > div {{
+        background-color: {colors.surface} !important;
+        border: 1px solid {colors.border} !important;
+    }}
+    [data-testid="stPopoverBody"] {{
+        background-color: {colors.surface} !important;
+    }}
+
+    /* Alert/notification boxes override */
+    [data-testid="stAlert"] {{
+        color: {colors.text_primary} !important;
+    }}
+
+    /* Expander */
+    [data-testid="stExpander"] {{
+        border-color: {colors.border} !important;
+        background-color: {colors.surface_variant} !important;
+    }}
+    [data-testid="stExpander"] summary {{
+        color: {colors.text_primary} !important;
+    }}
+    [data-testid="stExpander"] [data-testid="stMarkdownContainer"] {{
+        color: {colors.text_primary} !important;
+    }}
+
+    /* DataFrame */
+    [data-testid="stDataFrame"] {{
+        border: 1px solid {colors.border} !important;
+        border-radius: {radius.lg} !important;
+    }}
+
+    /* Markdown text */
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li,
+    [data-testid="stMarkdownContainer"] span {{
+        color: {colors.text_primary};
+    }}
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4 {{
+        color: {colors.heading_primary} !important;
+    }}
+
+    /* Caption text */
+    [data-testid="stCaptionContainer"] {{
+        color: {colors.text_secondary} !important;
     }}
 </style>
     """

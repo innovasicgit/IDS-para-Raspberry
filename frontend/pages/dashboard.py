@@ -3,6 +3,7 @@ Página principal del dashboard - Panel de Control de Detección.
 """
 
 import streamlit as st
+from config.theme import get_current_theme
 import joblib
 import pandas as pd
 import numpy as np
@@ -129,6 +130,9 @@ def capture_local(duration_sec, comm_arg):
 
 def show_dashboard_page():
     """Página principal del dashboard."""
+
+    t = get_current_theme()
+    c = t.colors
     
     # Título con botón de descarga PDF en la misma línea
     col_title, col_pdf = st.columns([3, 1])
@@ -140,7 +144,7 @@ def show_dashboard_page():
             resumen = st.session_state['resumen_prediccion']
             # Crear gráfica de barras para el PDF
             fig_bar, ax = plt.subplots(figsize=(6, 3.5))
-            bar_colors = [('#10B981' if (str(lbl).lower() == 'normal') else '#EF4444') for lbl in resumen['labels']]
+            bar_colors = [(c.success if (str(lbl).lower() == 'normal') else c.error) for lbl in resumen['labels']]
             ax.bar(resumen['labels'], resumen['values'], color=bar_colors)
             ax.set_title('Distribución de Detecciones')
             ax.set_ylabel('Cantidad')
@@ -192,61 +196,61 @@ def show_dashboard_page():
         }
 
     # CSS: scroll independiente por columna y animaciones
-    st.markdown("""
+    st.markdown(f"""
         <style>
         /* ══════ HEADER COMPACTO (título + PDF) ══════ */
-        [data-testid="stMain"] h1 {
+        [data-testid="stMain"] h1 {{
             padding-top: 0.3rem !important;
             margin-top: 0 !important;
             margin-bottom: 0.2rem !important;
             font-size: 1.6rem !important;
-        }
+        }}
 
         /* ══════ SCROLL INDEPENDIENTE POR COLUMNA ══════ */
         /* Bloque principal de 2 columnas: altura fija */
-        section[data-testid="stMain"] [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stHorizontalBlock"] [data-testid="column"]) {
+        section[data-testid="stMain"] [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stHorizontalBlock"] [data-testid="column"]) {{
             max-height: 100vh;
-        }
+        }}
 
         /* Cada columna del dashboard: scroll propio */
-        section[data-testid="stMain"] [data-testid="column"] {
+        section[data-testid="stMain"] [data-testid="column"] {{
             height: calc(100vh - 80px) !important;
             max-height: calc(100vh - 80px) !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
-        }
+        }}
 
         /* Scrollbar personalizado */
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar {
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar {{
             width: 8px;
-        }
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-track {
-            background: #0C1B2E;
+        }}
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-track {{
+            background: {c.background};
             border-radius: 10px;
-        }
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb {
-            background: #0F2237;
+        }}
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb {{
+            background: {c.surface};
             border-radius: 10px;
-            border: 2px solid rgba(19,131,167,0.2);
-        }
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb:hover {
-            background: #1383A7;
-        }
+            border: 2px solid {c.border};
+        }}
+        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb:hover {{
+            background: {c.primary};
+        }}
 
         /* Animaciones suaves */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        [data-testid="stMarkdownContainer"] {
+        @keyframes fadeIn {{
+            from {{ opacity: 0; transform: translateY(20px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+        @keyframes pulse {{
+            0%, 100% {{ opacity: 1; }}
+            50% {{ opacity: 0.6; }}
+        }}
+        [data-testid="stMarkdownContainer"] {{
             animation: fadeIn 0.5s ease-out;
-        }
-        .gradient-card { animation: fadeIn 0.6s ease-out; }
-        .pulse-animation { animation: pulse 2s ease-in-out infinite; }
+        }}
+        .gradient-card {{ animation: fadeIn 0.6s ease-out; }}
+        .pulse-animation {{ animation: pulse 2s ease-in-out infinite; }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -280,10 +284,10 @@ def show_dashboard_page():
             st.progress(0.5, text="🌐 Capturando paquetes de red...")
             
             # Información adicional
-            st.markdown("""
-            <div style="padding: 20px; background: linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(19,131,167,0.10) 100%); border-radius: 14px; color: white; text-align: center; border: 1px solid rgba(16,185,129,0.25); box-shadow: 0 4px 20px rgba(16,185,129,0.08);">
-                <h3 style="margin: 0; color: #10B981;">⚡ Captura Activa</h3>
-                <p style="margin: 10px 0 0 0; color: rgba(240,250,254,0.7);">Los resultados aparecerán automáticamente al finalizar</p>
+            st.markdown(f"""
+            <div style="padding: 20px; background: linear-gradient(135deg, {c.success_light} 0%, {c.surface_overlay} 100%); border-radius: 14px; color: {c.text_primary}; text-align: center; border: 1px solid {c.border}; box-shadow: 0 4px 20px {c.success_light};">
+                <h3 style="margin: 0; color: {c.success};">⚡ Captura Activa</h3>
+                <p style="margin: 10px 0 0 0; color: {c.text_secondary};">Los resultados aparecerán automáticamente al finalizar</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -304,11 +308,11 @@ def show_dashboard_page():
                     values=resumen['values'],
                     color=resumen['labels'],
                     color_discrete_map={
-                        'Normal': '#10B981',
-                        'Anómalo': '#EF4444',
-                        'DDOS_TCP': '#EF4444',
-                        'DDOS_UDP': '#F59E0B',
-                        'Reconnaissance': '#1383A7'
+                        'Normal': c.success,
+                        'Anómalo': c.error,
+                        'DDOS_TCP': c.error,
+                        'DDOS_UDP': c.warning,
+                        'Reconnaissance': c.primary
                     },
                     title="Distribución porcentual"
                 )
@@ -317,7 +321,7 @@ def show_dashboard_page():
             
             with col_graf2:
                 # Gráfica de barras
-                bar_colors = [('#10B981' if (str(lbl).lower() == 'normal') else '#EF4444') for lbl in resumen['labels']]
+                bar_colors = [(c.success if (str(lbl).lower() == 'normal') else c.error) for lbl in resumen['labels']]
                 fig_bar = go.Figure(data=[go.Bar(x=resumen['labels'], y=resumen['values'], text=resumen['values'], textposition='auto', marker_color=bar_colors)])
                 fig_bar.update_layout(title='Distribución de Detecciones', title_x=0.5)
                 st.plotly_chart(fig_bar, use_container_width=True)
@@ -350,9 +354,9 @@ def show_dashboard_page():
                             pct = float(st.session_state.get('ocsvm_percentile', 0.45))
                             thr = np.percentile(scores, 100 * pct)
                         hist_fig = go.Figure()
-                        hist_fig.add_trace(go.Histogram(x=scores, nbinsx=30, marker_color='#1383A7', name='decision_function'))
+                        hist_fig.add_trace(go.Histogram(x=scores, nbinsx=30, marker_color=c.primary, name='decision_function'))
                         if thr is not None:
-                            hist_fig.add_shape(type='line', x0=thr, x1=thr, y0=0, y1=1, xref='x', yref='paper', line=dict(color='#EF4444', width=2))
+                            hist_fig.add_shape(type='line', x0=thr, x1=thr, y0=0, y1=1, xref='x', yref='paper', line=dict(color=c.error, width=2))
                             hist_fig.add_annotation(x=thr, y=1, yref='paper', text=f"Umbral={thr:.3f}", showarrow=True, arrowhead=1)
                         hist_fig.update_layout(title='OCSVM: distribución de decision_function', title_x=0.5)
                         st.plotly_chart(hist_fig, use_container_width=True)
@@ -381,27 +385,27 @@ def show_dashboard_page():
                 
                 with col_gauge1:
                     # Gauge de CPU
-                    cpu_color = "#10B981" if met['cpu'] < 60 else "#F59E0B" if met['cpu'] < 85 else "#EF4444"
+                    cpu_color = c.success if met['cpu'] < 60 else c.warning if met['cpu'] < 85 else c.error
                     fig_cpu = go.Figure(go.Indicator(
                         mode="gauge+number+delta",
                         value=met['cpu'],
                         domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "🖥️ Uso de CPU", 'font': {'size': 20, 'color': 'white'}},
-                        number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
-                        delta={'reference': 50, 'increasing': {'color': "#EF4444"}, 'decreasing': {'color': "#10B981"}},
+                        title={'text': "🖥️ Uso de CPU", 'font': {'size': 20, 'color': c.text_primary}},
+                        number={'suffix': "%", 'font': {'size': 40, 'color': c.text_primary}},
+                        delta={'reference': 50, 'increasing': {'color': c.error}, 'decreasing': {'color': c.success}},
                         gauge={
-                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
+                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': c.text_primary},
                             'bar': {'color': cpu_color, 'thickness': 0.75},
                             'bgcolor': "rgba(0,0,0,0)",
                             'borderwidth': 2,
-                            'bordercolor': "white",
+                            'bordercolor': c.text_primary,
                             'steps': [
                                 {'range': [0, 60], 'color': 'rgba(0, 200, 83, 0.2)'},
                                 {'range': [60, 85], 'color': 'rgba(255, 167, 38, 0.2)'},
                                 {'range': [85, 100], 'color': 'rgba(255, 82, 82, 0.2)'}
                             ],
                             'threshold': {
-                                'line': {'color': "white", 'width': 4},
+                                'line': {'color': c.text_primary, 'width': 4},
                                 'thickness': 0.75,
                                 'value': 85
                             }
@@ -410,7 +414,7 @@ def show_dashboard_page():
                     fig_cpu.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': "white"},
+                        font={'color': c.text_primary},
                         height=250,
                         margin=dict(l=20, r=20, t=50, b=20)
                     )
@@ -421,27 +425,27 @@ def show_dashboard_page():
                 
                 with col_gauge2:
                     # Gauge de Memoria
-                    mem_color = "#10B981" if met['memoria'] < 70 else "#F59E0B" if met['memoria'] < 85 else "#EF4444"
+                    mem_color = c.success if met['memoria'] < 70 else c.warning if met['memoria'] < 85 else c.error
                     fig_mem = go.Figure(go.Indicator(
                         mode="gauge+number+delta",
                         value=met['memoria'],
                         domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "💾 Uso de Memoria RAM", 'font': {'size': 20, 'color': 'white'}},
-                        number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
-                        delta={'reference': 50, 'increasing': {'color': "#EF4444"}, 'decreasing': {'color': "#10B981"}},
+                        title={'text': "💾 Uso de Memoria RAM", 'font': {'size': 20, 'color': c.text_primary}},
+                        number={'suffix': "%", 'font': {'size': 40, 'color': c.text_primary}},
+                        delta={'reference': 50, 'increasing': {'color': c.error}, 'decreasing': {'color': c.success}},
                         gauge={
-                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
+                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': c.text_primary},
                             'bar': {'color': mem_color, 'thickness': 0.75},
                             'bgcolor': "rgba(0,0,0,0)",
                             'borderwidth': 2,
-                            'bordercolor': "white",
+                            'bordercolor': c.text_primary,
                             'steps': [
                                 {'range': [0, 70], 'color': 'rgba(16, 185, 129, 0.2)'},
                                 {'range': [70, 85], 'color': 'rgba(245, 158, 11, 0.2)'},
                                 {'range': [85, 100], 'color': 'rgba(239, 68, 68, 0.2)'}
                             ],
                             'threshold': {
-                                'line': {'color': "white", 'width': 4},
+                                'line': {'color': c.text_primary, 'width': 4},
                                 'thickness': 0.75,
                                 'value': 85
                             }
@@ -450,7 +454,7 @@ def show_dashboard_page():
                     fig_mem.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': "white"},
+                        font={'color': c.text_primary},
                         height=250,
                         margin=dict(l=20, r=20, t=50, b=20)
                     )
@@ -464,26 +468,26 @@ def show_dashboard_page():
                 
                 with col_gauge3:
                     # Gauge de Disco
-                    disk_color = "#10B981" if met['disco'] < 70 else "#F59E0B" if met['disco'] < 85 else "#EF4444"
+                    disk_color = c.success if met['disco'] < 70 else c.warning if met['disco'] < 85 else c.error
                     fig_disk = go.Figure(go.Indicator(
                         mode="gauge+number",
                         value=met['disco'],
                         domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "📀 Uso de Disco", 'font': {'size': 20, 'color': 'white'}},
-                        number={'suffix': "%", 'font': {'size': 40, 'color': 'white'}},
+                        title={'text': "📀 Uso de Disco", 'font': {'size': 20, 'color': c.text_primary}},
+                        number={'suffix': "%", 'font': {'size': 40, 'color': c.text_primary}},
                         gauge={
-                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
+                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': c.text_primary},
                             'bar': {'color': disk_color, 'thickness': 0.75},
                             'bgcolor': "rgba(0,0,0,0)",
                             'borderwidth': 2,
-                            'bordercolor': "white",
+                            'bordercolor': c.text_primary,
                             'steps': [
                                 {'range': [0, 70], 'color': 'rgba(16, 185, 129, 0.2)'},
                                 {'range': [70, 85], 'color': 'rgba(245, 158, 11, 0.2)'},
                                 {'range': [85, 100], 'color': 'rgba(239, 68, 68, 0.2)'}
                             ],
                             'threshold': {
-                                'line': {'color': "white", 'width': 4},
+                                'line': {'color': c.text_primary, 'width': 4},
                                 'thickness': 0.75,
                                 'value': 85
                             }
@@ -492,7 +496,7 @@ def show_dashboard_page():
                     fig_disk.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': "white"},
+                        font={'color': c.text_primary},
                         height=250,
                         margin=dict(l=20, r=20, t=50, b=20)
                     )
@@ -503,7 +507,7 @@ def show_dashboard_page():
                 
                 with col_gauge4:
                     # Indicador de Tiempo (diferente estilo - más simple)
-                    tiempo_color = "#10B981" if met['tiempo'] < 5 else "#F59E0B" if met['tiempo'] < 15 else "#EF4444"
+                    tiempo_color = c.success if met['tiempo'] < 5 else c.warning if met['tiempo'] < 15 else c.error
                     # Calcular un porcentaje relativo (máximo esperado: 30 segundos)
                     tiempo_pct = min((met['tiempo'] / 30) * 100, 100)
                     
@@ -511,21 +515,21 @@ def show_dashboard_page():
                         mode="number+gauge",
                         value=met['tiempo'],
                         domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "⏱️ Tiempo de Análisis", 'font': {'size': 20, 'color': 'white'}},
-                        number={'suffix': " seg", 'font': {'size': 40, 'color': 'white'}},
+                        title={'text': "⏱️ Tiempo de Análisis", 'font': {'size': 20, 'color': c.text_primary}},
+                        number={'suffix': " seg", 'font': {'size': 40, 'color': c.text_primary}},
                         gauge={
-                            'axis': {'range': [None, 30], 'tickwidth': 1, 'tickcolor': "white"},
+                            'axis': {'range': [None, 30], 'tickwidth': 1, 'tickcolor': c.text_primary},
                             'bar': {'color': tiempo_color, 'thickness': 0.75},
                             'bgcolor': "rgba(0,0,0,0)",
                             'borderwidth': 2,
-                            'bordercolor': "white",
+                            'bordercolor': c.text_primary,
                             'steps': [
                                 {'range': [0, 5], 'color': 'rgba(0, 200, 83, 0.2)'},
                                 {'range': [5, 15], 'color': 'rgba(255, 167, 38, 0.2)'},
                                 {'range': [15, 30], 'color': 'rgba(255, 82, 82, 0.2)'}
                             ],
                             'threshold': {
-                                'line': {'color': "white", 'width': 4},
+                                'line': {'color': c.text_primary, 'width': 4},
                                 'thickness': 0.75,
                                 'value': 15
                             }
@@ -534,7 +538,7 @@ def show_dashboard_page():
                     fig_time.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': "white"},
+                        font={'color': c.text_primary},
                         height=250,
                         margin=dict(l=20, r=20, t=50, b=20)
                     )
@@ -591,7 +595,7 @@ def show_dashboard_page():
                             y=traffic_data,
                             mode='lines',
                             name='Tráfico',
-                            line=dict(color='#1383A7', width=1)
+                            line=dict(color=c.primary, width=1)
                         ))
 
                         # Add ceiling line
@@ -600,7 +604,7 @@ def show_dashboard_page():
                             y=ceiling,
                             mode='lines',
                             name='Techo',
-                            line=dict(color='#10B981', width=2, dash='dash')
+                            line=dict(color=c.success, width=2, dash='dash')
                         ))
 
                         # Add floor line
@@ -609,7 +613,7 @@ def show_dashboard_page():
                             y=floor,
                             mode='lines',
                             name='Suelo',
-                            line=dict(color='#F59E0B', width=2, dash='dash')
+                            line=dict(color=c.warning, width=2, dash='dash')
                         ))
 
                         # Update layout
@@ -618,7 +622,7 @@ def show_dashboard_page():
                             title_x=0.5,
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
+                            font=dict(color=c.text_primary),
                             showlegend=True,
                             legend=dict(
                                 yanchor="top",
@@ -632,12 +636,12 @@ def show_dashboard_page():
                                 title="Muestras",
                                 showgrid=False,
                                 showline=True,
-                                linecolor='rgba(255,255,255,0.2)'
+                                linecolor=c.border
                             ),
                             yaxis=dict(
                                 title="Intensidad de Tráfico",
                                 showgrid=True,
-                                gridcolor='rgba(255,255,255,0.1)',
+                                gridcolor=c.surface_overlay,
                                 zeroline=False
                             )
                         )

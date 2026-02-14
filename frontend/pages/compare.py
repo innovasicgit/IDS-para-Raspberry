@@ -4,6 +4,7 @@ Permite ejecutar múltiples modelos sobre el mismo dataset y comparar resultados
 """
 
 import streamlit as st
+from config.theme import get_current_theme
 import pandas as pd
 import numpy as np
 import time
@@ -25,54 +26,85 @@ import metricas
 def show_compare_page():
     """Página principal de comparación de modelos."""
 
+    t = get_current_theme()
+    c = t.colors
+
+    # URL de imagen estática (servida por Streamlit static serving)
+    img5_url = "app/static/img5.jpg"
+
     # ==================== HEADER ====================
-    st.markdown("""
-    <div style="text-align: center; padding: 1.5rem 2rem; background: linear-gradient(135deg, rgba(19,131,167,0.12) 0%, rgba(12,74,110,0.06) 100%);
-                border-radius: 15px; margin-bottom: 1.5rem; border: 1px solid rgba(19,131,167,0.2);">
-        <h1 style="margin: 0 0 0.5rem 0; color: #F0FAFE;">📊 Comparar Modelos</h1>
-        <p style="margin: 0; font-size: 1.1rem; color: rgba(240,250,254,0.7);">
-            Ejecuta varios modelos de IA sobre el mismo dataset y compara su rendimiento lado a lado
-        </p>
+    st.markdown(f"""
+    <style>
+        .compare-hero {{{{
+            position: relative;
+            padding: 2.5rem 2rem;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            background: url('{img5_url}') center center / cover no-repeat;
+        }}}}
+        .compare-hero::before {{{{
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: {c.hero_overlay};
+            border-radius: 15px;
+            z-index: 1;
+        }}}}
+        .compare-hero-content {{{{
+            position: relative;
+            z-index: 2;
+        }}}}
+    </style>
+    <div class="compare-hero">
+        <div class="compare-hero-content">
+            <h1 style="margin: 0 0 0.5rem 0; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">📊 Comparar Modelos</h1>
+            <p style="margin: 0; font-size: 1.1rem; color: {c.heading_primary}; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
+                Ejecuta varios modelos de IA sobre el mismo dataset y compara su rendimiento lado a lado
+            </p>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
     # ==================== ¿QUÉ ES Y PARA QUÉ SIRVE? ====================
     with st.expander("💡 ¿Qué es esta página y cómo funciona?", expanded=False):
-        st.markdown("""
+        st.markdown(f"""
         <div style="line-height: 1.8; font-size: 0.95rem;">
 
-        <h4 style="color: #1383A7; margin-top: 0;">🎯 ¿Para qué sirve?</h4>
+        <h4 style="color: {c.heading_secondary}; margin-top: 0;">🎯 ¿Para qué sirve?</h4>
         <p>Esta herramienta te permite <strong>evaluar y comparar</strong> el rendimiento de los distintos modelos de detección de intrusos
         que tiene el sistema. Así puedes determinar <strong>cuál modelo es más efectivo</strong> para detectar amenazas en tu red IoT.</p>
 
-        <h4 style="color: #1383A7;">📋 ¿Cómo funciona? (3 pasos)</h4>
+        <h4 style="color: {c.heading_secondary};">📋 ¿Cómo funciona? (3 pasos)</h4>
         <table style="width: 100%; border-collapse: separate; border-spacing: 0 8px;">
             <tr>
                 <td style="background: rgba(16,185,129,0.1); padding: 12px; border-radius: 8px; text-align: center; width: 33%;">
                     <strong style="font-size: 1.5rem;">1️⃣</strong><br/>
-                    <strong style="color: #10B981;">Cargar datos</strong><br/>
+                    <strong style="color: {c.success};">Cargar datos</strong><br/>
                     <span style="font-size: 0.85rem;">Usa tu última captura de red o sube un CSV con tráfico de red</span>
                 </td>
                 <td style="background: rgba(19,131,167,0.1); padding: 12px; border-radius: 8px; text-align: center; width: 33%;">
                     <strong style="font-size: 1.5rem;">2️⃣</strong><br/>
-                    <strong style="color: #1383A7;">Seleccionar modelos</strong><br/>
+                    <strong style="color: {c.heading_secondary};">Seleccionar modelos</strong><br/>
                     <span style="font-size: 0.85rem;">Elige 2 o más modelos de IA para comparar sus resultados</span>
                 </td>
                 <td style="background: rgba(245,158,11,0.1); padding: 12px; border-radius: 8px; text-align: center; width: 33%;">
                     <strong style="font-size: 1.5rem;">3️⃣</strong><br/>
-                    <strong style="color: #F59E0B;">Analizar resultados</strong><br/>
+                    <strong style="color: {c.warning};">Analizar resultados</strong><br/>
                     <span style="font-size: 0.85rem;">Revisa gráficas, métricas y recomendaciones automáticas</span>
                 </td>
             </tr>
         </table>
 
-        <h4 style="color: #1383A7; margin-top: 1rem;">📊 Tipos de métricas disponibles</h4>
+        <h4 style="color: {c.heading_secondary}; margin-top: 1rem;">📊 Tipos de métricas disponibles</h4>
         <ul>
-            <li><strong style="color: #1CA8D4;">Internas</strong> — Evalúan la calidad de los clusters sin datos de referencia
+            <li><strong style="color: {c.heading_secondary};">Internas</strong> — Evalúan la calidad de los clusters sin datos de referencia
             (Silhouette, Calinski-Harabasz, Davies-Bouldin). Útil cuando <em>no tienes etiquetas reales</em>.</li>
-            <li><strong style="color: #1CA8D4;">Externas</strong> — Comparan las predicciones contra etiquetas reales conocidas
+            <li><strong style="color: {c.heading_secondary};">Externas</strong> — Comparan las predicciones contra etiquetas reales conocidas
             (Matriz de confusión, ROC AUC). Útil cuando <em>sí sabes cuáles son ataques reales</em>.</li>
-            <li><strong style="color: #1CA8D4;">Ninguna</strong> — Solo muestra conteos de detección y tiempos de ejecución.</li>
+            <li><strong style="color: {c.heading_secondary};">Ninguna</strong> — Solo muestra conteos de detección y tiempos de ejecución.</li>
         </ul>
 
         </div>
@@ -81,8 +113,8 @@ def show_compare_page():
     st.markdown("")
 
     # ==================== CONFIGURACIÓN ====================
-    st.markdown("""
-    <h3 style="color: #1383A7; margin: 0 0 1rem 0;">⚙️ Configuración del análisis</h3>
+    st.markdown(f"""
+    <h3 style="color: {c.heading_primary}; margin: 0 0 1rem 0;">⚙️ Configuración del análisis</h3>
     """, unsafe_allow_html=True)
 
     # Origen de datos
@@ -158,11 +190,11 @@ def _select_data_source():
     has_capture = 'data' in st.session_state and st.session_state.data is not None
 
     with src_col1:
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: rgba(16,185,129,0.06); padding: 0.8rem 1rem; border-radius: 10px;
                     border: 1px solid rgba(16,185,129,0.15); margin-bottom: 0.5rem;">
             <p style="margin: 0; font-size: 0.9rem; color: rgba(240,250,254,0.6);">
-                📡 <strong style="color: #10B981;">Última captura de red</strong>
+                📡 <strong style="color: {c.success};">Última captura de red</strong>
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -176,11 +208,11 @@ def _select_data_source():
             st.caption("⚪ No hay captura disponible. Ve al Panel de Control para capturar tráfico.")
 
     with src_col2:
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: rgba(19,131,167,0.06); padding: 0.8rem 1rem; border-radius: 10px;
                     border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
             <p style="margin: 0; font-size: 0.9rem; color: rgba(240,250,254,0.6);">
-                📄 <strong style="color: #1383A7;">Subir archivo CSV</strong>
+                📄 <strong style="color: {c.heading_secondary};">Subir archivo CSV</strong>
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -381,23 +413,23 @@ def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
 
         if pct_ataque == 0:
             estado = "🟢"
-            color = "#10B981"
+            color = c.success
             msg = f"no detectó amenazas. Todo el tráfico fue clasificado como normal."
         elif pct_ataque < 5:
             estado = "🟢"
-            color = "#10B981"
+            color = c.success
             msg = f"detectó un nivel mínimo de anomalías ({pct_ataque:.1f}%). La red se encuentra en buen estado."
         elif pct_ataque < 20:
             estado = "🟡"
-            color = "#F59E0B"
+            color = c.warning
             msg = f"detectó un {pct_ataque:.1f}% de tráfico anómalo. Se recomienda revisar los patrones detectados."
         elif pct_ataque < 50:
             estado = "🟠"
-            color = "#F97316"
+            color = c.warning_dark
             msg = f"detectó un {pct_ataque:.1f}% de posibles ataques. Se requiere atención inmediata."
         else:
             estado = "🔴"
-            color = "#EF4444"
+            color = c.error
             msg = f"clasificó el {pct_ataque:.1f}% del tráfico como ataques. Situación crítica que requiere acción urgente."
 
         insights.append(f'<p style="margin: 4px 0;"><strong style="color: {color};">{estado} {modelo}</strong>: {msg} '
@@ -411,11 +443,11 @@ def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
         std_pct = np.std(pcts)
 
         if std_pct < 5:
-            consenso = f'<p style="margin: 8px 0 0 0;"><strong style="color: #1383A7;">📊 Consenso:</strong> Los modelos <strong>coinciden</strong> en sus detecciones (desviación del {std_pct:.1f}%). Promedio de ataques: {avg_pct:.1f}%.</p>'
+            consenso = f'<p style="margin: 8px 0 0 0;"><strong style="color: {c.heading_secondary};">📊 Consenso:</strong> Los modelos <strong>coinciden</strong> en sus detecciones (desviación del {std_pct:.1f}%). Promedio de ataques: {avg_pct:.1f}%.</p>'
         elif std_pct < 15:
-            consenso = f'<p style="margin: 8px 0 0 0;"><strong style="color: #F59E0B;">📊 Consenso parcial:</strong> Los modelos muestran diferencias moderadas (desviación del {std_pct:.1f}%). Promedio de ataques: {avg_pct:.1f}%. Considera usar el modelo más conservador.</p>'
+            consenso = f'<p style="margin: 8px 0 0 0;"><strong style="color: {c.warning};">📊 Consenso parcial:</strong> Los modelos muestran diferencias moderadas (desviación del {std_pct:.1f}%). Promedio de ataques: {avg_pct:.1f}%. Considera usar el modelo más conservador.</p>'
         else:
-            consenso = f'<p style="margin: 8px 0 0 0;"><strong style="color: #EF4444;">📊 Sin consenso:</strong> Los modelos difieren significativamente (desviación del {std_pct:.1f}%). Promedio de ataques: {avg_pct:.1f}%. Se recomienda análisis más profundo.</p>'
+            consenso = f'<p style="margin: 8px 0 0 0;"><strong style="color: {c.error};">📊 Sin consenso:</strong> Los modelos difieren significativamente (desviación del {std_pct:.1f}%). Promedio de ataques: {avg_pct:.1f}%. Se recomienda análisis más profundo.</p>'
         insights.append(consenso)
 
     return "\n".join(insights)
@@ -432,28 +464,28 @@ def _generate_time_insight(res_df):
 
     insights = []
 
-    insights.append(f'<p style="margin: 4px 0;"><strong style="color: #10B981;">⚡ Más rápido:</strong> '
+    insights.append(f'<p style="margin: 4px 0;"><strong style="color: {c.success};">⚡ Más rápido:</strong> '
                     f'<strong>{fastest["Modelo"]}</strong> con {fastest["Tiempo (s)"]:.4f} segundos.</p>')
 
     if len(res_df) > 1:
-        insights.append(f'<p style="margin: 4px 0;"><strong style="color: #F59E0B;">🐢 Más lento:</strong> '
+        insights.append(f'<p style="margin: 4px 0;"><strong style="color: {c.warning};">🐢 Más lento:</strong> '
                         f'<strong>{slowest["Modelo"]}</strong> con {slowest["Tiempo (s)"]:.4f} segundos.</p>')
 
         if fastest["Tiempo (s)"] > 0:
             factor = slowest["Tiempo (s)"] / fastest["Tiempo (s)"]
-            insights.append(f'<p style="margin: 4px 0;"><strong style="color: #1383A7;">�� Diferencia:</strong> '
+            insights.append(f'<p style="margin: 4px 0;"><strong style="color: {c.heading_secondary};">�� Diferencia:</strong> '
                             f'{fastest["Modelo"]} es <strong>{factor:.1f}x más rápido</strong> que {slowest["Modelo"]}.</p>')
 
     avg_time = tiempos['Tiempo (s)'].mean()
     if avg_time < 1:
         rec = "Todos los modelos son suficientemente rápidos para análisis en tiempo real."
-        rec_color = "#10B981"
+        rec_color = c.success
     elif avg_time < 5:
         rec = "Los tiempos son aceptables para análisis periódico. Para tiempo real, prefiere los modelos más rápidos."
-        rec_color = "#F59E0B"
+        rec_color = c.warning
     else:
         rec = "Los tiempos son elevados. Considera reducir el volumen de datos o usar solo los modelos más rápidos."
-        rec_color = "#EF4444"
+        rec_color = c.error
 
     insights.append(f'<p style="margin: 8px 0 0 0;"><strong style="color: {rec_color};">💡 Recomendación:</strong> {rec}</p>')
 
@@ -465,8 +497,8 @@ def _display_results(filas, metric_compare):
     res_df = pd.DataFrame(filas)
 
     st.markdown("---")
-    st.markdown("""
-    <h2 style="text-align: center; color: #1383A7; margin: 1rem 0 1.5rem 0;">
+    st.markdown(f"""
+    <h2 style="text-align: center; color: {c.heading_primary}; margin: 1rem 0 1.5rem 0;">
         📈 Resultados del Análisis
     </h2>
     """, unsafe_allow_html=True)
@@ -498,10 +530,10 @@ def _display_results(filas, metric_compare):
     st.markdown("")
 
     # ==================== TABLA RESUMEN ====================
-    st.markdown("""
+    st.markdown(f"""
     <div style="background: rgba(19,131,167,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                 border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
-        <h3 style="margin: 0 0 0.3rem 0; color: #F0FAFE; font-size: 1.1rem;">📋 Tabla comparativa detallada</h3>
+        <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">📋 Tabla comparativa detallada</h3>
         <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
             Cada fila muestra cuántos paquetes clasificó cada modelo como Normal, Anómalo o tipo de ataque específico.
         </p>
@@ -525,7 +557,7 @@ def _display_results(filas, metric_compare):
     # Explicación de métricas internas
     if metric_compare == 'Internas' and any(c in res_df.columns for c in ['Silhouette', 'Calinski', 'Davies']):
         with st.expander("📖 ¿Qué significan estas métricas?"):
-            st.markdown("""
+            st.markdown(f"""
             | Métrica | Qué mide | Valor ideal |
             |---------|----------|-------------|
             | **Silhouette** | Qué tan bien separados están los grupos (clusters). | Cercano a **1.0** (mejor) |
@@ -541,10 +573,10 @@ def _display_results(filas, metric_compare):
     if metric_compare == 'Externas':
         has_cm = any('MatrizConfusion' in f and f['MatrizConfusion'] is not None for f in filas)
         if has_cm:
-            st.markdown("""
+            st.markdown(f"""
             <div style="background: rgba(245,158,11,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                         border: 1px solid rgba(245,158,11,0.15); margin-bottom: 0.5rem;">
-                <h3 style="margin: 0 0 0.3rem 0; color: #F0FAFE; font-size: 1.1rem;">🧮 Matrices de Confusión</h3>
+                <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">🧮 Matrices de Confusión</h3>
                 <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
                     Comparan las predicciones del modelo vs las etiquetas reales. La diagonal principal (↘) muestra aciertos.
                 </p>
@@ -569,10 +601,10 @@ def _display_results(filas, metric_compare):
 
     # --- Gráfico Normal vs Ataques ---
     with chart_col1:
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: rgba(19,131,167,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
-            <h3 style="margin: 0 0 0.3rem 0; color: #F0FAFE; font-size: 1.1rem;">📊 Normal vs Ataques</h3>
+            <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">📊 Normal vs Ataques</h3>
             <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
                 Cuántos paquetes clasificó cada modelo como tráfico legítimo vs amenazas detectadas.
             </p>
@@ -590,13 +622,13 @@ def _display_results(filas, metric_compare):
         fig = go.Figure()
         fig.add_trace(go.Bar(
             name='Normal', x=modelos, y=normales,
-            marker_color='#10B981',
+            marker_color=c.success,
             text=[f'{int(v):,}' for v in normales],
             textposition='auto'
         ))
         fig.add_trace(go.Bar(
             name='Ataques', x=modelos, y=ataques,
-            marker_color='#EF4444',
+            marker_color=c.error,
             text=[f'{int(v):,}' for v in ataques],
             textposition='auto'
         ))
@@ -618,18 +650,18 @@ def _display_results(filas, metric_compare):
         if insight_nva:
             st.markdown(f"""
             <div style="background: rgba(19,131,167,0.05); padding: 0.8rem 1rem; border-radius: 10px;
-                        border-left: 3px solid #1383A7; font-size: 0.88rem; line-height: 1.6;">
-                <strong style="color: #1383A7;">🔍 Análisis automático:</strong><br/>
+                        border-left: 3px solid {c.primary}; font-size: 0.88rem; line-height: 1.6;">
+                <strong style="color: {c.heading_secondary};">🔍 Análisis automático:</strong><br/>
                 {insight_nva}
             </div>
             """, unsafe_allow_html=True)
 
     # --- Gráfico de Tiempos ---
     with chart_col2:
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: rgba(19,131,167,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
-            <h3 style="margin: 0 0 0.3rem 0; color: #F0FAFE; font-size: 1.1rem;">⏱️ Tiempos de predicción</h3>
+            <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">⏱️ Tiempos de predicción</h3>
             <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
                 Cuánto tardó cada modelo en analizar todos los paquetes. Menor es mejor.
             </p>
@@ -643,11 +675,11 @@ def _display_results(filas, metric_compare):
             for t in tiempos:
                 ratio = t / max_t
                 if ratio < 0.4:
-                    colors.append('#10B981')
+                    colors.append(c.success)
                 elif ratio < 0.7:
-                    colors.append('#F59E0B')
+                    colors.append(c.warning)
                 else:
-                    colors.append('#EF4444')
+                    colors.append(c.error)
 
             figt = go.Figure(data=[go.Bar(
                 x=res_df['Modelo'], y=res_df['Tiempo (s)'],
@@ -671,8 +703,8 @@ def _display_results(filas, metric_compare):
             if insight_time:
                 st.markdown(f"""
                 <div style="background: rgba(19,131,167,0.05); padding: 0.8rem 1rem; border-radius: 10px;
-                            border-left: 3px solid #1383A7; font-size: 0.88rem; line-height: 1.6;">
-                    <strong style="color: #1383A7;">🔍 Análisis automático:</strong><br/>
+                            border-left: 3px solid {c.primary}; font-size: 0.88rem; line-height: 1.6;">
+                    <strong style="color: {c.heading_secondary};">🔍 Análisis automático:</strong><br/>
                     {insight_time}
                 </div>
                 """, unsafe_allow_html=True)
@@ -683,10 +715,10 @@ def _display_results(filas, metric_compare):
 
     if has_attack_detail:
         st.markdown("")
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: rgba(239,68,68,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(239,68,68,0.15); margin-bottom: 0.5rem;">
-            <h3 style="margin: 0 0 0.3rem 0; color: #F0FAFE; font-size: 1.1rem;">🎯 Desglose por tipo de ataque</h3>
+            <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">🎯 Desglose por tipo de ataque</h3>
             <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
                 Detalle de los tipos de ataques detectados por los modelos multiclase (KMEANS y Autoencoder).
             </p>
@@ -694,7 +726,7 @@ def _display_results(filas, metric_compare):
         """, unsafe_allow_html=True)
 
         fig_detail = go.Figure()
-        attack_colors = {'DDOS_TCP': '#EF4444', 'DDOS_UDP': '#F97316', 'Reconnaissance': '#8B5CF6'}
+        attack_colors = {'DDOS_TCP': c.error, 'DDOS_UDP': c.warning, 'Reconnaissance': c.primary}
         attack_labels = {'DDOS_TCP': 'DDoS TCP', 'DDOS_UDP': 'DDoS UDP', 'Reconnaissance': 'Reconnaissance'}
 
         for col in attack_cols:
@@ -702,7 +734,7 @@ def _display_results(filas, metric_compare):
                 fig_detail.add_trace(go.Bar(
                     name=attack_labels.get(col, col),
                     x=res_df['Modelo'], y=res_df[col].fillna(0),
-                    marker_color=attack_colors.get(col, '#1383A7'),
+                    marker_color=attack_colors.get(col, c.primary),
                     text=[f'{int(v):,}' for v in res_df[col].fillna(0).values],
                     textposition='auto'
                 ))
@@ -733,9 +765,9 @@ def _display_results(filas, metric_compare):
         if dominant_attack and max_attack_count > 0:
             st.markdown(f"""
             <div style="background: rgba(239,68,68,0.05); padding: 0.8rem 1rem; border-radius: 10px;
-                        border-left: 3px solid #EF4444; font-size: 0.88rem; line-height: 1.6;">
-                <strong style="color: #EF4444;">⚠️ Ataque predominante:</strong>
-                <strong>{dominant_attack}</strong> con {int(max_attack_count):,} detecciones totales.
-                {'Revisa las reglas de firewall para mitigar este tipo de ataque.' if max_attack_count > 10 else 'Nivel bajo, mantén monitoreo regular.'}
+                        border-left: 3px solid {c.error}; font-size: 0.88rem; line-height: 1.6;">
+                <strong style="color: {c.error};">⚠️ Ataque predominante:</strong>
+                <strong>{dominant_attack}</strong> con {{int(max_attack_count):,}} detecciones totales.
+                {{'Revisa las reglas de firewall para mitigar este tipo de ataque.' if max_attack_count > 10 else 'Nivel bajo, mantén monitoreo regular.'}}
             </div>
             """, unsafe_allow_html=True)
