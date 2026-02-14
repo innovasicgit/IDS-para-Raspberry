@@ -48,7 +48,7 @@ def show_guia_page():
                        text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">
                 📚 Guía Completa del Sistema IDS
             </h1>
-            <h3 style="color: {c.heading_primary}; font-weight: 300; margin-bottom: 0; font-size: 1.3rem;">
+            <h3 style="color: {c.hero_subtitle}; font-weight: 300; margin-bottom: 0; font-size: 1.3rem;">
                 Todo lo que necesitas saber para proteger tu red IoT
             </h3>
         </div>
@@ -1208,12 +1208,12 @@ def show_guia_page():
     </style>
     <div class="guia-footer">
         <div class="guia-footer-content">
-            <h2 style="color: white; margin-bottom: 1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">🎓 ¡Felicitaciones!</h2>
-            <p style="color: {c.heading_primary}; font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
+            <h2 style="color: {c.hero_title}; margin-bottom: 1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">🎓 ¡Felicitaciones!</h2>
+            <p style="color: {c.hero_subtitle}; font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
                 Ahora tienes todo el conocimiento necesario para usar este sistema de detección de intrusiones 
                 de manera efectiva y proteger tu red IoT.
             </p>
-            <p style="color: white; font-size: 1.1rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
+            <p style="color: {c.hero_title}; font-size: 1.1rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
                 🚀 <strong>Estás listo para comenzar. ¡Ve al Panel de Control y empieza a proteger tu red!</strong>
             </p>
         </div>

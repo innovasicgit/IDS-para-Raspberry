@@ -60,8 +60,8 @@ def show_compare_page():
     </style>
     <div class="compare-hero">
         <div class="compare-hero-content">
-            <h1 style="margin: 0 0 0.5rem 0; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">📊 Comparar Modelos</h1>
-            <p style="margin: 0; font-size: 1.1rem; color: {c.heading_primary}; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
+            <h1 style="margin: 0 0 0.5rem 0; color: {c.hero_title}; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">📊 Comparar Modelos</h1>
+            <p style="margin: 0; font-size: 1.1rem; color: {c.hero_subtitle}; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
                 Ejecuta varios modelos de IA sobre el mismo dataset y compara su rendimiento lado a lado
             </p>
         </div>

@@ -85,10 +85,11 @@ with st.sidebar:
         styles={
             "container": {
                 "padding": "0.5rem 0",
-                "background-color": "transparent",
+                "background-color": c.nav_bg,
+                "border-radius": "12px",
             },
             "icon": {
-                "color": c.primary_light,
+                "color": c.primary,
                 "font-size": "1.1rem",
             },
             "nav-link": {
@@ -97,12 +98,13 @@ with st.sidebar:
                 "margin": "4px 0",
                 "padding": "0.6rem 1rem",
                 "border-radius": "10px",
-                "color": c.text_secondary,
-                "--hover-color": c.surface_variant,
+                "color": c.nav_text,
+                "background-color": "transparent",
+                "--hover-color": c.nav_hover,
             },
             "nav-link-selected": {
-                "background": c.gradient_primary,
-                "color": c.text_on_primary,
+                "background": c.nav_selected_bg,
+                "color": c.nav_selected_text,
                 "font-weight": "600",
                 "box-shadow": f"0 4px 15px {c.primary_glow}",
             },
@@ -115,7 +117,7 @@ with st.sidebar:
                 "padding": "0.5rem 1rem",
             },
             "menu-icon": {
-                "color": c.primary_light,
+                "color": c.primary,
             },
         }
     )

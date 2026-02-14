@@ -306,6 +306,28 @@ def generate_custom_css(theme=None) -> str:
         box-shadow: {theme.shadows.xl} !important;
     }}
 
+    /* Popover trigger buttons (the ⚙️ / 👤 buttons in sidebar) */
+    section[data-testid="stSidebar"] [data-testid="stPopover"] > div:first-child > button,
+    section[data-testid="stSidebar"] [data-testid="stPopover"] button {{
+        background: {colors.popover_btn_bg} !important;
+        border: 1px solid {colors.popover_btn_border} !important;
+        color: {colors.popover_btn_text} !important;
+        font-weight: 500 !important;
+        border-radius: {radius.md} !important;
+        padding: 0.5rem 1rem !important;
+        width: 100% !important;
+        transition: all {transitions.base} {transitions.ease} !important;
+    }}
+
+    section[data-testid="stSidebar"] [data-testid="stPopover"] > div:first-child > button:hover,
+    section[data-testid="stSidebar"] [data-testid="stPopover"] button:hover {{
+        background: {colors.popover_btn_hover_bg} !important;
+        border-color: {colors.popover_btn_hover_border} !important;
+        color: {colors.primary} !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px {colors.primary_glow} !important;
+    }}
+
     [data-testid="stPopover"] .stSlider label {{
         color: {colors.text_primary} !important;
         font-weight: {typo.weight_medium} !important;
@@ -431,16 +453,21 @@ def generate_custom_css(theme=None) -> str:
         background: linear-gradient(90deg, transparent, {colors.border_active}, transparent) !important;
     }}
 
+    /* ── Sidebar buttons (popover triggers: Configuración avanzada, etc.) ── */
     section[data-testid="stSidebar"] .stButton > button {{
-        background: {colors.surface_variant} !important;
-        border: 1px solid {colors.border} !important;
-        color: {colors.text_primary} !important;
+        background: {colors.popover_btn_bg} !important;
+        border: 1px solid {colors.popover_btn_border} !important;
+        color: {colors.popover_btn_text} !important;
+        font-weight: 500 !important;
+        backdrop-filter: blur(8px) !important;
     }}
 
     section[data-testid="stSidebar"] .stButton > button:hover {{
-        background: {colors.surface_overlay} !important;
-        border-color: {colors.primary} !important;
+        background: {colors.popover_btn_hover_bg} !important;
+        border-color: {colors.popover_btn_hover_border} !important;
         color: {colors.primary} !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px {colors.primary_glow} !important;
     }}
 
     /* Sidebar selectbox */
@@ -457,26 +484,61 @@ def generate_custom_css(theme=None) -> str:
         color: {colors.text_primary} !important;
     }}
 
-    /* option_menu styles */
+    /* ── option_menu nav links ── */
     section[data-testid="stSidebar"] .nav-link {{
-        color: {colors.text_secondary} !important;
+        color: {colors.nav_text} !important;
         border-radius: {radius.md} !important;
         transition: all {transitions.base} {transitions.ease} !important;
+        background-color: transparent !important;
     }}
 
     section[data-testid="stSidebar"] .nav-link:hover {{
-        color: {colors.text_primary} !important;
-        background: {colors.surface_overlay} !important;
+        color: {colors.primary} !important;
+        background: {colors.nav_hover} !important;
     }}
 
     section[data-testid="stSidebar"] .nav-link-selected {{
-        background: {colors.gradient_primary} !important;
-        color: {colors.text_on_primary} !important;
+        background: {colors.nav_selected_bg} !important;
+        color: {colors.nav_selected_text} !important;
     }}
 
-    /* option_menu container */
+    /* option_menu container — ensure transparent background */
     section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: transparent !important;
+    }}
+
+    /* option_menu iframe container — transparent background */
+    section[data-testid="stSidebar"] iframe {{
+        background-color: transparent !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stCustomComponentV1"] {{
+        background-color: transparent !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stCustomComponentV1"] > div {{
+        background-color: transparent !important;
+    }}
+
+    /* option_menu menu-title */
+    section[data-testid="stSidebar"] .menu-title {{
+        color: {colors.text_primary} !important;
+    }}
+
+    /* option_menu icon color */
+    section[data-testid="stSidebar"] .nav-link .icon {{
+        color: {colors.primary} !important;
+    }}
+
+    /* ── Theme toggle button special style ── */
+    section[data-testid="stSidebar"] .stButton > button[data-testid="baseButton-secondary"] {{
+        background: {colors.surface_variant} !important;
+        border: 1px solid {colors.border} !important;
+        color: {colors.text_primary} !important;
+    }}
+
+    section[data-testid="stSidebar"] .stButton > button[data-testid="baseButton-secondary"]:hover {{
+        background: {colors.surface_overlay} !important;
+        border-color: {colors.primary} !important;
+        color: {colors.primary} !important;
     }}
 
     /* ═══════════════════════ METRICS ═══════════════════════ */

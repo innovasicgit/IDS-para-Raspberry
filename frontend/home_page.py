@@ -45,8 +45,8 @@ def show_home_page():
     </style>
     <div class="home-hero">
         <div class="home-hero-content">
-            <h1 style="margin: 0; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">🛡️ Sistema de Detección de Intrusos</h1>
-            <p style="margin: 15px 0 0 0; font-size: 1.2em; color: {c.heading_primary}; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
+            <h1 style="margin: 0; color: {c.hero_title}; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">🛡️ Sistema de Detección de Intrusos</h1>
+            <p style="margin: 15px 0 0 0; font-size: 1.2em; color: {c.hero_subtitle}; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -424,10 +424,10 @@ def show_home_page():
     </style>
     <div class="home-cta">
         <div class="home-cta-content">
-            <h2 style="color: {c.heading_primary}; margin-bottom: 1rem; font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+            <h2 style="color: {c.hero_title}; margin-bottom: 1rem; font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
                 ¿Listo para comenzar?
             </h2>
-            <p style="color: {c.text_secondary}; font-size: 1.2rem; margin-bottom: 1.5rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
+            <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-bottom: 1.5rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
                  Accede al <strong>Panel de Control</strong> y empezar a proteger tu red IoT
             </p>
             <div style="font-size: 3rem; margin-bottom: 0.5rem;">🚀</div>
