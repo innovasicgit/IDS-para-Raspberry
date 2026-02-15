@@ -168,6 +168,7 @@ def generate_custom_css(theme=None) -> str:
         background: {colors.gradient_primary} !important;
         border: 1px solid {colors.primary} !important;
         color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
         font-weight: {typo.weight_semibold} !important;
     }}
 
@@ -176,22 +177,58 @@ def generate_custom_css(theme=None) -> str:
         background: {colors.gradient_primary} !important;
         border-color: {colors.primary_light} !important;
         color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
         box-shadow: {theme.shadows.lg}, 0 0 25px {colors.primary_glow} !important;
     }}
 
-    /* ── Botón Secondary ── */
+    /* Primary button disabled */
+    .stButton > button[kind="primary"]:disabled,
+    .stButton > button[data-testid="baseButton-primary"]:disabled {{
+        background: {colors.gradient_primary} !important;
+        border: 1px solid {colors.primary} !important;
+        color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
+        opacity: 0.5 !important;
+    }}
+
+    /* ── Botón Secondary (blanco/superficie, NO azul) ── */
     .stButton > button[kind="secondary"],
-    .stButton > button[data-testid="baseButton-secondary"] {{
-        background: transparent !important;
+    .stButton > button[data-testid="baseButton-secondary"],
+    .stMainBlockContainer .stButton > button[kind="secondary"],
+    .stMainBlockContainer .stButton > button[data-testid="baseButton-secondary"],
+    section[data-testid="stMain"] .stButton > button[kind="secondary"],
+    section[data-testid="stMain"] .stButton > button[data-testid="baseButton-secondary"] {{
+        background: {colors.surface} !important;
+        background-image: none !important;
         border: 1px solid {colors.border} !important;
-        color: {colors.primary_light} !important;
+        color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
+        box-shadow: none !important;
     }}
 
     .stButton > button[kind="secondary"]:hover,
     .stButton > button[data-testid="baseButton-secondary"]:hover {{
-        background: {colors.surface_overlay} !important;
+        background: {colors.surface_elevated} !important;
+        background-image: none !important;
         border-color: {colors.primary} !important;
+        color: {colors.primary} !important;
+        -webkit-text-fill-color: {colors.primary} !important;
+    }}
+
+    .stButton > button[kind="secondary"]:disabled,
+    .stButton > button[data-testid="baseButton-secondary"]:disabled {{
+        background: {colors.surface} !important;
+        background-image: none !important;
+        border: 1px solid {colors.border} !important;
+        color: {colors.text_disabled} !important;
+        -webkit-text-fill-color: {colors.text_disabled} !important;
+        opacity: 0.6 !important;
+    }}
+
+    /* ── Botón disabled genérico: texto blanco (excepto secondary) ── */
+    .stButton > button:disabled:not([kind="secondary"]):not([data-testid="baseButton-secondary"]) {{
         color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
     }}
 
     /* ═══════════════ BOTONES SEMÁNTICOS (por contenido) ═══════════════ */
@@ -206,6 +243,7 @@ def generate_custom_css(theme=None) -> str:
         background: {colors.gradient_primary} !important;
         border: 1px solid {colors.primary} !important;
         color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
         border-radius: {radius.md} !important;
         font-weight: {typo.weight_medium} !important;
         transition: all {transitions.base} {transitions.ease} !important;
@@ -214,24 +252,100 @@ def generate_custom_css(theme=None) -> str:
     .stDownloadButton > button:hover {{
         background: {colors.gradient_primary} !important;
         color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
         transform: translateY(-2px) !important;
         box-shadow: {theme.shadows.md}, {theme.shadows.glow} !important;
     }}
 
+    .stDownloadButton > button:disabled {{
+        background: {colors.gradient_primary} !important;
+        color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
+        opacity: 0.5 !important;
+    }}
+
     /* ═══════════════════════ INPUTS ═══════════════════════ */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input {{
+    .stTextInput > div > div > input {{
         color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
         background-color: {colors.surface} !important;
         border: 1px solid {colors.border} !important;
         border-radius: {radius.md} !important;
         transition: all {transitions.base} {transitions.ease} !important;
     }}
 
-    .stTextInput > div > div > input:focus,
-    .stNumberInput > div > div > input:focus {{
+    .stTextInput > div > div > input:focus {{
         border-color: {colors.primary} !important;
         box-shadow: 0 0 0 3px {colors.primary_glow} !important;
+    }}
+
+    /* ── Number Input: COMPLETO ── */
+    /* Contenedor exterior */
+    .stNumberInput {{
+        color: {colors.text_primary} !important;
+    }}
+    /* Label */
+    .stNumberInput label,
+    .stNumberInput label p,
+    .stNumberInput label span {{
+        color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
+    }}
+    /* Wrapper baseweb */
+    .stNumberInput [data-baseweb="input"],
+    .stNumberInput > div,
+    .stNumberInput > div > div,
+    .stNumberInput > div > div > div {{
+        background-color: {colors.surface_elevated} !important;
+        background: {colors.surface_elevated} !important;
+        border-color: {colors.border} !important;
+        border-radius: {radius.md} !important;
+    }}
+    .stNumberInput [data-baseweb="input"]:focus-within {{
+        border-color: {colors.primary} !important;
+        box-shadow: 0 0 0 3px {colors.primary_glow} !important;
+    }}
+    /* El input real donde se escribe */
+    .stNumberInput [data-baseweb="input"] input,
+    .stNumberInput > div > div > input,
+    .stNumberInput input[type="number"],
+    .stNumberInput input {{
+        color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
+        background-color: transparent !important;
+        border: none !important;
+        caret-color: {colors.primary} !important;
+    }}
+    /* Botones +/- del number input */
+    .stNumberInput [data-baseweb="input"] button,
+    .stNumberInput button {{
+        background-color: {colors.surface} !important;
+        border: 1px solid {colors.border} !important;
+        color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
+        border-radius: {radius.sm} !important;
+    }}
+    .stNumberInput [data-baseweb="input"] button:hover,
+    .stNumberInput button:hover {{
+        background-color: {colors.primary} !important;
+        border-color: {colors.primary} !important;
+        color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
+    }}
+    /* Botones +/- SVG icons */
+    .stNumberInput [data-baseweb="input"] button svg,
+    .stNumberInput button svg {{
+        fill: {colors.text_primary} !important;
+        color: {colors.text_primary} !important;
+    }}
+    .stNumberInput [data-baseweb="input"] button:hover svg,
+    .stNumberInput button:hover svg {{
+        fill: {colors.text_on_primary} !important;
+        color: {colors.text_on_primary} !important;
+    }}
+    /* Help text */
+    .stNumberInput [data-testid="stTooltipIcon"] svg {{
+        color: {colors.text_secondary} !important;
     }}
 
     /* Select boxes */
@@ -289,6 +403,23 @@ def generate_custom_css(theme=None) -> str:
         color: {colors.text_secondary} !important;
     }}
 
+    /* Slider thumb value tooltip (cuadro azul con número) */
+    .stSlider [data-baseweb="slider"] [data-baseweb="tooltip"],
+    .stSlider [data-baseweb="slider"] [role="tooltip"] {{
+        border-radius: 8px !important;
+        color: #FFFFFF !important;
+    }}
+    .stSlider [data-baseweb="slider"] [data-baseweb="tooltip"] div,
+    .stSlider [data-baseweb="slider"] [role="tooltip"] div {{
+        color: #FFFFFF !important;
+        border-radius: 8px !important;
+    }}
+    /* Slider current value display */
+    .stSlider div[data-baseweb="slider"] div[role="slider"] div {{
+        color: #FFFFFF !important;
+        border-radius: 8px !important;
+    }}
+
     /* ═══════════════════════ TOGGLE / SWITCH ═══════════════════════ */
     .stToggle label span[data-baseweb="toggle-track"] {{
         background-color: {colors.surface_elevated} !important;
@@ -300,10 +431,9 @@ def generate_custom_css(theme=None) -> str:
 
     /* ═══════════════════════ POPOVER (dev options) ═══════════════════════ */
     [data-testid="stPopover"] {{
-        background: {colors.popover_body_bg} !important;
-        border: 1px solid {colors.popover_body_border} !important;
-        border-radius: {radius.xl} !important;
-        box-shadow: {colors.popover_body_shadow} !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }}
 
     /* Popover trigger buttons (the ⚙️ / 👤 buttons in sidebar) */
@@ -313,8 +443,8 @@ def generate_custom_css(theme=None) -> str:
         border: 1px solid {colors.popover_btn_border} !important;
         color: {colors.popover_btn_text} !important;
         font-weight: 500 !important;
-        border-radius: {radius.lg} !important;
-        padding: 0.5rem 1rem !important;
+        border-radius: 22px !important;
+        padding: 0.55rem 1.1rem !important;
         width: 100% !important;
         transition: all {transitions.base} {transitions.ease} !important;
     }}
@@ -335,9 +465,10 @@ def generate_custom_css(theme=None) -> str:
 
     [data-testid="stPopoverBody"] {{
         background: {colors.popover_body_bg} !important;
-        border-radius: {radius.lg} !important;
-        padding: {spacing.md} !important;
+        border-radius: 22px !important;
+        padding: {spacing.lg} !important;
         border: 1px solid {colors.popover_body_border} !important;
+        box-shadow: {colors.popover_body_shadow} !important;
     }}
 
     /* ═══════════════════════ ALERTS ═══════════════════════ */
@@ -486,48 +617,38 @@ def generate_custom_css(theme=None) -> str:
         color: {colors.text_primary} !important;
     }}
 
-    /* ── option_menu nav links ── */
-    section[data-testid="stSidebar"] .nav-link {{
+    /* ── Sidebar navigation buttons (custom nav) ── */
+    section[data-testid="stSidebar"] .stButton > button {{
+        border-radius: 14px !important;
+        font-size: 0.97rem !important;
+        text-align: left !important;
+        padding: 0.55rem 1rem !important;
+        margin: 2px 0 !important;
+        border: none !important;
+        background: transparent !important;
         color: {colors.nav_text} !important;
-        border-radius: {radius.md} !important;
+        font-weight: 400 !important;
         transition: all {transitions.base} {transitions.ease} !important;
-        background-color: transparent !important;
+        justify-content: flex-start !important;
     }}
-
-    section[data-testid="stSidebar"] .nav-link:hover {{
-        color: {colors.primary} !important;
+    section[data-testid="stSidebar"] .stButton > button:hover {{
         background: {colors.nav_hover} !important;
-    }}
-
-    section[data-testid="stSidebar"] .nav-link-selected {{
-        background: {colors.nav_selected_bg} !important;
-        color: {colors.nav_selected_text} !important;
-    }}
-
-    /* option_menu container — ensure transparent background */
-    section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
-        background-color: transparent !important;
-    }}
-
-    /* option_menu iframe container — transparent background */
-    section[data-testid="stSidebar"] iframe {{
-        background-color: transparent !important;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stCustomComponentV1"] {{
-        background-color: transparent !important;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stCustomComponentV1"] > div {{
-        background-color: transparent !important;
-    }}
-
-    /* option_menu menu-title */
-    section[data-testid="stSidebar"] .menu-title {{
-        color: {colors.text_primary} !important;
-    }}
-
-    /* option_menu icon color */
-    section[data-testid="stSidebar"] .nav-link .icon {{
         color: {colors.primary} !important;
+    }}
+    /* Active nav button (disabled state used for active indicator) */
+    section[data-testid="stSidebar"] .stButton > button:disabled,
+    section[data-testid="stSidebar"] .stButton > button:disabled p,
+    section[data-testid="stSidebar"] .stButton > button:disabled span,
+    section[data-testid="stSidebar"] .stButton > button:disabled div,
+    section[data-testid="stSidebar"] .stButton > button[disabled] {{
+        background: {colors.nav_selected_bg} !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px {colors.primary_glow} !important;
+        border: none !important;
+        opacity: 1 !important;
+        cursor: default !important;
     }}
 
     /* ── Theme toggle button special style ── */
@@ -578,6 +699,7 @@ def generate_custom_css(theme=None) -> str:
     .stTabs [aria-selected="true"] {{
         background: {colors.gradient_primary} !important;
         color: {colors.text_on_primary} !important;
+        -webkit-text-fill-color: {colors.text_on_primary} !important;
         box-shadow: {theme.shadows.sm};
     }}
 
@@ -665,6 +787,31 @@ def generate_custom_css(theme=None) -> str:
         border-radius: {radius.md};
         padding: {spacing.sm};
         border: 1px solid {colors.border};
+    }}
+
+    /* Tooltips globales (help="..." de botones, inputs, etc.) */
+    [data-baseweb="tooltip"],
+    [data-baseweb="tooltip"] [role="tooltip"],
+    [role="tooltip"],
+    [data-testid="stTooltipContent"],
+    div[data-baseweb="popover"] > div {{
+        background-color: {colors.surface_elevated} !important;
+        color: {colors.text_primary} !important;
+        border: 1px solid {colors.border} !important;
+        border-radius: {radius.md} !important;
+    }}
+    [data-baseweb="tooltip"] p,
+    [data-baseweb="tooltip"] span,
+    [data-baseweb="tooltip"] div,
+    [role="tooltip"] p,
+    [role="tooltip"] span,
+    [role="tooltip"] div,
+    [data-testid="stTooltipContent"] p,
+    [data-testid="stTooltipContent"] span,
+    div[data-baseweb="popover"] > div p,
+    div[data-baseweb="popover"] > div span {{
+        color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
     }}
 
     /* ═══════════════════════ RESPONSIVIDAD ═══════════════════════ */
@@ -767,6 +914,7 @@ def generate_custom_css(theme=None) -> str:
         color: {colors.text_primary} !important;
     }}
     /* Dropdown menu list */
+    /* baseweb popover — selectbox/dropdown only */
     [data-baseweb="popover"] {{
         background-color: {colors.surface} !important;
         border: 1px solid {colors.border} !important;
@@ -785,16 +933,24 @@ def generate_custom_css(theme=None) -> str:
         background-color: {colors.surface_variant} !important;
     }}
 
+    /* st.popover() body — override baseweb popover when it wraps stPopoverBody */
+    [data-baseweb="popover"]:has([data-testid="stPopoverBody"]) {{
+        background-color: {colors.popover_body_bg} !important;
+        border: 1px solid {colors.popover_body_border} !important;
+        border-radius: 22px !important;
+        box-shadow: {colors.popover_body_shadow} !important;
+    }}
+
     /* Popover backgrounds (st.popover) */
     [data-testid="stPopover"] > div {{
         background-color: {colors.popover_body_bg} !important;
         border: 1px solid {colors.popover_body_border} !important;
-        border-radius: {radius.lg} !important;
+        border-radius: 22px !important;
         box-shadow: {colors.popover_body_shadow} !important;
     }}
     [data-testid="stPopoverBody"] {{
         background-color: {colors.popover_body_bg} !important;
-        border-radius: {radius.lg} !important;
+        border-radius: 22px !important;
     }}
     [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] p,
     [data-testid="stPopoverBody"] [data-testid="stMarkdownContainer"] span {{
@@ -860,14 +1016,7 @@ def generate_custom_css(theme=None) -> str:
         color: {colors.text_primary} !important;
     }}
 
-    /* Number input */
-    .stNumberInput [data-baseweb="input"] {{
-        background-color: {colors.surface} !important;
-        border-color: {colors.border} !important;
-    }}
-    .stNumberInput [data-baseweb="input"] input {{
-        color: {colors.text_primary} !important;
-    }}
+    /* Number input - see comprehensive section above */
 
     /* Toast */
     [data-testid="stToast"] {{
@@ -893,6 +1042,79 @@ def generate_custom_css(theme=None) -> str:
         color: {colors.text_primary} !important;
     }}
 
+    /* ── Sidebar expanders (config avanzada / usuario) ── */
+    section[data-testid="stSidebar"] [data-testid="stExpander"] {{
+        background-color: {colors.popover_body_bg} !important;
+        border: 1px solid {colors.popover_btn_border} !important;
+        border-radius: 18px !important;
+        overflow: hidden;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary {{
+        background: {colors.popover_btn_bg} !important;
+        color: {colors.popover_btn_text} !important;
+        border-radius: 18px !important;
+        padding: 0.55rem 1rem !important;
+        font-weight: 500 !important;
+        transition: all {transitions.base} {transitions.ease} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {{
+        background: {colors.popover_btn_hover_bg} !important;
+        color: {colors.primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary svg {{
+        fill: {colors.primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] {{
+        background-color: {colors.popover_body_bg} !important;
+        border-top: 1px solid {colors.popover_btn_border} !important;
+        padding: 0.8rem !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stMarkdownContainer"] span {{
+        color: {colors.text_primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stWidgetLabel"] label {{
+        color: {colors.text_primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stCaptionContainer"] {{
+        color: {colors.text_secondary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] .stButton > button {{
+        background: {colors.popover_btn_bg} !important;
+        border: 1px solid {colors.popover_btn_border} !important;
+        color: {colors.popover_btn_text} !important;
+        border-radius: 14px !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] .stButton > button:hover {{
+        background: {colors.popover_btn_hover_bg} !important;
+        border-color: {colors.popover_btn_hover_border} !important;
+        color: {colors.primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] .stTextInput > div > div > input {{
+        background-color: {colors.surface_elevated} !important;
+        color: {colors.text_primary} !important;
+        border-color: {colors.border} !important;
+        border-radius: 10px !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] .stTextInput > div > div > input:focus {{
+        border-color: {colors.primary} !important;
+        box-shadow: 0 0 0 3px {colors.primary_glow} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] .stToggle label span {{
+        color: {colors.text_primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-baseweb="select"] > div {{
+        background-color: {colors.surface_elevated} !important;
+        border-color: {colors.border} !important;
+        border-radius: 10px !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-baseweb="select"] > div > div {{
+        color: {colors.text_primary} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stExpander"] hr {{
+        border-color: {colors.border} !important;
+    }}
+
     /* DataFrame */
     [data-testid="stDataFrame"] {{
         border: 1px solid {colors.border} !important;
@@ -910,6 +1132,20 @@ def generate_custom_css(theme=None) -> str:
     [data-testid="stMarkdownContainer"] h3,
     [data-testid="stMarkdownContainer"] h4 {{
         color: {colors.heading_primary} !important;
+    }}
+
+    /* Hero sections: títulos y subtítulos SIEMPRE blancos */
+    .home-hero-content h1, .home-hero-content h2, .home-hero-content h3,
+    .home-hero-content p, .home-hero-content strong,
+    .home-cta-content h1, .home-cta-content h2, .home-cta-content h3,
+    .home-cta-content p, .home-cta-content strong,
+    .guia-header-content h1, .guia-header-content h2, .guia-header-content h3,
+    .guia-header-content p, .guia-header-content strong,
+    .guia-footer-content h1, .guia-footer-content h2, .guia-footer-content h3,
+    .guia-footer-content p, .guia-footer-content strong,
+    .compare-hero-content h1, .compare-hero-content h2, .compare-hero-content h3,
+    .compare-hero-content p, .compare-hero-content strong {{
+        color: #FFFFFF !important;
     }}
 
     /* Caption text */

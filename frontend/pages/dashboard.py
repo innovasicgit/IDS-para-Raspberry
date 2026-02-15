@@ -762,7 +762,7 @@ def show_dashboard_page():
             # Botones de control
             col_btn_a, col_btn_b = st.columns(2, gap="small")
             with col_btn_a:
-                if st.button('▶️ Iniciar automática', use_container_width=True, disabled=st.session_state.auto_capture['active']):
+                if st.button('▶️ Iniciar automática', use_container_width=True, type="primary", disabled=st.session_state.auto_capture['active']):
                     st.session_state.auto_capture['active'] = True
                     st.session_state.auto_capture['stop_requested'] = False
                     st.session_state.auto_capture['total_cycles'] = 0
@@ -772,7 +772,7 @@ def show_dashboard_page():
                     st.session_state.auto_capture['next_run_ts'] = time.time()
                     st.rerun()
             with col_btn_b:
-                if st.button('⏹️ Detener automática', use_container_width=True, disabled=not st.session_state.auto_capture['active']):
+                if st.button('⏹️ Detener automática', use_container_width=True, type="secondary", disabled=not st.session_state.auto_capture['active']):
                     st.session_state.auto_capture['stop_requested'] = True
                     st.session_state.auto_capture['active'] = False
                     st.session_state.auto_capture['is_capturing'] = False
@@ -1127,7 +1127,7 @@ def show_dashboard_page():
         
         # Botón para limpiar y volver a predecir
         if st.session_state.get('prediccion_realizada', False):
-            if st.button('🔄 Volver a Predecir', key='reset_prediction', use_container_width=True, type="secondary"):
+            if st.button('🔄 Volver a Predecir', key='reset_prediction', use_container_width=True, type="primary"):
                 # Limpiar todos los estados de predicción
                 st.session_state['prediccion_realizada'] = False
                 st.session_state['resumen_prediccion'] = None

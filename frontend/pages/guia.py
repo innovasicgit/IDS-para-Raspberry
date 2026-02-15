@@ -117,7 +117,7 @@ def show_guia_page():
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
             <strong>¿Cómo lo hace?</strong><br>
-            Utilizamos una herramienta llamada <code>tshark</code> que captura "paquetes de datos" 
+            Utilizamos una herramienta llamada <strong><u>tshark</u></strong> que captura "paquetes de datos" 
             (pequeños fragmentos de información que viajan por la red). Cada paquete contiene:
         </p>
         
