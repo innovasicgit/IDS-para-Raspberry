@@ -11,17 +11,27 @@ venv/
 *.zip
 *.exe
 *.msi
+*.tgz
+*.tar.xz
+*.deb
+*.gpg
 
 ## Archivos temporales / cache
 __pycache__/
 *.pyc
 *.pyo
 *.log
+*.db
+
+## Datos generados en runtime
+captura_paquetes.csv
+*.csv
 
 ## Base de datos local de autenticación
 auth.db
+notifications_config.db
 
-## Archivos grandes locales no versionados
+## Archivos grandes no versionados
 code.deb
 kmeans_normal.csv
 Python-3.11.5.tgz
