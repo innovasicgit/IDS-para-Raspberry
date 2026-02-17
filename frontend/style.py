@@ -79,6 +79,49 @@ def _build_css(theme) -> str:
     [data-testid="column"] {{
         overflow-x: hidden !important;
         max-width: 100% !important;
+        box-sizing: border-box !important;
+    }}
+
+    /* ═══ Fix: Plotly resize loop dentro de st.columns ═══ */
+    [data-testid="stPlotlyChart"],
+    .stPlotlyChart {{
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }}
+    [data-testid="stPlotlyChart"] > div {{
+        max-width: 100% !important;
+        width: 100% !important;
+    }}
+    [data-testid="stPlotlyChart"] iframe {{
+        max-width: 100% !important;
+        width: 100% !important;
+    }}
+    .js-plotly-plot, .plot-container, .plotly {{
+        max-width: 100% !important;
+        width: 100% !important;
+    }}
+
+    /* ═══ Fix: st.dataframe dentro de columnas ═══ */
+    [data-testid="stDataFrame"],
+    [data-testid="stDataFrame"] > div {{
+        max-width: 100% !important;
+        overflow-x: auto !important;
+    }}
+
+    /* ═══ Fix: HTML embebido (st.markdown) ═══ */
+    [data-testid="stMarkdownContainer"] {{
+        max-width: 100% !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }}
+    [data-testid="stMarkdownContainer"] table {{
+        max-width: 100% !important;
+        table-layout: fixed !important;
+    }}
+    [data-testid="stMarkdownContainer"] div {{
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }}
 
     /* ═══════════════════════ HEADERS ═══════════════════════ */
@@ -503,15 +546,6 @@ def _build_css(theme) -> str:
         border-radius: {radius.md} !important;
         padding: {spacing.md} !important;
         backdrop-filter: blur(4px) !important;
-    }}
-
-    /* ═══════════════════════ PLOTLY / GRÁFICAS ═══════════════════════ */
-    .stPlotlyChart,
-    [data-testid="stPlotlyChart"],
-    .js-plotly-plot,
-    .plotly {{
-        max-width: 100% !important;
-        overflow: hidden !important;
     }}
 
     /* ═══════════════════════ DATAFRAMES ═══════════════════════ */

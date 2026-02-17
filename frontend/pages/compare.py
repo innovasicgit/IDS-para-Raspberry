@@ -646,12 +646,13 @@ def _display_results(filas, metric_compare):
             yaxis_title='Paquetes',
             template='plotly_dark',
             height=400,
+            autosize=False,
             margin=dict(t=20, b=40, l=50, r=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
         # Insight inteligente
         insight_nva = _generate_normal_vs_attacks_insight(res_df, normales, ataques)
@@ -701,11 +702,12 @@ def _display_results(filas, metric_compare):
                 yaxis_title='Segundos',
                 template='plotly_dark',
                 height=400,
+                autosize=False,
                 margin=dict(t=20, b=40, l=50, r=20),
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
-            st.plotly_chart(figt, use_container_width=True)
+            st.plotly_chart(figt, use_container_width=True, config={'displayModeBar': False})
 
             # Insight inteligente
             insight_time = _generate_time_insight(res_df)
@@ -755,12 +757,13 @@ def _display_results(filas, metric_compare):
             yaxis_title='Paquetes detectados',
             template='plotly_dark',
             height=350,
+            autosize=False,
             margin=dict(t=20, b=40, l=50, r=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig_detail, use_container_width=True)
+        st.plotly_chart(fig_detail, use_container_width=True, config={'displayModeBar': False})
 
         # Insight de ataques
         dominant_attack = None
