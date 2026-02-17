@@ -23,6 +23,9 @@ __pycache__/
 *.log
 *.db
 
+## Logs del IDS
+logs/
+
 ## Datos generados en runtime
 captura_paquetes.csv
 *.csv
