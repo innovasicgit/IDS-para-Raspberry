@@ -60,6 +60,7 @@ def _build_css(theme) -> str:
         color: {colors.text_primary};
         font-family: {typo.font_family};
         background-color: {colors.background};
+        overflow-x: hidden !important;
     }}
 
     /* Fondo con patrón sutil */
@@ -67,6 +68,17 @@ def _build_css(theme) -> str:
         background:
             {colors.gradient_glow},
             {colors.background};
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }}
+
+    /* Evitar desborde horizontal en bloques de contenido */
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stVerticalBlock"],
+    .stMarkdown,
+    [data-testid="column"] {{
+        overflow-x: hidden !important;
+        max-width: 100% !important;
     }}
 
     /* ═══════════════════════ HEADERS ═══════════════════════ */
@@ -491,6 +503,15 @@ def _build_css(theme) -> str:
         border-radius: {radius.md} !important;
         padding: {spacing.md} !important;
         backdrop-filter: blur(4px) !important;
+    }}
+
+    /* ═══════════════════════ PLOTLY / GRÁFICAS ═══════════════════════ */
+    .stPlotlyChart,
+    [data-testid="stPlotlyChart"],
+    .js-plotly-plot,
+    .plotly {{
+        max-width: 100% !important;
+        overflow: hidden !important;
     }}
 
     /* ═══════════════════════ DATAFRAMES ═══════════════════════ */

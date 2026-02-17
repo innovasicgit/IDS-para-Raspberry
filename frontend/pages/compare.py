@@ -78,7 +78,7 @@ def show_compare_page():
         que tiene el sistema. Así puedes determinar <strong>cuál modelo es más efectivo</strong> para detectar amenazas en tu red IoT.</p>
 
         <h4 style="color: {c.heading_secondary};">📋 ¿Cómo funciona? (3 pasos)</h4>
-        <table style="width: 100%; border-collapse: separate; border-spacing: 0 8px;">
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0 8px; table-layout: fixed;">
             <tr>
                 <td style="background: rgba(16,185,129,0.1); padding: 12px; border-radius: 8px; text-align: center; width: 33%;">
                     <strong style="font-size: 1.5rem;">1️⃣</strong><br/>
@@ -658,7 +658,8 @@ def _display_results(filas, metric_compare):
         if insight_nva:
             st.markdown(f"""
             <div style="background: rgba(19,131,167,0.05); padding: 0.8rem 1rem; border-radius: 10px;
-                        border-left: 3px solid {c.primary}; font-size: 0.88rem; line-height: 1.6;">
+                        border-left: 3px solid {c.primary}; font-size: 0.88rem; line-height: 1.6;
+                        overflow-wrap: break-word; word-break: break-word; max-width: 100%; box-sizing: border-box;">
                 <strong style="color: {c.heading_secondary};">🔍 Análisis automático:</strong><br/>
                 {insight_nva}
             </div>
@@ -711,7 +712,8 @@ def _display_results(filas, metric_compare):
             if insight_time:
                 st.markdown(f"""
                 <div style="background: rgba(19,131,167,0.05); padding: 0.8rem 1rem; border-radius: 10px;
-                            border-left: 3px solid {c.primary}; font-size: 0.88rem; line-height: 1.6;">
+                            border-left: 3px solid {c.primary}; font-size: 0.88rem; line-height: 1.6;
+                            overflow-wrap: break-word; word-break: break-word; max-width: 100%; box-sizing: border-box;">
                     <strong style="color: {c.heading_secondary};">🔍 Análisis automático:</strong><br/>
                     {insight_time}
                 </div>
@@ -775,7 +777,8 @@ def _display_results(filas, metric_compare):
             attack_recommendation = 'Revisa las reglas de firewall para mitigar este tipo de ataque.' if max_attack_count > 10 else 'Nivel bajo, mantén monitoreo regular.'
             st.markdown(f"""
             <div style="background: rgba(239,68,68,0.05); padding: 0.8rem 1rem; border-radius: 10px;
-                        border-left: 3px solid {c.error}; font-size: 0.88rem; line-height: 1.6;">
+                        border-left: 3px solid {c.error}; font-size: 0.88rem; line-height: 1.6;
+                        overflow-wrap: break-word; word-break: break-word; max-width: 100%; box-sizing: border-box;">
                 <strong style="color: {c.error};">⚠️ Ataque predominante:</strong>
                 <strong>{dominant_attack}</strong> con {attack_count_str} detecciones totales.
                 {attack_recommendation}
