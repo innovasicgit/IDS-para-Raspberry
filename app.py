@@ -1,8 +1,3 @@
-"""
-Aplicación principal - Sistema de Detección de Anomalías IoT.
-Punto de entrada y orquestación de la navegación.
-"""
-
 import streamlit as st
 import sklearn
 from pathlib import Path
