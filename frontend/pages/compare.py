@@ -504,6 +504,47 @@ def _display_results(filas, metric_compare):
     c = t.colors
     res_df = pd.DataFrame(filas)
 
+    # CSS crítico: prevenir que los resultados expandan la página horizontalmente
+    st.markdown("""
+    <style>
+        /* Fix: prevenir resize loop en resultados de comparación */
+        [data-testid="stMainBlockContainer"] {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+        }
+        [data-testid="stHorizontalBlock"] {
+            overflow: hidden !important;
+            max-width: 100% !important;
+            flex-wrap: nowrap !important;
+        }
+        [data-testid="stColumn"] {
+            overflow: hidden !important;
+            min-width: 0 !important;
+        }
+        /* Plotly: forzar 100% del ancho de su columna con CSS puro */
+        [data-testid="stPlotlyChart"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+        [data-testid="stPlotlyChart"] > div {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        [data-testid="stPlotlyChart"] > div > div {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .js-plotly-plot {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .plotly .main-svg {
+            max-width: 100% !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("---")
     st.markdown(f"""
     <h2 style="text-align: center; color: {c.heading_primary}; margin: 1rem 0 1.5rem 0;">
@@ -646,13 +687,12 @@ def _display_results(filas, metric_compare):
             yaxis_title='Paquetes',
             template='plotly_dark',
             height=400,
-            autosize=False,
             margin=dict(t=20, b=40, l=50, r=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False, 'responsive': True})
 
         # Insight inteligente
         insight_nva = _generate_normal_vs_attacks_insight(res_df, normales, ataques)
@@ -702,12 +742,11 @@ def _display_results(filas, metric_compare):
                 yaxis_title='Segundos',
                 template='plotly_dark',
                 height=400,
-                autosize=False,
                 margin=dict(t=20, b=40, l=50, r=20),
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
-            st.plotly_chart(figt, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(figt, use_container_width=False, config={'displayModeBar': False, 'responsive': True})
 
             # Insight inteligente
             insight_time = _generate_time_insight(res_df)
@@ -757,13 +796,12 @@ def _display_results(filas, metric_compare):
             yaxis_title='Paquetes detectados',
             template='plotly_dark',
             height=350,
-            autosize=False,
             margin=dict(t=20, b=40, l=50, r=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
-        st.plotly_chart(fig_detail, use_container_width=True, config={'displayModeBar': False})
+        st.plotly_chart(fig_detail, use_container_width=False, config={'displayModeBar': False, 'responsive': True})
 
         # Insight de ataques
         dominant_attack = None
