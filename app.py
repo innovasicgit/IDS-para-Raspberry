@@ -43,7 +43,6 @@ if "arp_limit_mode" not in st.session_state:
     st.session_state.arp_limit_mode = "medium"
 
 # ==================== AUTENTICACIÓN Y NAVEGACIÓN ====================
-
 # Requerir autenticación para todas las páginas
 # ensure_auth()  # DESHABILITADO TEMPORALMENTE
 
