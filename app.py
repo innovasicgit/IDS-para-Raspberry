@@ -57,15 +57,20 @@ t = get_current_theme()
 c = t.colors
 
 with st.sidebar:
-    # Logo centrado con st.image (método nativo de Streamlit)
-    import base64
-    _logo_path = Path(__file__).parent / "img" / "logo.png"
-    if _logo_path.exists():
-        with open(_logo_path, "rb") as _f:
-            _logo_b64 = base64.b64encode(_f.read()).decode()
+    # Logo centrado (cacheado en session_state para no re-leer del disco)
+    if "_logo_b64" not in st.session_state:
+        import base64
+        _logo_path = Path(__file__).parent / "img" / "logo.png"
+        if _logo_path.exists():
+            with open(_logo_path, "rb") as _f:
+                st.session_state._logo_b64 = base64.b64encode(_f.read()).decode()
+        else:
+            st.session_state._logo_b64 = None
+    
+    if st.session_state._logo_b64:
         st.markdown(f"""
         <div style='display:flex;justify-content:center;align-items:center;width:100%;margin-bottom:0.5rem;'>
-            <img src='data:image/png;base64,{_logo_b64}' width='150' style='display:block;margin:0 auto;border-radius:22px;'/>
+            <img src='data:image/png;base64,{st.session_state._logo_b64}' width='150' style='display:block;margin:0 auto;border-radius:22px;'/>
         </div>
         """, unsafe_allow_html=True)
     

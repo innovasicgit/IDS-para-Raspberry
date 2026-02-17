@@ -41,13 +41,14 @@ except ImportError:
                 return X
 
 
+@st.cache_resource(show_spinner="Cargando modelo...")
 def load_model(model_path):
+    """Carga un modelo desde disco y lo cachea en memoria (solo se carga 1 vez)."""
     try:
         absolute_path = os.path.abspath(model_path)
         if not os.path.exists(absolute_path):
             raise FileNotFoundError(f"El archivo {absolute_path} no se encuentra.")
         
-        # Cargar el modelo con el contexto correcto
         model = joblib.load(absolute_path)
         
         # Verificar si el modelo está fitted
@@ -59,7 +60,7 @@ def load_model(model_path):
             else:
                 check_is_fitted(model)
         except Exception as fit_error:
-            st.warning(f"⚠ Advertencia: El modelo podría no estar entrenado correctamente: {fit_error}")
+            pass  # No mostrar warnings en función cacheada
         
         return model
     except Exception as e:

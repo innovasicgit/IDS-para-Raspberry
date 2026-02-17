@@ -1,7 +1,5 @@
-# Requirements completos para la app original en Streamlit Cloud
+# Requirements para IDS Raspberry Pi
 streamlit>=1.31.0
-streamlit-lottie>=0.0.5
-streamlit-option-menu>=0.3.0
 plotly>=5.18.0
 pandas>=2.0.0
 numpy>=1.24.0,<2.0.0
@@ -11,6 +9,5 @@ matplotlib>=3.7.0
 pyod>=1.1.0
 joblib>=1.3.0
 requests>=2.31.0
-python-dotenv>=1.0.0
 fpdf2>=2.7.0
 psutil>=5.9.0

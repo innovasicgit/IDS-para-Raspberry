@@ -361,5 +361,10 @@ def get_current_theme() -> Theme:
     return Theme(mode=mode)
 
 
+def get_theme_by_mode(mode: str) -> Theme:
+    """Obtiene un tema por modo (para funciones cacheadas que no acceden a session_state)."""
+    return Theme(mode=mode)
+
+
 # Instancia global (se usa en style.py para CSS base)
 theme = Theme(mode="dark")

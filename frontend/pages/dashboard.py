@@ -858,7 +858,7 @@ def show_dashboard_page():
                         pass
 
                 start_time = time.time()
-                cpu_usage = psutil.cpu_percent(1)
+                cpu_usage = psutil.cpu_percent(0)  # No bloquea (usa medición desde última llamada)
                 mem_usage = psutil.virtual_memory().percent
                 disco2 = psutil.disk_usage('/')
 
@@ -1147,5 +1147,5 @@ def show_dashboard_page():
         if st.session_state.auto_capture.get('next_run_ts') is not None:
             remaining = st.session_state.auto_capture['next_run_ts'] - time.time()
             if remaining > 0:
-                time.sleep(1)
+                time.sleep(3)  # Refrescar cada 3s (reduce carga de CPU en la Pi)
                 st.rerun()

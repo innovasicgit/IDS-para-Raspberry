@@ -25,10 +25,22 @@ def setup_page_and_style():
     st.markdown(css, unsafe_allow_html=True)
 
 
+@st.cache_data(show_spinner=False)
+def _generate_css_cached(theme_mode: str) -> str:
+    """Genera y cachea el CSS por modo de tema (solo se regenera al cambiar tema)."""
+    from config.theme import get_theme_by_mode
+    theme = get_theme_by_mode(theme_mode)
+    return _build_css(theme)
+
+
 def generate_custom_css(theme=None) -> str:
-    """Generar CSS personalizado usando el sistema de tema."""
-    if theme is None:
-        theme = get_current_theme()
+    """Generar CSS personalizado usando el sistema de tema (cacheado)."""
+    theme_mode = st.session_state.get("theme_mode", "dark")
+    return _generate_css_cached(theme_mode)
+
+
+def _build_css(theme) -> str:
+    """Construye el CSS completo a partir del tema."""
     colors = theme.colors
     typo = theme.typography
     spacing = theme.spacing
@@ -85,8 +97,8 @@ def generate_custom_css(theme=None) -> str:
     /* ═══════════════════════ CARDS GLASSMORPHISM ═══════════════════════ */
     .metric-card {{
         background: {colors.gradient_card};
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         padding: {spacing.lg};
         border-radius: {radius.xl};
         box-shadow: {theme.shadows.md};
@@ -119,8 +131,8 @@ def generate_custom_css(theme=None) -> str:
 
     .card {{
         background: {colors.gradient_card};
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         padding: {spacing.lg};
         border-radius: {radius.xl};
         box-shadow: {theme.shadows.sm};
@@ -139,7 +151,7 @@ def generate_custom_css(theme=None) -> str:
         transition: all {transitions.base} {transitions.ease} !important;
         font-weight: {typo.weight_medium} !important;
         font-family: {typo.font_family} !important;
-        backdrop-filter: blur(8px) !important;
+        backdrop-filter: blur(4px) !important;
         position: relative !important;
         overflow: hidden !important;
     }}
@@ -478,7 +490,7 @@ def generate_custom_css(theme=None) -> str:
         border: 1px solid {colors.border} !important;
         border-radius: {radius.md} !important;
         padding: {spacing.md} !important;
-        backdrop-filter: blur(8px) !important;
+        backdrop-filter: blur(4px) !important;
     }}
 
     /* ═══════════════════════ DATAFRAMES ═══════════════════════ */
@@ -592,7 +604,7 @@ def generate_custom_css(theme=None) -> str:
         border: 1px solid {colors.popover_btn_border} !important;
         color: {colors.popover_btn_text} !important;
         font-weight: 500 !important;
-        backdrop-filter: blur(8px) !important;
+        backdrop-filter: blur(4px) !important;
     }}
 
     section[data-testid="stSidebar"] .stButton > button:hover {{
