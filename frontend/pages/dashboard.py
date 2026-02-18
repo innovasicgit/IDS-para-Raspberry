@@ -16,6 +16,7 @@ import psutil
 import os
 import requests
 import select
+from autoencoder_classifier import AutoencoderClassifier
 
 from backend.constants import (
     IFOREST_MODEL_PATHS,

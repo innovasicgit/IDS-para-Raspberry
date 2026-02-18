@@ -7,6 +7,9 @@ import sklearn.metrics._dist_metrics as _dm
 # Importar del_columns para que joblib pueda deserializar los modelos
 from del_columns import del_columns
 
+# Importar AutoencoderClassifier para que joblib pueda deserializar autoencoder.pkl
+from autoencoder_classifier import AutoencoderClassifier
+
 # Imports de backend
 from backend.notifications_db import NotificationsDB
 from backend.notifications import NotificationManager
