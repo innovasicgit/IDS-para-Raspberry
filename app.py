@@ -9,6 +9,7 @@ from del_columns import del_columns
 
 # Imports de backend
 from backend.notifications_db import NotificationsDB
+from backend.notifications import NotificationManager
 from config.theme import get_current_theme
 
 # Imports de frontend
@@ -39,6 +40,8 @@ if "notifications_db" not in st.session_state:
     st.session_state.setdefault("gmail_user", email_config.get("gmail_user", ""))
     st.session_state.setdefault("gmail_app_password", email_config.get("gmail_app_password", ""))
     st.session_state.setdefault("enable_email_notifications", db.load_preferences())
+if 'notification_manager' not in st.session_state:
+    st.session_state.notification_manager = NotificationManager()
 if "arp_limit_mode" not in st.session_state:
     st.session_state.arp_limit_mode = "medium"
 
@@ -174,6 +177,19 @@ with st.sidebar:
                 "👤 Usuario Gmail (remitente)",
                 value=st.session_state.get("gmail_user", ""),
                 help="Cuenta Gmail que enviará los correos."
+            )
+            st.session_state.gmail_app_password = st.text_input(
+                "🔑 Contraseña de aplicación Gmail",
+                type="password",
+                value=st.session_state.get("gmail_app_password", ""),
+                help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)"
+            )
+            st.info(
+                "📌 **Instrucciones:**\n"
+                "1. Ve a https://myaccount.google.com/apppasswords\n"
+                "2. Asegúrate de tener verificación en 2 pasos activada\n"
+                "3. Selecciona 'Mail' y 'Windows Computer'\n"
+                "4. Copia la contraseña de 16 caracteres y pégala arriba"
             )
             
             col_save, col_clear = st.columns(2)

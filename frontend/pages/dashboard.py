@@ -272,6 +272,40 @@ def show_dashboard_page():
             st.markdown("## 📄 Resumen de la Predicción")
             resumen = st.session_state['resumen_prediccion']
             st.success(resumen['texto'])
+
+            # ── Indicador visual de nivel de alerta ──
+            alert_info = st.session_state.get('alert_info')
+            if alert_info:
+                anomaly_pct = alert_info['anomaly_percentage']
+                alert_lvl = alert_info['alert_level']
+                email_res = alert_info.get('email_result')
+
+                st.markdown("### 🚦 Nivel de Alerta")
+                col_alert_a, col_alert_b = st.columns([1, 2])
+                with col_alert_a:
+                    if alert_lvl == 'attack':
+                        st.metric("Anomalías", f"{anomaly_pct:.1f}%", delta="Crítico", delta_color="inverse")
+                    elif alert_lvl == 'suspicious':
+                        st.metric("Anomalías", f"{anomaly_pct:.1f}%", delta="Sospechoso", delta_color="off")
+                    else:
+                        st.metric("Anomalías", f"{anomaly_pct:.1f}%", delta="Normal", delta_color="normal")
+                with col_alert_b:
+                    if alert_lvl == 'attack':
+                        st.markdown('<div style="background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">🚨 NIVEL CRÍTICO - Posible ataque</div>', unsafe_allow_html=True)
+                    elif alert_lvl == 'suspicious':
+                        st.markdown('<div style="background: linear-gradient(90deg, #ff9800 0%, #ff6f00 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">⚠️ NIVEL MEDIO - Actividad sospechosa</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div style="background: linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">✅ NIVEL NORMAL</div>', unsafe_allow_html=True)
+
+                # Resultado de envío de email
+                if email_res is not None:
+                    ok, email_msg = email_res
+                    if ok:
+                        st.success(f"📧 Notificación por email enviada correctamente")
+                    else:
+                        st.warning(f"⚠️ Error enviando email: {email_msg}")
+
+                st.markdown("---")
             
             # Gráficas: Pie y Barras
             col_graf1, col_graf2 = st.columns(2, gap="medium")
@@ -825,30 +859,13 @@ def show_dashboard_page():
                 else:
                     anomaly_percentage = (n_anomalos / total * 100) if total > 0 else 0
 
-                # Actualizar estado de notificaciones
+                # Actualizar estado de notificaciones y guardar en session_state
                 nm = st.session_state.get('notification_manager')
+                alert_level = 'normal'
+                email_result = None  # (success, msg) o None si no se envió
                 if nm is not None:
                     nm.update_state(anomaly_percentage)
                     alert_level = nm.get_alert_level(anomaly_percentage)
-
-                    # Indicador visual del nivel de alerta
-                    st.markdown("### 🚦 Nivel de Alerta")
-                    col_alert_a, col_alert_b = st.columns([1, 2])
-                    with col_alert_a:
-                        if alert_level == 'attack':
-                            st.metric("Anomalías", f"{anomaly_percentage:.1f}%", delta="Crítico", delta_color="inverse")
-                        elif alert_level == 'suspicious':
-                            st.metric("Anomalías", f"{anomaly_percentage:.1f}%", delta="Sospechoso", delta_color="off")
-                        else:
-                            st.metric("Anomalías", f"{anomaly_percentage:.1f}%", delta="Normal", delta_color="normal")
-                    with col_alert_b:
-                        if alert_level == 'attack':
-                            st.markdown('<div style="background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">🚨 NIVEL CRÍTICO - Posible ataque</div>', unsafe_allow_html=True)
-                        elif alert_level == 'suspicious':
-                            st.markdown('<div style="background: linear-gradient(90deg, #ff9800 0%, #ff6f00 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">⚠️ NIVEL MEDIO - Actividad sospechosa</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown('<div style="background: linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">✅ NIVEL NORMAL</div>', unsafe_allow_html=True)
-                    st.markdown("---")
 
                     # Enviar email si está habilitado y es captura automática
                     if st.session_state.get('enable_email_notifications', False) and not is_manual:
@@ -862,12 +879,16 @@ def show_dashboard_page():
                                     is_manual=is_manual,
                                     model_name=model_option
                                 )
-                                if success:
-                                    st.toast("📧 Email enviado correctamente", icon='✉️')
-                                else:
-                                    st.warning(f"⚠️ Error enviando email: {msg}")
+                                email_result = (success, msg)
                             except Exception as e:
-                                st.warning(f"⚠️ Error al enviar email: {str(e)}")
+                                email_result = (False, str(e))
+
+                # Guardar estado de alerta para mostrar en col2 después del rerun
+                st.session_state['alert_info'] = {
+                    'anomaly_percentage': anomaly_percentage,
+                    'alert_level': alert_level,
+                    'email_result': email_result,
+                }
 
                 # Guardar estado completo para el panel derecho (col2)
                 tiempo_total = time.time() - start_time
