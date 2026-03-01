@@ -417,7 +417,7 @@ def show_home_page():
             border-radius: 15px;
             margin: 2rem 0;
             overflow: hidden;
-            background: url('{img4_url}') center center / cover no-repeat;
+            background: url('data:image/png;base64,{img4_b64}') center center / cover no-repeat;
         }}
         .home-cta::before {{
             content: '';
