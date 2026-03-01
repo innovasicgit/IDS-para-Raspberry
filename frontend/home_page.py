@@ -5,8 +5,6 @@ Página principal con información del sistema, características y guía de uso.
 
 import streamlit as st
 from config.theme import get_current_theme
-import base64
-from pathlib import Path
 
 
 def show_home_page():
@@ -15,19 +13,11 @@ def show_home_page():
     t = get_current_theme()
     c = t.colors
 
-    # helper: cargar imagen desde carpeta img/ en base64 (evita dependencia de
-    # Streamlit static serving que en ocasiones no está disponible)
-    def _b64(fname):
-        p = Path(__file__).parent.parent / "img" / fname
-        if not p.exists():
-            return None
-        with open(p, 'rb') as f:
-            return base64.b64encode(f.read()).decode()
+    # URLs de imágenes estáticas (servidas por Streamlit desde carpeta static/)
+    img2_url = "app/static/img2.jpg"
+    img4_url = "app/static/img4.png"
 
-    img2_b64 = _b64("img2.jpg")
-    img4_b64 = _b64("img4.png")
-
-    # Título principal con imagen de fondo (static serving)
+    # Título principal con imagen de fondo
     st.markdown(f"""
     <style>
         .home-hero {{
@@ -38,7 +28,7 @@ def show_home_page():
             text-align: center;
             margin: 20px 0;
             overflow: hidden;
-            background: url('data:image/jpeg;base64,{img2_b64}') center center / cover no-repeat;
+            background: url('{img2_url}') center center / cover no-repeat;
         }}
         .home-hero::before {{
             content: '';
@@ -417,7 +407,7 @@ def show_home_page():
             border-radius: 15px;
             margin: 2rem 0;
             overflow: hidden;
-            background: url('data:image/png;base64,{img4_b64}') center center / cover no-repeat;
+            background: url('{img4_url}') center center / cover no-repeat;
         }}
         .home-cta::before {{
             content: '';
