@@ -8,7 +8,8 @@ import sklearn.metrics._dist_metrics as _dm
 from del_columns import del_columns
 
 # Importar AutoencoderClassifier para que joblib pueda deserializar autoencoder.pkl
-from autoencoder_classifier import AutoencoderClassifier
+# el módulo está dentro del paquete `backend`, así que usamos la ruta completa
+from backend.autoencoder_classifier import AutoencoderClassifier
 
 # Imports de backend
 from backend.notifications_db import NotificationsDB
