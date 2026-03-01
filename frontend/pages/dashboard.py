@@ -16,11 +16,12 @@ import psutil
 import os
 import requests
 import select
-"""Este import original fallaba cuando se ejecuta fuera del contexto del paquete:
-`autoencoder_classifier` no es un módulo de nivel superior, sino un submódulo de
-`backend`. Al usar la ruta completa evitamos el `ModuleNotFoundError`.
+"""El fichero puente `autoencoder_classifier.py` en la raíz del proyecto
+expone la clase `AutoencoderClassifier` importándola desde
+`backend.autoencoderclassifier`. El import directo a ese módulo es más
+sencillo y evita problemas cuando el proyecto se instala como paquete.
 """
-from backend.autoencoder_classifier import AutoencoderClassifier
+from autoencoder_classifier import AutoencoderClassifier
 
 from backend.constants import (
     IFOREST_MODEL_PATHS,
