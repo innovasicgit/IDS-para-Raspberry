@@ -11,10 +11,21 @@ def _get_image_base64(image_path):
         return base64.b64encode(img_file.read()).decode()
 
 def _login_ui(_set_qp_fn=None):
-    logo_path = Path(__file__).resolve().parent.parent / "img" / "logo.gif"
-    gif_path = Path(__file__).resolve().parent.parent / "img" / "Fondo-Tecnologico.gif"
+    # preferimos usar GIF si existen, pero utilizamos PNG como fallback porque en
+    # el repositorio sólo hay imágenes en ese formato actualmente. El código
+    # anterior asumía obligatoriamente la presencia de `.gif` y por eso fallaba.
+    base_dir = Path(__file__).resolve().parent.parent / "img"
+    logo_path = base_dir / "logo.gif"
+    if not logo_path.exists():
+        # usar versión PNG si no hay GIF
+        logo_path = base_dir / "logo.png"
 
-    gif_base64 = _get_image_base64(gif_path)
+    gif_path = base_dir / "Fondo-Tecnologico.gif"
+    if not gif_path.exists():
+        # ningún gif disponible, simplemente no incluimos el fondo
+        gif_path = None
+
+    gif_base64 = _get_image_base64(gif_path) if gif_path is not None else None
 
     st.markdown(f"""
         <style>
@@ -68,7 +79,7 @@ def _login_ui(_set_qp_fn=None):
         st.markdown(f"""
             <div class="login-header">
                 <div class="logo-container">
-                    <img src="data:image/gif;base64,{_get_image_base64(logo_path)}" width="120">
+                    <img src="data:image/{logo_path.suffix.lstrip('.')}+base64,{_get_image_base64(logo_path)}" width="120">
                 </div>
                 <div class="login-header-content" style="text-align: center; margin-top: 3rem;">
                     <h1 style="color: white; font-size: 3rem; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">

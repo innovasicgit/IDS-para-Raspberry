@@ -84,11 +84,14 @@ def generar_reporte_pdf(resumen, labels, values, descripcion_amenazas, fig=None,
     if logo_path and os.path.exists(logo_path):
         resolved_logo = logo_path
     else:
-        # Intento de ruta relativa: ../img/logo.gif (desde frontend/)
+        # Intento de ruta relativa: ../img/logo.gif (desde frontend/). Si no
+        # existe gif, buscar png/otra extensión.
         base_dir = os.path.dirname(os.path.dirname(__file__))
-        candidate = os.path.join(base_dir, 'img', 'logo.gif')
-        if os.path.exists(candidate):
-            resolved_logo = candidate
+        for fname in ('logo.gif', 'logo.png', 'logo1.png', 'logo.png'):
+            candidate = os.path.join(base_dir, 'img', fname)
+            if os.path.exists(candidate):
+                resolved_logo = candidate
+                break
     if resolved_logo:
         try:
             pdf.image(resolved_logo, x=12, y=10, w=30)
