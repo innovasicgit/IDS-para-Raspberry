@@ -32,7 +32,9 @@ def show_compare_page():
     c = t.colors
 
     # helper base64
-    img_dir = Path(__file__).parent.parent / "img"
+    # subir un nivel extra para llegar al directorio de la raíz donde está
+    # la carpeta `img` (frontend/pages -> frontend -> raíz)
+    img_dir = Path(__file__).parent.parent.parent / "img"
     def _b64(fname):
         p = img_dir / fname
         if not p.exists():

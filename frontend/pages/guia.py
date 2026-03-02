@@ -16,7 +16,8 @@ def show_guia_page():
     c = t.colors
     
     # helper base64
-    img_dir = Path(__file__).parent.parent / "img"
+    # el directorio "img" vive en la raíz del repo, no dentro de frontend/pages.
+    img_dir = Path(__file__).parent.parent.parent / "img"
     def _b64(fname):
         p = img_dir / fname
         if not p.exists():

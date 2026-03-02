@@ -16,7 +16,10 @@ def show_home_page():
     c = t.colors
 
     # Rutas a imágenes + helpers para base64
-    img_dir = Path(__file__).parent.parent / "img"
+    # el directorio `img` está situado en la raíz del proyecto, dos niveles
+    # arriba de este archivo (frontend/pages no forma parte de la ruta).
+    # Por eso subimos tres veces: pages -> frontend -> raíz.
+    img_dir = Path(__file__).parent.parent.parent / "img"
     def _b64(fname):
         p = img_dir / fname
         if not p.exists():
