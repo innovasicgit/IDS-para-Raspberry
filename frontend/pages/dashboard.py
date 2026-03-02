@@ -960,15 +960,21 @@ def show_dashboard_page():
                             packet_list = packet_str.split('\t')
                             protocol = packet_list[1] if len(packet_list) > 1 else ''
 
-                            # Usar el filtro ARP en tiempo real
+                            # Usar el filtro ARP en tiempo real. Esta función espera
+                            # recepcionar los conteos actuales; para que el ratio
+                            # refleje los paquetes *vistos* (no sólo los aceptados)
+                            # incrementamos packets_count siempre, y sólo sumamos
+                            # arp_count cuando el paquete ARP se almacena.
                             accept_packet = apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_mode)
+
+                            # contadores globales de paquetes vistos
+                            packets_count += 1
 
                             if accept_packet:
                                 type_packet_data = type_packet(packet_list)
                                 captured_data = packet_df(type_packet_data, captured_data)
                                 if protocol == 'ARP':
                                     arp_count += 1
-                                packets_count += 1
 
                         elapsed = time.time() - start_ts
                         frac = min(1.0, elapsed / duration_sec)
@@ -1000,6 +1006,9 @@ def show_dashboard_page():
                         if captured_data is not None and list(captured_data.columns) != ['value']:
                             if arp_mode != 'none':
                                 st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
+                            # aplicar filtro fila a fila adicional si es necesario
+                            if arp_mode != 'none':
+                                captured_data = filter_arp_dataframe(captured_data, arp_mode)
                             st.session_state.data = captured_data
                             # run_prediction_on_data hace st.rerun() al final
                             run_prediction_on_data(captured_data, is_manual=False)
@@ -1095,6 +1104,9 @@ def show_dashboard_page():
                 # Guardar datos capturados y refrescar para mostrar en col2
                 if captured_data is not None and len(captured_data) > 0:
                     if not (list(captured_data.columns) == ['value'] and len(captured_data) == 0):
+                        # aplicar filtro ARP post-captura si corresponde
+                        if st.session_state.get('arp_limit_mode', 'low') != 'none':
+                            captured_data = filter_arp_dataframe(captured_data, st.session_state['arp_limit_mode'])
                         st.session_state.data = captured_data
                         st.session_state['captura_manual_lista'] = True
                         st.rerun()
@@ -1128,7 +1140,9 @@ def show_dashboard_page():
                             st.dataframe(data.head(), use_container_width=True)
                             st.info(f"📏 Dimensiones del dataset: {data.shape[0]} filas, {data.shape[1]} columnas")
                         
-                        # Guardar en session_state
+                        # Guardar en session_state (filtrar ARP si está activo)
+                        if st.session_state.get('arp_limit_mode', 'low') != 'none':
+                            data = filter_arp_dataframe(data, st.session_state['arp_limit_mode'])
                         st.session_state.data = data
                 except pd.errors.EmptyDataError:
                     st.error("❌ El archivo CSV está vacío o no tiene columnas válidas.")

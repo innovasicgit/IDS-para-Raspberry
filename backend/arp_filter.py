@@ -30,11 +30,12 @@ def apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_limit_mode
     bool
         True si el paquete debe aceptarse, False si debe descartarse
     """
+    # proporción máxima de ARP permitida (sobre paquetes aceptados)
     arp_ratios = {
-        'low': 0.15,
-        'medium': 0.30,
-        'high': 0.50,
-        'none': 1.0
+        'low': 0.15,     # ~15% de ARP, mínimo posible
+        'medium': 0.30,  # ~30% de ARP
+        'high': 0.50,    # ~50% de ARP
+        'none': 1.0      # sin filtro, todos los ARP pasan
     }
     
     arp_ratio = arp_ratios.get(arp_limit_mode, 0.15)
@@ -48,6 +49,10 @@ def apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_limit_mode
         return True
     
     # Para paquetes ARP: aceptar según el ratio
+    # calcular ratio usando paquetes procesados (aceptados) hasta el momento.
+    # la llamada que invoca esta función debe incrementarlos de forma
+    # consistente (ver dashboard.py). El filtro descarta ARP adicionales
+    # cuando la proporción excede el límite configurado.
     current_ratio = arp_count / max(packets_count, 1)
     return current_ratio <= arp_ratio
 
@@ -76,6 +81,9 @@ def filter_arp_dataframe(df, arp_limit_mode='low'):
         return df
     
     # Determinar porcentaje de ARP a mantener
+    # para el filtrado posterior a la captura usamos los mismos valores
+    # aproximados; note que la función actual no se utiliza en todo el
+    # flujo, pero se conserva para procesar CSVs o capturas manuales.
     retention_rates = {
         'low': 0.15,
         'medium': 0.30,
