@@ -70,7 +70,7 @@ def show_home_page():
     col_feat1, col_feat2, col_feat3 = st.columns(3, gap="medium")
     with col_feat1:
         st.markdown(f"""
-        <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; height: 200px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
+        <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
             <h1 style="margin: 0; font-size: 3em;">⚡</h1>
             <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>Tiempo Real</strong></p>
             <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">Captura y análisis instantáneo</p>
@@ -78,7 +78,7 @@ def show_home_page():
         """, unsafe_allow_html=True)
     with col_feat2:
         st.markdown(f"""
-        <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; height: 200px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
+        <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
             <h1 style="margin: 0; font-size: 3em;">🤖</h1>
             <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>IA Avanzada</strong></p>
             <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">4 modelos de Machine Learning</p>
@@ -86,7 +86,7 @@ def show_home_page():
         """, unsafe_allow_html=True)
     with col_feat3:
         st.markdown(f"""
-        <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; height: 200px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
+        <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
             <h1 style="margin: 0; font-size: 3em;">📊</h1>
             <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>Visualización</strong></p>
             <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">Gráficas interactivas y reportes</p>
@@ -126,7 +126,7 @@ def show_home_page():
     with col1:
         st.markdown(f"""
         <div style="background: {c.success_light}; padding: 1.5rem; 
-                    border-radius: 15px; text-align: center; height: 280px; 
+                    border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid rgba(16, 185, 129, 0.25);">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔍</div>
             <h3 style="color: {c.success}; margin-bottom: 1rem;">Detección en Tiempo Real</h3>
@@ -139,7 +139,7 @@ def show_home_page():
     with col2:
         st.markdown(f"""
         <div style="background: {c.surface_variant}; padding: 1.5rem; 
-                    border-radius: 15px; text-align: center; height: 280px; 
+                    border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid {c.border_active};">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧠</div>
             <h3 style="color: {c.heading_secondary}; margin-bottom: 1rem;">IA Avanzada</h3>
@@ -152,7 +152,7 @@ def show_home_page():
     with col3:
         st.markdown(f"""
         <div style="background: {c.warning_light}; padding: 1.5rem; 
-                    border-radius: 15px; text-align: center; height: 280px; 
+                    border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid rgba(245, 158, 11, 0.25);">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">📊</div>
             <h3 style="color: {c.warning}; margin-bottom: 1rem;">Análisis Predictivo</h3>
@@ -165,7 +165,7 @@ def show_home_page():
     with col4:
         st.markdown(f"""
         <div style="background: {c.error_light}; padding: 1.5rem; 
-                    border-radius: 15px; text-align: center; height: 280px; 
+                    border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid rgba(239, 68, 68, 0.25);">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">🚫</div>
             <h3 style="color: {c.error}; margin-bottom: 1rem;">Protección Activa</h3>
@@ -309,7 +309,7 @@ def show_home_page():
         with cols[idx]:
             st.markdown(f"""
             <div style="background: {c.surface_variant}; padding: 1rem; 
-                        border-radius: 12px; text-align: center; height: 200px;
+                        border-radius: 12px; text-align: center; min-height: 150px;
                         border: 1px solid {c.border_active};">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{icon}</div>
                 <h3 style="font-size: 0.95rem; margin: 0.5rem 0;">{title}</h3>
