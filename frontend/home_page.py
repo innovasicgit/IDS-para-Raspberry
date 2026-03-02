@@ -19,17 +19,14 @@ def show_home_page():
     img2_path = str(img_dir / "img2.jpg")
     img4_path = str(img_dir / "img4.png")
 
-    # Título principal con imagen de fondo usando st.image
+    # Hero rectangle similar al diseño de ejemplo: fondo gris oscuro, bordes
+    # redondeados y texto centrado. Notar que se abandona el uso de imágenes
+    # de fondo para simplificar y garantizar la consistencia en temas claros.
     st.markdown("<br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        # use_container_width evita warning deprecado y rellena la columna
-        st.image(img2_path, use_container_width=True)
-    
     st.markdown(f"""
-    <div style="text-align: center; margin: 2rem 0;">
-        <h1 style="color: {c.hero_title}; font-size: 3rem; margin: 0;">🛡️ Sistema de Detección de Intrusos</h1>
-        <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-top: 1rem;">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
+    <div style="background: #777; padding: 50px 30px; border-radius: 15px; color: white; text-align: center; margin: 20px 0;">
+        <h1 style="margin: 0; font-size: 3rem;">🛡️ Sistema de Detección de Intrusos</h1>
+        <p style="margin: 15px 0 0 0; font-size: 1.2rem;">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
     </div>
     """, unsafe_allow_html=True)
     
