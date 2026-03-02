@@ -16,6 +16,8 @@ from autoencoder_classifier import AutoencoderClassifier
 # Imports de backend
 from backend.notifications_db import NotificationsDB
 from backend.notifications import NotificationManager
+# utilidades para filtrado ARP (sidebar)
+from backend.arp_filter import get_arp_filter_description
 from config.theme import get_current_theme
 
 # Imports de frontend
