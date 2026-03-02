@@ -23,7 +23,8 @@ def show_home_page():
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image(img2_path, use_column_width=True)
+        # use_container_width evita warning deprecado y rellena la columna
+        st.image(img2_path, use_container_width=True)
     
     st.markdown(f"""
     <div style="text-align: center; margin: 2rem 0;">
@@ -290,7 +291,7 @@ def show_home_page():
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image(img4_path, use_column_width=True)
+        st.image(img4_path, use_container_width=True)
     
     st.markdown(f"""
     <div style="text-align: center; margin: 2rem 0; padding: 2rem; border-radius: 15px; background: {c.surface_overlay};">
@@ -314,7 +315,7 @@ def show_home_page():
         <p style="margin: 0.5rem 0; font-size: 0.9rem;">
             Desarrollado por <strong>Innovasic UCC</strong> | Potenciado por IA Avanzada
         </p>
-        <p style="margin: 0.5rem 0; font-size: 0.85rem; color: {c.text_tertiary};">
+        <p style="margin: 0.5rem 0; font-size: 0.85rem; color: {c.text_disabled};">
             © 2026 - Todos los derechos reservados
         </p>
     </div>
