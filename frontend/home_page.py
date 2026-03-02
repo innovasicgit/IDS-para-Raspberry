@@ -6,6 +6,7 @@ Página principal con información del sistema, características y guía de uso.
 import streamlit as st
 from config.theme import get_current_theme
 from pathlib import Path
+import base64
 
 
 def show_home_page():
@@ -14,15 +15,22 @@ def show_home_page():
     t = get_current_theme()
     c = t.colors
 
-    # Rutas a imágenes
+    # Rutas a imágenes + helpers para base64
     img_dir = Path(__file__).parent.parent / "img"
-    img2_path = str(img_dir / "img2.jpg")
-    img4_path = str(img_dir / "img4.png")
+    def _b64(fname):
+        p = img_dir / fname
+        if not p.exists():
+            return None
+        ext = p.suffix.lstrip('.')
+        data = base64.b64encode(p.read_bytes()).decode()
+        return f"data:image/{ext};base64,{data}"
 
-    # Hero banner: rectángulo con imagen de fondo y overlay de color
-    # utilizamos un <div> con CSS en lugar de st.image para que el texto
-    # quede sobre la imagen y el contenedor conserve el mismo aspecto que
-    # el ejemplo que enviaste.
+    # background images (hero y CTA). Usa la mano/escudo para hero, otra para CTA
+    hero_b64 = _b64("img4.png") or ""
+    cta_b64 = _b64("img1.jpg") or ""
+
+    # Hero banner: rectángulo con imagen de fondo embebida en base64
+    # Utiliza la imagen seleccionada para cubrirlo y un overlay semitransparente
     st.markdown(f"""
     <style>
         .home-hero {{
@@ -33,7 +41,7 @@ def show_home_page():
             text-align: center;
             margin: 20px 0;
             overflow: hidden;
-            background: url('{img2_path}') center center / cover no-repeat;
+            background: url('{hero_b64}') center center / cover no-repeat;
         }}
         .home-hero::before {{
             content: '';
@@ -309,21 +317,42 @@ def show_home_page():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Sección CTA con imagen
+    # Sección CTA con fondo de otra imagen
     st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image(img4_path, use_container_width=True)
-    
     st.markdown(f"""
-    <div style="text-align: center; margin: 2rem 0; padding: 2rem; border-radius: 15px; background: {c.surface_overlay};">
-        <h2 style="color: {c.hero_title}; margin-bottom: 1rem; font-size: 2rem;">
-            ¿Listo para comenzar?
-        </h2>
-        <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-bottom: 1.5rem;">
-            Accede al <strong>Panel de Control</strong> y empezar a proteger tu red IoT
-        </p>
-        <div style="font-size: 3rem;">🚀</div>
+    <style>
+        .cta-banner {{
+            position: relative;
+            padding: 60px 30px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            margin: 20px 0;
+            overflow: hidden;
+            background: url('{cta_b64}') center center / cover no-repeat;
+        }}
+        .cta-banner::before {{
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: {c.surface_overlay};
+            z-index: 1;
+        }}
+        .cta-content {{
+            position: relative;
+            z-index: 2;
+        }}
+    </style>
+    <div class="cta-banner">
+        <div class="cta-content">
+            <h2 style="color: {c.hero_title}; margin-bottom: 1rem; font-size: 2rem;">
+                ¿Listo para comenzar?
+            </h2>
+            <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-bottom: 1.5rem;">
+                Accede al <strong>Panel de Control</strong> y empezar a proteger tu red IoT
+            </p>
+            <div style="font-size: 3rem;">🚀</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
