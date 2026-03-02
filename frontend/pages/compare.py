@@ -5,6 +5,8 @@ Permite ejecutar múltiples modelos sobre el mismo dataset y comparar resultados
 
 import streamlit as st
 from config.theme import get_current_theme
+from pathlib import Path
+import base64
 import pandas as pd
 import numpy as np
 import time
@@ -29,8 +31,17 @@ def show_compare_page():
     t = get_current_theme()
     c = t.colors
 
-    # URL de imagen estática (servida por Streamlit static serving)
-    img5_url = "app/static/img5.jpg"
+    # helper base64
+    img_dir = Path(__file__).parent.parent / "img"
+    def _b64(fname):
+        p = img_dir / fname
+        if not p.exists():
+            return None
+        ext = p.suffix.lstrip('.')
+        data = base64.b64encode(p.read_bytes()).decode()
+        return f"data:image/{ext};base64,{data}"
+
+    img5_b64 = _b64("img5.jpg") or ""
 
     # ==================== HEADER ====================
     st.markdown(f"""
@@ -43,7 +54,7 @@ def show_compare_page():
             text-align: center;
             margin-bottom: 1.5rem;
             overflow: hidden;
-            background: url('{img5_url}') center center / cover no-repeat;
+            background: url('{img5_b64}') center center / cover no-repeat;
         }}
         .compare-hero::before {{
             content: '';

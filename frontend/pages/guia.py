@@ -5,6 +5,8 @@ Explicación detallada y accesible de todos los conceptos, modelos y funcionalid
 
 import streamlit as st
 from config.theme import get_current_theme
+from pathlib import Path
+import base64
 
 
 def show_guia_page():
@@ -13,15 +15,25 @@ def show_guia_page():
     t = get_current_theme()
     c = t.colors
     
-    # URL de imagen estática (servida por Streamlit static serving)
-    img3_url = "app/static/img3.png"
+    # helper base64
+    img_dir = Path(__file__).parent.parent / "img"
+    def _b64(fname):
+        p = img_dir / fname
+        if not p.exists():
+            return None
+        ext = p.suffix.lstrip('.')
+        data = base64.b64encode(p.read_bytes()).decode()
+        return f"data:image/{ext};base64,{data}"
+
+    # Background image encoded
+    img3_b64 = _b64("img3.png") or ""
     
     # Hero Section con imagen de fondo
     st.markdown(f"""
     <style>
         .guia-header {{
             position: relative;
-            background: url('{img3_url}') center center / cover no-repeat;
+            background: url('{img3_b64}') center center / cover no-repeat;
             padding: 3rem 2rem;
             border-radius: 20px;
             margin-bottom: 2.5rem;
