@@ -5,6 +5,7 @@ Página principal con información del sistema, características y guía de uso.
 
 import streamlit as st
 from config.theme import get_current_theme
+from pathlib import Path
 
 
 def show_home_page():
@@ -13,41 +14,21 @@ def show_home_page():
     t = get_current_theme()
     c = t.colors
 
-    # URLs de imágenes desde carpeta img/
-    img2_url = "img/img2.jpg"
-    img4_url = "img/img4.png"
+    # Rutas a imágenes
+    img_dir = Path(__file__).parent.parent / "img"
+    img2_path = str(img_dir / "img2.jpg")
+    img4_path = str(img_dir / "img4.png")
 
-    # Título principal con imagen de fondo
+    # Título principal con imagen de fondo usando st.image
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image(img2_path, use_column_width=True)
+    
     st.markdown(f"""
-    <style>
-        .home-hero {{
-            position: relative;
-            padding: 50px 30px;
-            border-radius: 15px;
-            color: white;
-            text-align: center;
-            margin: 20px 0;
-            overflow: hidden;
-            background: url('{img2_url}') center center / cover no-repeat;
-        }}
-        .home-hero::before {{
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: {c.hero_overlay};
-            border-radius: 15px;
-            z-index: 1;
-        }}
-        .home-hero-content {{
-            position: relative;
-            z-index: 2;
-        }}
-    </style>
-    <div class="home-hero">
-        <div class="home-hero-content">
-            <h1 style="margin: 0; color: {c.hero_title}; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">🛡️ Sistema de Detección de Intrusos</h1>
-            <p style="margin: 15px 0 0 0; font-size: 1.2em; color: {c.hero_subtitle}; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
-        </div>
+    <div style="text-align: center; margin: 2rem 0;">
+        <h1 style="color: {c.hero_title}; font-size: 3rem; margin: 0;">🛡️ Sistema de Detección de Intrusos</h1>
+        <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-top: 1rem;">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -208,7 +189,7 @@ def show_home_page():
         st.markdown(f"""
         <div style="background: {c.warning_light}; padding: 1.5rem; border-radius: 12px; 
                     border-left: 4px solid {c.warning};">
-            <h3 style="color: {c.warning}; margin-bottom: 1rem;">�� Métricas de Rendimiento</h3>
+            <h3 style="color: {c.warning}; margin-bottom: 1rem;">⚙️ Métricas de Rendimiento</h3>
             <ul style="line-height: 2;">
                 <li><strong>CPU:</strong> % Consumo por segundo</li>
                 <li><strong>Memoria:</strong> % Uso de RAM</li>
@@ -243,7 +224,7 @@ def show_home_page():
         st.markdown(f"""
         <div style="background: {c.success_light}; padding: 1.5rem; border-radius: 12px; 
                     margin-bottom: 1rem; border: 2px solid {c.success};">
-            <h3 style="color: {c.success};">🟢 IForest (Isolation Forest)</h3>
+            <h3 style="color: {c.success};">�� IForest (Isolation Forest)</h3>
             <p style="line-height: 1.8; margin-top: 1rem;">
                 Algoritmo basado en árboles de decisión que aísla anomalías de forma eficiente. 
                 Excelente para detectar outliers en grandes volúmenes de datos.
@@ -298,148 +279,43 @@ def show_home_page():
                         border-radius: 12px; text-align: center; height: 200px;
                         border: 1px solid {c.border_active};">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{icon}</div>
-                <h4 style="color: {c.heading_primary}; font-size: 0.9rem; margin-bottom: 0.5rem;">{title}</h4>
-                <p style="font-size: 0.85rem; line-height: 1.4;">{desc}</p>
+                <h3 style="font-size: 0.95rem; margin: 0.5rem 0;">{title}</h3>
+                <p style="font-size: 0.8rem; margin: 0; color: {c.text_secondary};">{desc}</p>
             </div>
             """, unsafe_allow_html=True)
 
-    # Tipos de Resultados y Recomendaciones
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Sección CTA con imagen
     st.markdown("---")
-    st.markdown(f"""
-    <h2 style="text-align: center; color: {c.heading_primary}; margin: 3rem 0 2rem 0;">
-        📊 Tipos de Resultados y Recomendaciones
-    </h2>
-    """, unsafe_allow_html=True)
-
-    # Resultados Normales
-    st.markdown(f"""
-    <div style="background: {c.success_light}; padding: 2rem; border-radius: 12px; 
-                margin-bottom: 1.5rem; border-left: 5px solid {c.success};">
-        <h3 style="color: {c.success}; margin-bottom: 1rem;">
-            ✅ Resultados Normales
-        </h3>
-        <p style="font-size: 1.1rem; line-height: 1.8;">
-            Los datos han sido clasificados como normales. No se han detectado anomalías 
-            significativas en el tráfico de red analizado.
-        </p>
-        <div style="background: {c.success_light}; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-            <strong style="color: {c.success};">💡 Recomendación:</strong><br>
-            Continúa monitoreando la red regularmente para mantener la seguridad.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Resultados Anómalos
-    st.markdown(f"""
-    <div style="background: {c.warning_light}; padding: 2rem; border-radius: 12px; 
-                margin-bottom: 1.5rem; border-left: 5px solid {c.warning};">
-        <h3 style="color: {c.warning}; margin-bottom: 1rem;">
-            ⚠️ Resultados Anómalos
-        </h3>
-        <p style="font-size: 1.1rem; line-height: 1.8;">
-            Se han detectado patrones anómalos en la red. Esto puede indicar posibles amenazas 
-            o comportamientos inusuales que requieren atención.
-        </p>
-        <div style="background: {c.warning_light}; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-            <strong style="color: {c.warning};">🔍 Recomendación:</strong><br>
-            Investiga las anomalías detectadas y toma medidas preventivas inmediatas.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Ataques Específicos
-    st.markdown(f"""
-    <div style="background: {c.error_light}; padding: 2rem; border-radius: 12px; 
-                margin-bottom: 1.5rem; border-left: 5px solid {c.error};">
-        <h3 style="color: {c.error}; margin-bottom: 1.5rem;">
-            🚨 Ataques Específicos
-        </h3>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown(f"""
-        <div style="background: {c.error_light}; padding: 1.5rem; border-radius: 10px;">
-            <h4 style="color: {c.error}; margin-bottom: 1rem;">🔴 DDoS_TCP:</h4>
-            <ul style="line-height: 2;">
-                <li>Activa SYN cookies</li>
-                <li>Configura límites de tasa</li>
-                <li>Usa ACL para bloquear IPs</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown(f"""
-        <div style="background: {c.warning_light}; padding: 1.5rem; border-radius: 10px;">
-            <h4 style="color: {c.warning}; margin-bottom: 1rem;">🟠 DDoS_UDP:</h4>
-            <ul style="line-height: 2;">
-                <li>Permite solo puertos necesarios</li>
-                <li>Aplica límites de tasa UDP</li>
-                <li>Usa null routing</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col3:
-        st.markdown(f"""
-        <div style="background: rgba(19, 131, 167, 0.12); padding: 1.5rem; border-radius: 10px;">
-            <h4 style="color: {c.heading_secondary}; margin-bottom: 1rem;">🔵 Reconnaissance:</h4>
-            <ul style="line-height: 2;">
-                <li>Restringe respuestas ICMP</li>
-                <li>Expón solo puertos necesarios</li>
-                <li>Configura límites anti-scan</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # Call to Action Final con botón integrado
-    st.markdown("---")
+        st.image(img4_path, use_column_width=True)
+    
     st.markdown(f"""
-    <style>
-        .home-cta {{
-            position: relative;
-            text-align: center;
-            padding: 3rem 2rem 1rem 2rem;
-            border-radius: 15px;
-            margin: 2rem 0;
-            overflow: hidden;
-            background: url('{img4_url}') center center / cover no-repeat;
-        }}
-        .home-cta::before {{
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: {c.hero_overlay};
-            border-radius: 15px;
-            z-index: 1;
-        }}
-        .home-cta-content {{
-            position: relative;
-            z-index: 2;
-        }}
-    </style>
-    <div class="home-cta">
-        <div class="home-cta-content">
-            <h2 style="color: {c.hero_title}; margin-bottom: 1rem; font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                ¿Listo para comenzar?
-            </h2>
-            <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-bottom: 1.5rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
-                 Accede al <strong>Panel de Control</strong> y empezar a proteger tu red IoT
-            </p>
-            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🚀</div>
-        </div>
+    <div style="text-align: center; margin: 2rem 0; padding: 2rem; border-radius: 15px; background: {c.surface_overlay};">
+        <h2 style="color: {c.hero_title}; margin-bottom: 1rem; font-size: 2rem;">
+            ¿Listo para comenzar?
+        </h2>
+        <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-bottom: 1.5rem;">
+            Accede al <strong>Panel de Control</strong> y empezar a proteger tu red IoT
+        </p>
+        <div style="font-size: 3rem;">🚀</div>
     </div>
     """, unsafe_allow_html=True)
 
     # Footer
     st.markdown("---")
     st.markdown(f"""
-    <div style="text-align: center; padding: 2rem 0; color: {c.text_disabled};">
-        <p style="margin: 0;">🛡️ Sistema de Detección de Anomalías IoT</p>
-        <p style="margin: 0.5rem 0 0 0;">© 2026 Innovasic | UCC</p>
+    <div style="text-align: center; padding: 2rem; color: {c.text_secondary};">
+        <p style="margin: 0.5rem 0;">
+            <strong>Sistema de Detección de Intrusiones para IoT</strong> v1.0
+        </p>
+        <p style="margin: 0.5rem 0; font-size: 0.9rem;">
+            Desarrollado por <strong>Innovasic UCC</strong> | Potenciado por IA Avanzada
+        </p>
+        <p style="margin: 0.5rem 0; font-size: 0.85rem; color: {c.text_tertiary};">
+            © 2026 - Todos los derechos reservados
+        </p>
     </div>
     """, unsafe_allow_html=True)
