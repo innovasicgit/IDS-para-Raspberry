@@ -19,14 +19,39 @@ def show_home_page():
     img2_path = str(img_dir / "img2.jpg")
     img4_path = str(img_dir / "img4.png")
 
-    # Hero rectangle similar al diseño de ejemplo: fondo gris oscuro, bordes
-    # redondeados y texto centrado. Notar que se abandona el uso de imágenes
-    # de fondo para simplificar y garantizar la consistencia en temas claros.
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Hero banner: rectángulo con imagen de fondo y overlay de color
+    # utilizamos un <div> con CSS en lugar de st.image para que el texto
+    # quede sobre la imagen y el contenedor conserve el mismo aspecto que
+    # el ejemplo que enviaste.
     st.markdown(f"""
-    <div style="background: #777; padding: 50px 30px; border-radius: 15px; color: white; text-align: center; margin: 20px 0;">
-        <h1 style="margin: 0; font-size: 3rem;">🛡️ Sistema de Detección de Intrusos</h1>
-        <p style="margin: 15px 0 0 0; font-size: 1.2rem;">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
+    <style>
+        .home-hero {{
+            position: relative;
+            padding: 60px 30px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            margin: 20px 0;
+            overflow: hidden;
+            background: url('{img2_path}') center center / cover no-repeat;
+        }}
+        .home-hero::before {{
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: {c.hero_overlay};
+            z-index: 1;
+        }}
+        .home-hero-content {{
+            position: relative;
+            z-index: 2;
+        }}
+    </style>
+    <div class="home-hero">
+        <div class="home-hero-content">
+            <h1 style="margin: 0; color: {c.hero_title}; font-size: 3rem;">🛡️ Sistema de Detección de Intrusos</h1>
+            <p style="margin-top: 0.5rem; color: {c.hero_subtitle}; font-size: 1.2rem;">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
