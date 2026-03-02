@@ -13,9 +13,9 @@ def show_home_page():
     t = get_current_theme()
     c = t.colors
 
-    # URLs de imágenes estáticas (servidas por Streamlit desde carpeta static/)
-    img2_url = "app/static/img2.jpg"
-    img4_url = "app/static/img4.png"
+    # URLs de imágenes desde carpeta img/
+    img2_url = "img/img2.jpg"
+    img4_url = "img/img4.png"
 
     # Título principal con imagen de fondo
     st.markdown(f"""
