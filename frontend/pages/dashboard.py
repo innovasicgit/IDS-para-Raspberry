@@ -38,7 +38,7 @@ from backend.capture_utils import (
     packet_df,
 )
 from backend.predict import predecir, mostrar_metricas
-from backend.arp_filter import apply_realtime_arp_filter, get_arp_filter_description
+from backend.arp_filter import apply_realtime_arp_filter, get_arp_filter_description, filter_arp_dataframe
 from backend.notifications import NotificationManager
 from frontend.pdf_report import generar_reporte_pdf, DESCRIPCIONES_AMENAZAS
 from frontend.analysis_explanations import (
