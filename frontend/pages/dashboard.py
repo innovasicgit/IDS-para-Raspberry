@@ -756,6 +756,16 @@ def show_dashboard_page():
                     st.session_state.auto_capture['stop_requested'] = True
                     st.session_state.auto_capture['active'] = False
                     st.session_state.auto_capture['next_run_ts'] = None
+                    # --- Limpieza de estado para restaurar el panel inicial ---
+                    st.session_state.auto_capture['is_capturing'] = False
+                    # Limpiar flags y datos de predicción/captura
+                    for key in [
+                        'prediccion_realizada', 'resumen_prediccion', 'data_prediccion', 'data',
+                        'captura_manual_lista', 'alert_info', 'y_pred', 'scores', 'pp3', 'metricas_rendimiento', 'model_option_used', 'metric_option_used'
+                    ]:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    st.rerun()
 
             # Countdown/estado próximo ciclo
             if st.session_state.auto_capture['active'] and not st.session_state.auto_capture['is_capturing']:
