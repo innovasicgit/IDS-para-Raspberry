@@ -24,4 +24,4 @@ RUN groupadd -r wireshark && usermod -a -G wireshark root && chmod +x /usr/bin/d
 EXPOSE 8501
 
 # Comando para iniciar la app
-CMD ["streamlit", "run", "app2IPV2.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
