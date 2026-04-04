@@ -16,8 +16,6 @@ from autoencoder_classifier import AutoencoderClassifier
 # Imports de backend
 from backend.notifications_db import NotificationsDB
 from backend.notifications import NotificationManager
-# utilidades para filtrado ARP (sidebar)
-from backend.arp_filter import get_arp_filter_description
 from config.theme import get_current_theme
 
 # Imports de frontend
@@ -51,9 +49,7 @@ if "notifications_db" not in st.session_state:
 if 'notification_manager' not in st.session_state:
     st.session_state.notification_manager = NotificationManager()
 if "arp_limit_mode" not in st.session_state:
-    # por defecto, usar modo bajo para minimizar paquetes ARP; los modelos
-    # suelen confundir ARP con anomalías si hay demasiados.
-    st.session_state.arp_limit_mode = "low"
+    st.session_state.arp_limit_mode = "medium"
 
 # ==================== AUTENTICACIÓN Y NAVEGACIÓN ====================
 # Requerir autenticación para todas las páginas
@@ -230,15 +226,13 @@ with st.sidebar:
 
         st.markdown("---")
         st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>🛡️ Filtro ARP</p>", unsafe_allow_html=True)
-        # selector de modo ARP con descripción contextual
-        modes = ["low", "medium", "high", "none"]
-        default_mode = st.session_state.get("arp_limit_mode", "low")
         st.session_state.arp_limit_mode = st.selectbox(
             "Modo de límite ARP",
-            options=modes,
-            index=modes.index(default_mode),
-            format_func=lambda m: get_arp_filter_description(m),
-            help="Reduce la cantidad de paquetes ARP incluidos en la captura."
+            options=["low", "medium", "high", "none"],
+            index=["low", "medium", "high", "none"].index(
+                st.session_state.get("arp_limit_mode", "medium")
+            ),
+            help="Controla cuántos paquetes ARP se permiten antes de alertar."
         )
 
     # Toggle de tema claro/oscuro
