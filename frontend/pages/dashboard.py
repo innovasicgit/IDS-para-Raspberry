@@ -688,20 +688,40 @@ def show_dashboard_page():
         
         # Mostrar mensaje de bienvenida si no hay captura ni predicción
         else:
-            st.markdown("### 🚀 Comenzar")
-            st.info("""
-            **Pasos para usar el sistema:**
+                st.markdown("### 🚀 Comenzar")
+                st.info("""
+                **Pasos para usar el sistema:**
             
-            1. 📌 Selecciona un **modelo de detección** (IForest, OCSVM, KMEANS, AUTOENCODER)
-            2. 📊 Elige el tipo de **métrica** (Externas o Internas)
-            3. 🎯 Escoge tu método de captura:
-               - **🚀 Automática**: Capturas programadas en intervalos
-               - **🖐️ Manual**: Captura única bajo demanda
-               - **📂 CSV**: Carga un archivo de datos
-            4. 🔍 Presiona **"Realizar Predicción"** para analizar
+                1. 📌 Selecciona un **modelo de detección** (IForest, OCSVM, KMEANS, AUTOENCODER)
+                2. 📊 Elige el tipo de **métrica** (Externas o Internas)
+                3. 🎯 Escoge tu método de captura:
+                    - **🚀 Automática**: Capturas programadas en intervalos
+                    - **🖐️ Manual**: Captura única bajo demanda
+                    - **📂 CSV**: Carga un archivo de datos
+                4. 🔍 Presiona **"Realizar Predicción"** para analizar
             
-            Los resultados aparecerán aquí con gráficas interactivas y análisis detallado.
-            """)
+                ---
+            
+                **¿Quieres desplegar el IDS en Raspberry Pi u otra arquitectura ARM?**
+            
+                - 📦 **Imagen Docker ARM disponible:**
+                  [juancaing/ids-iot-app:arm en Docker Hub](https://hub.docker.com/r/juancaing/ids-iot-app)
+            
+                - **Instrucciones para ejecutar la ISO Docker:**
+                  1. Instala Docker en tu Raspberry Pi.
+                  2. Descarga y ejecuta la imagen con los permisos adecuados:
+                 
+                      ```bash
+                      sudo docker run --rm -it --net=host --cap-add=NET_ADMIN --cap-add=NET_RAW -e STREAMLIT_SERVER_PORT=8502 juancaing/ids-iot-app:arm
+                      ```
+                  3. Accede a la app en tu navegador: [http://localhost:8502](http://localhost:8502)
+            
+                > Si tienes dudas, revisa la documentación en el repositorio o en Docker Hub.
+            
+                ---
+            
+                Los resultados aparecerán aquí con gráficas interactivas y análisis detallado.
+                """)
     
     # Interfaz Usuario Panel de Control
     with col1:
@@ -1105,6 +1125,11 @@ def show_dashboard_page():
                 # Guardar datos capturados y refrescar para mostrar en col2
                 if captured_data is not None and len(captured_data) > 0:
                     if not (list(captured_data.columns) == ['value'] and len(captured_data) == 0):
+                        # Aplica el filtro ARP según el modo seleccionado
+                        arp_mode = st.session_state.get('arp_limit_mode', 'low')
+                        from backend.arp_filter import filter_arp_dataframe
+                        if arp_mode != 'none':
+                            captured_data = filter_arp_dataframe(captured_data, arp_mode)
                         st.session_state.data = captured_data
                         st.session_state['captura_manual_lista'] = True
                         st.rerun()
