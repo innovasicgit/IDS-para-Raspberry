@@ -32,7 +32,7 @@ def _detect_active_interface():
 def build_tshark_command() -> list:
     iface = _detect_active_interface()
     comm_arg = (
-        f"/usr/local/bin/tshark "
+        f"tshark "
         f"-i {iface} "
         "-l "
         "-f \"tcp or udp or arp or icmp\" "
