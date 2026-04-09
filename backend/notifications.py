@@ -11,6 +11,30 @@ from datetime import datetime
 from typing import Dict, Optional
 
 
+# Umbrales (porcentaje de anomalías) usados en toda la app.
+# Se centralizan aquí para que el "Nivel de Alerta" del dashboard,
+# las notificaciones y el análisis inteligente sean consistentes.
+ALERT_SUSPICIOUS_THRESHOLD = 45.0
+ALERT_ATTACK_THRESHOLD = 80.0
+
+
+def get_alert_level_from_anomaly_percentage(anomaly_percentage: float) -> str:
+    """Clasifica el nivel de alerta a partir del % de anomalías.
+
+    Returns:
+        'normal' (<45%), 'suspicious' (>=45% y <80%), 'attack' (>=80%)
+    """
+    try:
+        ap = float(anomaly_percentage)
+    except Exception:
+        ap = 0.0
+    if ap >= ALERT_ATTACK_THRESHOLD:
+        return 'attack'
+    if ap >= ALERT_SUSPICIOUS_THRESHOLD:
+        return 'suspicious'
+    return 'normal'
+
+
 class NotificationManager:
     """Gestor de notificaciones con control de frecuencia inteligente."""
     
@@ -19,7 +43,7 @@ class NotificationManager:
             'last_email_timestamp': 0,
             'normal_email_interval': 1800,      # 30 minutos para estado normal
             'attack_email_interval': 300,       # 5 minutos para estado de ataque
-            'previous_state': 'normal',         # 'normal' o 'attack'
+            'previous_state': 'normal',         # 'normal' | 'suspicious' | 'attack'
             'attack_started': None,             # Timestamp cuando comenzó el ataque
             'normal_since': None,               # Timestamp cuando terminó el ataque
             'anomaly_percentage': 0
@@ -37,14 +61,10 @@ class NotificationManager:
         Returns:
         --------
         str
-            'normal' (<30%), 'suspicious' (30-80%), 'attack' (>=80%)
+            'normal' (<45%), 'suspicious' (45-80%), 'attack' (>=80%)
         """
-        if anomaly_percentage >= 80:
-            return 'attack'
-        elif anomaly_percentage >= 45:
-            return 'suspicious'
-        else:
-            return 'normal'
+        # Mantener coherencia con el resto del sistema (dashboard/análisis/email).
+        return get_alert_level_from_anomaly_percentage(anomaly_percentage)
     
     def should_send_email(self, anomaly_percentage: float) -> bool:
         """
@@ -211,7 +231,7 @@ class NotificationManager:
                         
                         <div style="background-color: #fff3e0; padding: 15px; border-radius: 5px; margin: 20px 0;">
                             <p><strong>Anomalías detectadas:</strong> <span style="color: #ff9800; font-size: 20px;">{anomaly_percentage:.1f}%</span></p>
-                            <p><strong>Nivel de alerta:</strong> <span style="color: #ff9800; font-weight: bold;">MEDIO (30-80%)</span></p>
+                            <p><strong>Nivel de alerta:</strong> <span style="color: #ff9800; font-weight: bold;">MEDIO ({ALERT_SUSPICIOUS_THRESHOLD:.0f}-{ALERT_ATTACK_THRESHOLD:.0f}%)</span></p>
                             <p><strong>Modelo utilizado:</strong> {model_name}</p>
                             <p><strong>Fecha y hora:</strong> {timestamp.strftime('%d/%m/%Y %H:%M:%S')}</p>
                             <p><strong>Tipo de captura:</strong> {'Manual' if is_manual else 'Automática'}</p>
@@ -253,7 +273,7 @@ class NotificationManager:
                         
                         <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
                             <p><strong>Anomalías detectadas:</strong> <span style="color: #44aa44; font-size: 20px;">{anomaly_percentage:.1f}%</span></p>
-                            <p><strong>Nivel de alerta:</strong> <span style="color: #44aa44; font-weight: bold;">NORMAL (<30%)</span></p>
+                            <p><strong>Nivel de alerta:</strong> <span style="color: #44aa44; font-weight: bold;">NORMAL (&lt;{ALERT_SUSPICIOUS_THRESHOLD:.0f}%)</span></p>
                             <p><strong>Modelo utilizado:</strong> {model_name}</p>
                             <p><strong>Fecha y hora:</strong> {timestamp.strftime('%d/%m/%Y %H:%M:%S')}</p>
                             <p><strong>Tipo de captura:</strong> {'Manual' if is_manual else 'Automática'}</p>

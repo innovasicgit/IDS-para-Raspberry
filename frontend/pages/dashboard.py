@@ -1,7 +1,6 @@
 ﻿"""
 Página principal del dashboard - Panel de Control de Detección.
 """
-
 import streamlit as st
 from config.theme import get_current_theme
 import joblib
@@ -22,7 +21,6 @@ expone la clase `AutoencoderClassifier` importándola desde
 sencillo y evita problemas cuando el proyecto se instala como paquete.
 """
 from autoencoder_classifier import AutoencoderClassifier
-
 from backend.constants import (
     IFOREST_MODEL_PATHS,
     OCSVM_MODEL_PATH,
@@ -239,39 +237,7 @@ def show_dashboard_page():
     with col2:
         # Mostrar panel de captura en vivo si está capturando
         if st.session_state.auto_capture.get('is_capturing', False):
-            st.markdown("## 🔴 CAPTURA EN VIVO")
-            
-            # Panel de estadísticas en tiempo real (ligero)
-            st.markdown("### 📊 Estadísticas en Tiempo Real")
-            
-            # Información del ciclo actual
-            st.info("📍 **Captura automática** en progreso...")
-            
-            # Estadísticas básicas
-            _dur_display = st.session_state.auto_capture.get('duration_sec', 60)
-            _dur_m, _dur_s = divmod(_dur_display, 60)
-            col_stat1, col_stat2, col_stat3 = st.columns(3, gap="small")
-            with col_stat1:
-                st.metric("⏱️ Duración", f"{_dur_m:.0f}m {_dur_s:.0f}s", help="Duración de captura configurada")
-            with col_stat2:
-                st.metric("📦 Protocolo", "TCP/UDP/ICMP", help="Protocolos en captura")
-            with col_stat3:
-                st.metric("🎯 Estado", "Activo", delta="Procesando", help="Estado actual")
-            
-            # Indicador visual de progreso
-            st.markdown("### 🔄 Proceso de Captura")
-            st.progress(0.5, text="🌐 Capturando paquetes de red...")
-            
-            # Información adicional
-            st.markdown(f"""
-            <div style="padding: 20px; background: linear-gradient(135deg, {c.success_light} 0%, {c.surface_overlay} 100%); border-radius: 14px; color: {c.text_primary}; text-align: center; border: 1px solid {c.border}; box-shadow: 0 4px 20px {c.success_light};">
-                <h3 style="margin: 0; color: {c.success};">⚡ Captura Activa</h3>
-                <p style="margin: 10px 0 0 0; color: {c.text_secondary};">Los resultados aparecerán automáticamente al finalizar</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("---")
-            st.info("💡 **Tip:** Espera unos segundos mientras se captura el tráfico de red. Los resultados se mostrarán automáticamente con gráficas completas.")
+            st.info("💡 **Tip:** Si la captura se detiene, puedes reiniciarla en cualquier momento, dale en detener captura y vuelve a ejecutar la captura.")
             
         # Mostrar resultados si hay predicción completada
         elif 'prediccion_realizada' in st.session_state and st.session_state['prediccion_realizada']:
@@ -378,6 +344,8 @@ def show_dashboard_page():
             
             # Métricas Internas
             if st.session_state.get('metric_option_used') == 'Internas' and 'y_pred' in st.session_state and 'pp3' in st.session_state:
+                # Nota: Silhouette / Calinski-Harabasz / Davies-Bouldin se calculan con scikit-learn
+                # (ver implementación en `metricas.metrica_internas`, que usa `sklearn.metrics.*`).
                 y_pred = st.session_state['y_pred']
                 pp3 = st.session_state['pp3']
                 unique_labels = np.unique(y_pred)

@@ -27,9 +27,20 @@ def metricas(df,tipo_ataque, Trans_cluster):
     
 
 def metrica_internas(pp3,cluster):
-    
+    """Calcula métricas internas de clustering usando scikit-learn.
 
-    ss = round(metrics.silhouette_score(pp3, cluster,metric='sqeuclidean'),5)
+    Nota para documentación/explicación:
+    - Estas métricas se calculan mediante `sklearn.metrics` (no se implementan a mano).
+    - Entradas:
+        - `pp3`: matriz de características X (n_muestras, n_features)
+        - `cluster`: etiquetas de cluster asignadas (y_pred)
+    - Funciones usadas (scikit-learn):
+        - `metrics.silhouette_score(X, labels, metric=...)` (más alto = mejor)
+        - `metrics.calinski_harabasz_score(X, labels)` (más alto = mejor)
+        - `metrics.davies_bouldin_score(X, labels)` (más bajo = mejor)
+    """
+
+    ss = round(metrics.silhouette_score(pp3, cluster, metric='sqeuclidean'),5)
 #     ss='prueba_DBSCAN'
     chs = round(metrics.calinski_harabasz_score(pp3, cluster),5)
     dbs = round(metrics.davies_bouldin_score(pp3, cluster),5)

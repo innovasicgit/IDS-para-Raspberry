@@ -5,6 +5,8 @@ Genera análisis contextualizados según los datos obtenidos.
 
 import numpy as np
 
+from backend.notifications import get_alert_level_from_anomaly_percentage
+
 
 def explicar_distribucion(labels, values, model_option):
     """
@@ -35,44 +37,40 @@ def explicar_distribucion(labels, values, model_option):
         anomalo = distribuciones.get('Anómalo', {'cantidad': 0, 'porcentaje': 0})
         
         explicacion = f"### 🔍 Análisis de la Distribución\n\n"
-        
-        if normal['porcentaje'] >= 95:
-            explicacion += f"✅ **Estado: EXCELENTE**\n\n"
-            explicacion += f"Su red presenta un comportamiento muy saludable con **{normal['porcentaje']:.1f}% de tráfico normal** "
-            explicacion += f"({normal['cantidad']:,} paquetes). Solo se detectaron {anomalo['cantidad']} paquetes anómalos "
-            explicacion += f"({anomalo['porcentaje']:.1f}%), lo cual es típico en redes normales debido a falsos positivos o tráfico legítimo inusual."
-        
-        elif normal['porcentaje'] >= 85:
-            explicacion += f"✅ **Estado: BUENO**\n\n"
-            explicacion += f"La red presenta un comportamiento mayormente normal con **{normal['porcentaje']:.1f}% de tráfico regular** "
-            explicacion += f"({normal['cantidad']:,} paquetes). Se detectaron **{anomalo['cantidad']} paquetes anómalos** "
-            explicacion += f"({anomalo['porcentaje']:.1f}%), lo cual podría indicar:\n"
-            explicacion += f"- Tráfico legítimo pero inusual (actualizaciones, backups)\n"
-            explicacion += f"- Posibles intentos de reconocimiento de red\n"
-            explicacion += f"- Configuraciones de red no óptimas\n\n"
-            explicacion += f"💡 **Recomendación:** Monitorear estos paquetes anómalos periódicamente."
-        
-        elif normal['porcentaje'] >= 70:
-            explicacion += f"⚠️ **Estado: MODERADO - REQUIERE ATENCIÓN**\n\n"
-            explicacion += f"Se detectó **{anomalo['porcentaje']:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes), "
-            explicacion += f"lo cual es significativo. Esto podría indicar:\n"
-            explicacion += f"- **Posible ataque en curso** (DDoS, escaneo de puertos)\n"
-            explicacion += f"- Dispositivo IoT comprometido en la red\n"
-            explicacion += f"- Tráfico malicioso o sospechoso\n\n"
-            explicacion += f"⚠️ **Recomendación:** Investigar los paquetes anómalos, revisar logs del firewall y verificar dispositivos conectados."
-        
+
+        # Unificar con los umbrales oficiales de alerta (backend.notifications).
+        anomaly_pct = float(anomalo['porcentaje'])
+        alert_level = get_alert_level_from_anomaly_percentage(anomaly_pct)
+
+        if alert_level == 'normal':
+            explicacion += f"✅ **Estado: NORMAL**\n\n"
+            explicacion += (
+                f"Se detectó **{anomaly_pct:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes) y "
+                f"**{normal['porcentaje']:.1f}% de tráfico normal** ({normal['cantidad']:,} paquetes). "
+                f"Este nivel está dentro del margen definido por el sistema para operación normal.\n\n"
+                f"💡 **Recomendación:** Mantener monitoreo regular y revisar anomalías si se repiten."
+            )
+        elif alert_level == 'suspicious':
+            explicacion += f"⚠️ **Estado: SOSPECHOSO - REQUIERE ATENCIÓN**\n\n"
+            explicacion += (
+                f"Se detectó **{anomaly_pct:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes), "
+                f"lo cual supera el umbral de operación normal. Esto podría indicar:\n"
+                f"- Tráfico legítimo pero inusual (picos, actualizaciones)\n"
+                f"- Reconocimiento/escaneo\n"
+                f"- Actividad sospechosa inicial\n\n"
+                f"⚠️ **Recomendación:** Investigar los paquetes anómalos y reforzar reglas de seguridad."
+            )
         else:
             explicacion += f"🚨 **Estado: CRÍTICO - ACCIÓN INMEDIATA REQUERIDA**\n\n"
-            explicacion += f"¡ALERTA! Se detectó **{anomalo['porcentaje']:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes). "
-            explicacion += f"Este nivel tan alto sugiere:\n"
-            explicacion += f"- **Ataque activo en la red** (DDoS masivo, botnet)\n"
-            explicacion += f"- Múltiples dispositivos comprometidos\n"
-            explicacion += f"- Intrusión en progreso\n\n"
-            explicacion += f"🚨 **ACCIÓN INMEDIATA:**\n"
-            explicacion += f"1. Aislar dispositivos sospechosos de la red\n"
-            explicacion += f"2. Revisar firewall y reglas de seguridad\n"
-            explicacion += f"3. Contactar al equipo de seguridad\n"
-            explicacion += f"4. Considerar resetear contraseñas y credenciales"
+            explicacion += (
+                f"¡ALERTA! Se detectó **{anomaly_pct:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes). "
+                f"Este nivel sugiere un evento severo o ataque activo.\n\n"
+                f"🚨 **ACCIÓN INMEDIATA:**\n"
+                f"1. Aislar dispositivos sospechosos de la red\n"
+                f"2. Revisar firewall y reglas de seguridad\n"
+                f"3. Contactar al equipo de seguridad\n"
+                f"4. Considerar resetear contraseñas y credenciales"
+            )
     
     elif model_option in ['KMEANS', 'AUTOENCODER']:
         # Modelos multiclase: Normal, DDOS_TCP, DDOS_UDP, Reconnaissance
@@ -85,14 +83,27 @@ def explicar_distribucion(labels, values, model_option):
         porcentaje_ataques = (ataques_totales / total) * 100
         
         explicacion = f"### 🔍 Análisis Detallado de Amenazas\n\n"
-        
-        if porcentaje_ataques < 5:
-            explicacion += f"✅ **Estado: SEGURO**\n\n"
-            explicacion += f"La red está operando de forma segura con **{normal['porcentaje']:.1f}% de tráfico normal** "
-            explicacion += f"({normal['cantidad']:,} paquetes).\n\n"
+
+        # Unificar con los umbrales oficiales de alerta.
+        alert_level = get_alert_level_from_anomaly_percentage(porcentaje_ataques)
+        if alert_level == 'normal':
+            explicacion += f"✅ **Estado: NORMAL**\n\n"
+            explicacion += (
+                f"Se detectó **{porcentaje_ataques:.1f}%** de tráfico asociado a amenazas "
+                f"({ataques_totales:,} paquetes). Este nivel está dentro del margen definido por el sistema.\n\n"
+            )
+        elif alert_level == 'suspicious':
+            explicacion += f"⚠️ **Estado: SOSPECHOSO - AMENAZAS DETECTADAS**\n\n"
+            explicacion += (
+                f"Se identificaron **{ataques_totales:,} paquetes** ({porcentaje_ataques:.1f}% del total). "
+                f"Se recomienda análisis y mitigación.\n\n"
+            )
         else:
-            explicacion += f"⚠️ **Estado: AMENAZAS DETECTADAS**\n\n"
-            explicacion += f"Se identificaron **{ataques_totales:,} paquetes maliciosos** ({porcentaje_ataques:.1f}% del total):\n\n"
+            explicacion += f"🚨 **Estado: CRÍTICO - ATAQUE EN CURSO**\n\n"
+            explicacion += (
+                f"¡ALERTA! **{porcentaje_ataques:.1f}%** del tráfico es malicioso "
+                f"({ataques_totales:,} paquetes). Acción inmediata requerida.\n\n"
+            )
         
         # Explicar cada tipo de ataque detectado
         if ddos_tcp['cantidad'] > 0:
@@ -324,33 +335,30 @@ def generar_resumen_general(resumen_prediccion, metricas_rendimiento, model_opti
     resumen += f"- **Modelo de detección:** {model_option}\n"
     resumen += f"- **Tiempo de procesamiento:** {metricas_rendimiento['tiempo']:.2f} segundos\n\n"
     
-    # 2. Veredicto general
+    # 2. Veredicto general (unificado con umbrales oficiales)
     if model_option in ['IForest', 'OCSVM']:
-        normal_pct = (values[labels.index('Normal')] / total * 100) if 'Normal' in labels else 0
-        
-        if normal_pct >= 95:
-            resumen += f"### ✅ VEREDICTO: RED SEGURA\n\n"
-            resumen += f"Su red presenta un estado de salud excelente con {normal_pct:.1f}% de tráfico normal. "
-            resumen += f"Las pocas anomalías detectadas están dentro de rangos esperados.\n\n"
-        elif normal_pct >= 85:
-            resumen += f"### ⚠️ VEREDICTO: MONITOREO RECOMENDADO\n\n"
-            resumen += f"La red está mayormente saludable ({normal_pct:.1f}% normal), pero hay suficientes anomalías "
-            resumen += f"({100-normal_pct:.1f}%) que ameritan supervisión periódica.\n\n"
-        elif normal_pct >= 70:
-            resumen += f"### 🚨 VEREDICTO: ATENCIÓN REQUERIDA\n\n"
-            resumen += f"Se detectó un nivel preocupante de anomalías ({100-normal_pct:.1f}%). Se recomienda investigación inmediata.\n\n"
+        anomaly_pct = 0.0
+        if 'Anómalo' in labels:
+            anomaly_pct = (values[labels.index('Anómalo')] / total * 100) if total > 0 else 0
+        alert_level = get_alert_level_from_anomaly_percentage(anomaly_pct)
+        if alert_level == 'normal':
+            resumen += f"### ✅ VEREDICTO: NIVEL NORMAL\n\n"
+            resumen += f"Se detectó {anomaly_pct:.1f}% de anomalías. Está dentro del margen definido para operación normal.\n\n"
+        elif alert_level == 'suspicious':
+            resumen += f"### ⚠️ VEREDICTO: ACTIVIDAD SOSPECHOSA\n\n"
+            resumen += f"Se detectó {anomaly_pct:.1f}% de anomalías, superando el umbral de normalidad. Requiere revisión.\n\n"
         else:
-            resumen += f"### 🔴 VEREDICTO: SITUACIÓN CRÍTICA\n\n"
-            resumen += f"¡ALERTA MÁXIMA! {100-normal_pct:.1f}% del tráfico es anómalo. Se requiere acción inmediata.\n\n"
+            resumen += f"### 🚨 VEREDICTO: SITUACIÓN CRÍTICA\n\n"
+            resumen += f"¡ALERTA! {anomaly_pct:.1f}% del tráfico es anómalo. Se requiere acción inmediata.\n\n"
     else:
         # Modelos multiclase
         ataques = sum([v for l, v in zip(labels, values) if l != 'Normal'])
         pct_ataques = (ataques / total * 100) if total > 0 else 0
-        
-        if pct_ataques < 5:
-            resumen += f"### ✅ VEREDICTO: RED SEGURA\n\n"
-            resumen += f"Se detectaron muy pocos intentos de ataque ({pct_ataques:.1f}%). La red está protegida.\n\n"
-        elif pct_ataques < 15:
+        alert_level = get_alert_level_from_anomaly_percentage(pct_ataques)
+        if alert_level == 'normal':
+            resumen += f"### ✅ VEREDICTO: NIVEL NORMAL\n\n"
+            resumen += f"Se detectó {pct_ataques:.1f}% de tráfico malicioso. Está dentro del margen definido por el sistema.\n\n"
+        elif alert_level == 'suspicious':
             resumen += f"### ⚠️ VEREDICTO: AMENAZAS DETECTADAS\n\n"
             resumen += f"Se identificaron {ataques:,} paquetes maliciosos ({pct_ataques:.1f}%). Requiere atención.\n\n"
         else:
@@ -384,12 +392,15 @@ def generar_resumen_general(resumen_prediccion, metricas_rendimiento, model_opti
     resumen += f"### 💡 Recomendaciones Finales\n\n"
     
     if model_option in ['IForest', 'OCSVM']:
-        normal_pct = (values[labels.index('Normal')] / total * 100) if 'Normal' in labels else 0
-        if normal_pct >= 95:
+        anomaly_pct = 0.0
+        if 'Anómalo' in labels:
+            anomaly_pct = (values[labels.index('Anómalo')] / total * 100) if total > 0 else 0
+        alert_level = get_alert_level_from_anomaly_percentage(anomaly_pct)
+        if alert_level == 'normal':
             resumen += f"- Continuar con el monitoreo regular\n"
             resumen += f"- Mantener las defensas actuales\n"
             resumen += f"- Revisar logs periódicamente\n"
-        elif normal_pct >= 70:
+        elif alert_level == 'suspicious':
             resumen += f"- Investigar paquetes anómalos en detalle\n"
             resumen += f"- Verificar configuración de firewall\n"
             resumen += f"- Identificar dispositivos sospechosos\n"
