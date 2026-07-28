@@ -84,4 +84,33 @@ def pred_threshold(score, threshold):
     return Actual_pred.reset_index(drop=True)
 
 
+def dbscan_predict(model, X):
+    """Predice etiquetas para nuevas muestras usando un modelo DBSCAN entrenado.
+
+    Esta función se conserva por compatibilidad con código legacy que hace:
+    `from backend.model_utils import dbscan_predict`.
+    Si no hay suficientes atributos en el modelo, devuelve -1 (ruido) para todas.
+    """
+    X_arr = np.asarray(X)
+    if X_arr.ndim == 1:
+        X_arr = X_arr.reshape(1, -1)
+
+    core = getattr(model, 'components_', None)
+    core_labels = getattr(model, 'labels_', None)
+    eps = float(getattr(model, 'eps', 0.5))
+
+    if core is None or core_labels is None or len(core) == 0:
+        return np.full(X_arr.shape[0], -1, dtype=int)
+
+    y_new = np.full(X_arr.shape[0], -1, dtype=int)
+
+    for i, x in enumerate(X_arr):
+        dists = np.linalg.norm(core - x, axis=1)
+        j = int(np.argmin(dists))
+        if dists[j] <= eps:
+            y_new[i] = int(core_labels[j])
+
+    return y_new
+
+
  

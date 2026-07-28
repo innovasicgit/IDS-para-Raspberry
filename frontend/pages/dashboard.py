@@ -1,6 +1,11 @@
 ﻿"""
 Página principal del dashboard - Panel de Control de Detección.
 """
+import sys
+import os
+# Agregar ruta raíz al PYTHONPATH para acceder a metricas.py
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
 import streamlit as st
 from config.theme import get_current_theme
 import joblib
@@ -12,9 +17,9 @@ import time
 import matplotlib.pyplot as plt
 from collections import Counter
 import psutil
-import os
 import requests
 import select
+from sklearn.metrics import roc_curve, auc
 """El fichero puente `autoencoder_classifier.py` en la raíz del proyecto
 expone la clase `AutoencoderClassifier` importándola desde
 `backend.autoencoderclassifier`. El import directo a ese módulo es más
@@ -22,11 +27,11 @@ sencillo y evita problemas cuando el proyecto se instala como paquete.
 """
 from autoencoder_classifier import AutoencoderClassifier
 from backend.constants import (
-    IFOREST_MODEL_PATHS,
-    OCSVM_MODEL_PATH,
-    KMEANS_MODEL_PATHS,
-    AUTOENCODER_MODEL_PATH,
     KMEANS_TXT_PATH,
+    MODEL_PATHS,
+    MODEL_TYPE_BY_ID,
+    SUPERVISED_MODEL_PATHS,
+    UNSUPERVISED_MODEL_PATHS,
 )
 from backend.model_utils import load_model, dict_predict, pred_threshold
 from backend.capture_utils import (
@@ -105,6 +110,78 @@ def capture_via_api(duration_sec, backend_url):
         st.error(f"❌ Error en la captura: {str(e)}")
         return None
 
+
+def _format_model_label(model_id):
+    model_group = MODEL_TYPE_BY_ID.get(model_id, "No supervisados")
+    return f"{model_group} | {model_id}"
+
+
+def _is_supervised_model(model_id):
+    return model_id in SUPERVISED_MODEL_PATHS
+
+
+def _normalize_dataframe_types(df):
+    """
+    Normaliza los tipos de datos del DataFrame para evitar problemas de serialización con PyArrow.
+    Asegura que todas las columnas numéricas sean del mismo tipo y sin valores mixtos.
+    
+    Args:
+        df: DataFrame a normalizar
+        
+    Returns:
+        DataFrame con tipos de datos normalizados
+    """
+    if df is None or df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # Columnas que deberían ser numéricas
+    numeric_columns = [
+        'port_src', 'port_dst', 'frame_len', 'udp_len', 'ip_ttl', 'icmp_type',
+        'tos', 'ip_flags_rb', 'ip_flags_df', 'ip_flags_mf',
+        'tcp_flags_res', 'tcp_flags_ns', 'tcp_flags_cwr', 'tcp_flags_ecn', 
+        'tcp_flags_urg', 'tcp_flags_ack', 'tcp_flags_push', 'tcp_flags_reset',
+        'tcp_flags_syn', 'tcp_flags_fin', 'epoch_time'
+    ]
+    
+    for col in numeric_columns:
+        if col in df.columns:
+            try:
+                # Convertir a numeric, cualquier valor no convertible se reemplaza por 0
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype('float32')
+            except Exception:
+                df[col] = 0
+    
+    # Columnas que deberían ser string
+    string_columns = ['protocols', 'ip_src', 'ip_dst', 'delta_time']
+    for col in string_columns:
+        if col in df.columns:
+            df[col] = df[col].astype(str)
+    
+    return df
+
+
+def _compute_external_metrics(y_true, y_pred, scores=None):
+    """Calcula métricas externas y datos de curva ROC para visualización."""
+    external_metrics = metricas.metricas_externas(y_true, y_pred, y_score=scores)
+    y_true_bin = metricas.to_binary_attack_labels(y_true)
+
+    roc_curve_data = None
+    if np.unique(y_true_bin).size == 2:
+        try:
+            score_for_curve = np.asarray(scores) if scores is not None else metricas.to_binary_attack_labels(y_pred)
+            fpr, tpr, _ = roc_curve(y_true_bin, score_for_curve)
+            roc_curve_data = {
+                'fpr': fpr,
+                'tpr': tpr,
+                'auc': float(auc(fpr, tpr)),
+            }
+        except Exception:
+            roc_curve_data = None
+
+    return external_metrics, roc_curve_data
+
 # capture_local eliminada — la captura automática se hace inline con select.select()
 
 def show_dashboard_page():
@@ -157,6 +234,9 @@ def show_dashboard_page():
     # Inicializa el flag una sola vez
     if 'prediccion_realizada' not in st.session_state:
         st.session_state['prediccion_realizada'] = False
+
+    if 'supervised_attack_threshold' not in st.session_state:
+        st.session_state['supervised_attack_threshold'] = 0.70
 
     # Estado para captura automática
     if 'auto_capture' not in st.session_state:
@@ -354,6 +434,63 @@ def show_dashboard_page():
                     mostrar_metricas(silhouette, calinski, davies)
                 else:
                     st.info("Las métricas internas requieren al menos dos clases en la predicción.")
+
+            # Métricas Externas (modelos supervisados)
+            if st.session_state.get('metric_option_used') == 'Externas':
+                external_metrics = st.session_state.get('external_metrics')
+                if external_metrics:
+                    st.markdown("### 📊 Métricas Externas")
+                    mcol1, mcol2, mcol3, mcol4, mcol5 = st.columns(5)
+                    with mcol1:
+                        st.metric("Accuracy", f"{external_metrics.get('Accuracy', 0):.3f}")
+                    with mcol2:
+                        st.metric("Precision", f"{external_metrics.get('Precision', 0):.3f}")
+                    with mcol3:
+                        st.metric("Recall", f"{external_metrics.get('Recall', 0):.3f}")
+                    with mcol4:
+                        st.metric("F1", f"{external_metrics.get('F1', 0):.3f}")
+                    with mcol5:
+                        roc_auc_value = external_metrics.get('ROC_AUC')
+                        st.metric("ROC AUC", f"{roc_auc_value:.3f}" if roc_auc_value is not None else "N/A")
+
+                    cm = external_metrics.get('MatrizConfusion')
+                    if cm is not None:
+                        st.markdown("#### 🧮 Matriz de Confusión")
+                        cm_df = pd.DataFrame(
+                            cm,
+                            columns=['Pred: Normal', 'Pred: Ataque'],
+                            index=['Real: Normal', 'Real: Ataque']
+                        )
+                        st.dataframe(cm_df, use_container_width=True)
+
+                    roc_curve_data = st.session_state.get('roc_curve_data')
+                    if roc_curve_data is not None:
+                        roc_fig = go.Figure()
+                        roc_fig.add_trace(go.Scatter(
+                            x=roc_curve_data['fpr'],
+                            y=roc_curve_data['tpr'],
+                            mode='lines',
+                            name=f"ROC (AUC={roc_curve_data['auc']:.3f})",
+                            line=dict(color=c.primary, width=3)
+                        ))
+                        roc_fig.add_trace(go.Scatter(
+                            x=[0, 1],
+                            y=[0, 1],
+                            mode='lines',
+                            name='Azar',
+                            line=dict(color=c.warning, width=2, dash='dash')
+                        ))
+                        roc_fig.update_layout(
+                            title='Curva ROC',
+                            xaxis_title='False Positive Rate',
+                            yaxis_title='True Positive Rate',
+                            title_x=0.5,
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)'
+                        )
+                        st.plotly_chart(roc_fig, use_container_width=True)
+                else:
+                    st.info("No hay métricas externas disponibles para esta ejecución.")
             
             # Métricas de Rendimiento con gráficos dinámicos
             if 'metricas_rendimiento' in st.session_state:
@@ -634,7 +771,8 @@ def show_dashboard_page():
             # Tabla de paquetes capturados (siempre visible debajo de la gráfica de tráfico)
             if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
                 st.markdown("### 📊 Paquetes Capturados")
-                st.dataframe(st.session_state['data_prediccion'], use_container_width=True)
+                display_df = _normalize_dataframe_types(st.session_state['data_prediccion'])
+                st.dataframe(display_df, use_container_width=True)
         
         # Mostrar tabla de paquetes capturados (captura manual completada, aún sin predicción)
         elif st.session_state.get('captura_manual_lista', False):
@@ -646,7 +784,8 @@ def show_dashboard_page():
                 # Mensaje temporal con conteo (6s)
                 msg_info = st.empty()
                 msg_info.info(f"📏 **{len(st.session_state.data)}** paquetes capturados · Presiona **Realizar Predicción** en el panel izquierdo para analizar.")
-                st.dataframe(st.session_state.data, use_container_width=True)
+                display_df = _normalize_dataframe_types(st.session_state.data)
+                st.dataframe(display_df, use_container_width=True)
                 time.sleep(3)
                 msg_listos.empty()
                 time.sleep(3)
@@ -660,8 +799,10 @@ def show_dashboard_page():
                 st.info("""
                 **Pasos para usar el sistema:**
             
-                1. 📌 Selecciona un **modelo de detección** (IForest, OCSVM, KMEANS, AUTOENCODER)
-                2. 📊 Elige el tipo de **métrica** (Externas o Internas)
+                     1. 📌 Selecciona un **modelo de detección** en el combo (separado por No supervisados y Supervisados)
+                     2. 📊 La **métrica se selecciona automáticamente**:
+                         - No supervisados → Internas
+                         - Supervisados → Externas
                 3. 🎯 Escoge tu método de captura:
                     - **🚀 Automática**: Capturas programadas en intervalos
                     - **🖐️ Manual**: Captura única bajo demanda
@@ -694,16 +835,47 @@ def show_dashboard_page():
     # Interfaz Usuario Panel de Control
     with col1:
         st.markdown("### 🖥 Panel de Control")
+
+        model_options = list(UNSUPERVISED_MODEL_PATHS.keys()) + list(SUPERVISED_MODEL_PATHS.keys())
         model_option = st.selectbox(
             "📌 Seleccione el modelo de detección",
-            ('IForest','OCSVM','KMEANS','AUTOENCODER'),
+            model_options,
+            format_func=_format_model_label,
             help="Cada modelo utiliza diferentes técnicas para detectar anomalías"
         )
-        metric_option = st.selectbox(
-            "📌 Seleccione el tipo de metrica",
-            ('Externas', 'Internas'),
-            help="Cada modelo utiliza diferentes técnicas para detectar anomalías"
-        )
+
+        model_type = MODEL_TYPE_BY_ID.get(model_option, "No supervisados")
+        metric_option = 'Externas' if _is_supervised_model(model_option) else 'Internas'
+        st.caption(f"📏 Métrica automática: **{metric_option}** ({model_type})")
+
+        if _is_supervised_model(model_option):
+            attack_thr = st.slider(
+                "🎯 Umbral de ataque (modelos supervisados)",
+                min_value=0.05,
+                max_value=0.95,
+                value=float(st.session_state.get('supervised_attack_threshold', 0.70)),
+                step=0.01,
+                help="Mayor umbral = menos falsos positivos (más conservador). Menor umbral = más sensibilidad."
+            )
+            st.session_state['supervised_attack_threshold'] = float(attack_thr)
+            st.caption(f"Umbral activo: {attack_thr:.2f}")
+
+        true_label_col = None
+        current_data = st.session_state.get('data')
+        if _is_supervised_model(model_option):
+            if isinstance(current_data, pd.DataFrame) and not current_data.empty:
+                label_candidates = metricas.candidate_label_columns(current_data)
+                if label_candidates:
+                    true_label_col = st.selectbox(
+                        "🏷️ Columna de etiquetas reales (para métricas externas)",
+                        label_candidates,
+                        key="dashboard_true_label_col",
+                        help="Solo se muestran columnas que parecen etiquetas reales (0/1, -1/1, Normal/Ataque, etc.)."
+                    )
+                else:
+                    st.info("📂 No se detectaron columnas de etiqueta válidas; se omitirán métricas externas.")
+            else:
+                st.info("📂 Para métricas externas, carga un CSV con columna de etiqueta real.")
 
         # Pestañas: Captura Automática, Captura Manual y Cargar CSV
         tab_auto, tab_manual, tab_csv = st.tabs(["🚀 Captura automática", "🖐️ Captura manual", "📂 Cargar archivo CSV"])
@@ -749,7 +921,8 @@ def show_dashboard_page():
                     # Limpiar flags y datos de predicción/captura
                     for key in [
                         'prediccion_realizada', 'resumen_prediccion', 'data_prediccion', 'data',
-                        'captura_manual_lista', 'alert_info', 'y_pred', 'scores', 'pp3', 'metricas_rendimiento', 'model_option_used', 'metric_option_used'
+                        'captura_manual_lista', 'alert_info', 'y_pred', 'scores', 'pp3', 'metricas_rendimiento',
+                        'model_option_used', 'metric_option_used', 'external_metrics', 'roc_curve_data'
                     ]:
                         if key in st.session_state:
                             del st.session_state[key]
@@ -770,10 +943,11 @@ def show_dashboard_page():
         # Comando y utilidades de captura desde backend.capture_utils
         comm_arg = build_tshark_command()
         
-        # Función para guardar los paquetes en CSV
-        def save_packet_csv(df, path):
-            df.to_csv(path, index=False)
-            st.success(f"✅ Archivo guardado en {path}")
+        # Función para preparar bytes CSV para descarga en navegador
+        def build_packet_csv_bytes(df):
+            csv_text = df.to_csv(index=False)
+            # BOM para compatibilidad con Excel en Windows
+            return csv_text.encode('utf-8-sig')
             
         # Auxiliar: ejecutar predicción y mostrar resultado (manual/automática)
         def run_prediction_on_data(data_df, is_manual=True):
@@ -781,45 +955,42 @@ def show_dashboard_page():
                 if data_df is None or len(data_df) == 0:
                     st.error('❌ No se capturaron paquetes. Verifica que haya tráfico de red.')
                     return
-                
-                model = None
-                if model_option == 'IForest':
-                    model = load_model(IFOREST_MODEL_PATHS)
-                elif model_option == 'OCSVM':
-                    model = load_model(OCSVM_MODEL_PATH)
-                elif model_option == 'KMEANS':
-                    model = load_model(KMEANS_MODEL_PATHS)
-                elif model_option == 'AUTOENCODER':
-                    model = load_model(AUTOENCODER_MODEL_PATH)
+
+                # Separar etiqueta real del set de entrada para evitar fuga de etiquetas en predict.
+                y_true = None
+                work_df = data_df.copy()
+                if _is_supervised_model(model_option) and true_label_col is not None and true_label_col in work_df.columns:
+                    y_true = work_df[true_label_col].values
+                    work_df = work_df.drop(columns=[true_label_col], errors='ignore')
+
+                model_path = MODEL_PATHS.get(model_option)
+                if model_path is None:
+                    st.error('No existe ruta configurada para el modelo seleccionado')
+                    return
+
+                model = load_model(model_path)
                 if model is None:
                     st.error('No se pudo cargar el modelo seleccionado')
                     return
 
                 lista = ['ip_ttl','tos','ip_flags_rb','ip_flags_df','ip_flags_mf']
-                if set(lista).issubset(set(data_df.columns)):
-                    data_df[lista] = data_df[lista].astype('str')
-                    data_df.ip_ttl = data_df.ip_ttl.str.replace(',','.')
-                    data_df.tos = data_df.tos.str.replace(',','.')
-                    data_df.ip_flags_rb = data_df.ip_flags_rb.str.replace(',','.')
-                    data_df.ip_flags_df = data_df.ip_flags_df.str.replace(',','.')
-                    data_df.ip_flags_mf = data_df.ip_flags_mf.str.replace(',','.')
+                if set(lista).issubset(set(work_df.columns)):
+                    work_df[lista] = work_df[lista].astype('str')
+                    work_df.ip_ttl = work_df.ip_ttl.str.replace(',','.')
+                    work_df.tos = work_df.tos.str.replace(',','.')
+                    work_df.ip_flags_rb = work_df.ip_flags_rb.str.replace(',','.')
+                    work_df.ip_flags_df = work_df.ip_flags_df.str.replace(',','.')
+                    work_df.ip_flags_mf = work_df.ip_flags_mf.str.replace(',','.')
                 
                 # Limpiar valores vacíos y NaN
-                data_df = data_df.replace('', np.nan).fillna(0)
-                
-                # Convertir todas las columnas numéricas a float, reemplazando errores con 0
-                for col in data_df.columns:
-                    try:
-                        data_df[col] = pd.to_numeric(data_df[col], errors='coerce').fillna(0)
-                    except:
-                        pass
+                work_df = work_df.replace('', np.nan).fillna(0)
 
                 start_time = time.time()
                 cpu_usage = psutil.cpu_percent(0)  # No bloquea (usa medición desde última llamada)
                 mem_usage = psutil.virtual_memory().percent
                 disco2 = psutil.disk_usage('/')
 
-                pp3, y_pred, scores = predecir(model, data_df, model_option)
+                pp3, y_pred, scores = predecir(model, work_df, model_option)
                 if pp3 is None or y_pred is None:
                     st.error('Error en la predicción')
                     return
@@ -847,6 +1018,14 @@ def show_dashboard_page():
                     labels = ['Normal','DDOS_TCP','DDOS_UDP','Reconnaissance']
                     values = [normal_count, ddos_tcp_count, ddos_udp_count, reconnaissance_count]
                     resumen_text = f"Se analizaron {total} paquetes. Normal: {normal_count}, DDOS_TCP: {ddos_tcp_count}, DDOS_UDP: {ddos_udp_count}, Reconnaissance: {reconnaissance_count}."
+                elif _is_supervised_model(model_option):
+                    y_bin = metricas.to_binary_attack_labels(y_pred)
+                    n_normales = int((y_bin == 0).sum())
+                    n_anomalos = int((y_bin == 1).sum())
+                    total = n_normales + n_anomalos
+                    labels = ['Normal','Anómalo']
+                    values = [n_normales, n_anomalos]
+                    resumen_text = f"Se analizaron {total} paquetes. Normales: {n_normales}, Ataques: {n_anomalos}."
                 else:
                     n_normales = int((y_pred == 0).sum())
                     n_anomalos = int((y_pred == 1).sum())
@@ -894,17 +1073,33 @@ def show_dashboard_page():
                     'email_result': email_result,
                 }
 
+                external_metrics = None
+                roc_curve_data = None
+                if metric_option == 'Externas':
+                    if y_true is not None:
+                        if len(y_true) == len(y_pred):
+                            try:
+                                external_metrics, roc_curve_data = _compute_external_metrics(y_true, y_pred, scores)
+                            except Exception as ext_err:
+                                st.warning(f"No se pudieron calcular métricas externas: {str(ext_err)}")
+                        else:
+                            st.warning("No se calcularon métricas externas: longitud distinta entre etiquetas reales y predicciones.")
+                    else:
+                        st.info("Métricas externas omitidas: falta columna de etiquetas reales.")
+
                 # Guardar estado completo para el panel derecho (col2)
                 tiempo_total = time.time() - start_time
                 st.session_state['prediccion_realizada'] = True
                 st.session_state['captura_manual_lista'] = False  # Limpiar flag de captura manual
                 st.session_state['resumen_prediccion'] = {'texto': resumen_text, 'labels': labels, 'values': values}
-                st.session_state['data_prediccion'] = data_df
+                st.session_state['data_prediccion'] = work_df
                 st.session_state['y_pred'] = y_pred
                 st.session_state['scores'] = scores
                 st.session_state['pp3'] = pp3
                 st.session_state['model_option_used'] = model_option
                 st.session_state['metric_option_used'] = metric_option
+                st.session_state['external_metrics'] = external_metrics
+                st.session_state['roc_curve_data'] = roc_curve_data
                 st.session_state['metricas_rendimiento'] = {
                     'tiempo': tiempo_total,
                     'cpu': cpu_usage,
@@ -998,6 +1193,8 @@ def show_dashboard_page():
                         if captured_data is not None and list(captured_data.columns) != ['value']:
                             if arp_mode != 'none':
                                 st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
+                            # Normalizar tipos de datos antes de guardar
+                            captured_data = _normalize_dataframe_types(captured_data)
                             st.session_state.data = captured_data
                             # run_prediction_on_data hace st.rerun() al final
                             run_prediction_on_data(captured_data, is_manual=False)
@@ -1028,8 +1225,15 @@ def show_dashboard_page():
                 # Botón de guardar CSV (solo habilitado si hay datos capturados)
                 has_manual_data = 'data' in st.session_state and st.session_state.data is not None
                 if has_manual_data:
-                    if st.button("💾 Guardar en CSV", key="btn_save_csv", use_container_width=True):
-                        save_packet_csv(st.session_state.data, "captura_paquetes.csv")
+                    csv_bytes = build_packet_csv_bytes(st.session_state.data)
+                    st.download_button(
+                        "💾 Guardar en CSV",
+                        data=csv_bytes,
+                        file_name="captura_paquetes.csv",
+                        mime="text/csv",
+                        key="btn_save_csv",
+                        use_container_width=True,
+                    )
                 else:
                     st.button("💾 Guardar en CSV", key="btn_save_csv_disabled", use_container_width=True, disabled=True,
                               help="Primero captura paquetes para poder guardarlos")
@@ -1098,6 +1302,8 @@ def show_dashboard_page():
                         from backend.arp_filter import filter_arp_dataframe
                         if arp_mode != 'none':
                             captured_data = filter_arp_dataframe(captured_data, arp_mode)
+                        # Normalizar tipos de datos antes de guardar
+                        captured_data = _normalize_dataframe_types(captured_data)
                         st.session_state.data = captured_data
                         st.session_state['captura_manual_lista'] = True
                         st.rerun()
@@ -1169,6 +1375,8 @@ def show_dashboard_page():
                 st.session_state['model_option_used'] = None
                 st.session_state['metric_option_used'] = None
                 st.session_state['metricas_rendimiento'] = None
+                st.session_state['external_metrics'] = None
+                st.session_state['roc_curve_data'] = None
                 st.success("✅ Predicción limpiada. Puedes realizar una nueva predicción.")
                 st.rerun()
 

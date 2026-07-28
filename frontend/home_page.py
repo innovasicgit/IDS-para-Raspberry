@@ -81,7 +81,7 @@ def show_home_page():
         <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
             <h1 style="margin: 0; font-size: 3em;">🤖</h1>
             <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>IA Avanzada</strong></p>
-            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">4 modelos de Machine Learning</p>
+            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">8 modelos de Machine Learning</p>
         </div>
         """, unsafe_allow_html=True)
     with col_feat3:
@@ -105,9 +105,10 @@ def show_home_page():
             en redes de IoT, brindando seguridad y confiabilidad sin precedentes.
         </p>
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify; margin-top: 1rem;">
-            Nuestro sistema utiliza modelos de vanguardia en detección de anomalías, como 
+            Nuestro sistema utiliza modelos de vanguardia en detección de anomalías y clasificación supervisada, como 
             <strong>IForest</strong> (Isolation Forest), <strong>OCSVM</strong> (One Class Support Vector Machine),
-            <strong>K-MEANS</strong> y <strong>Autoencoder multiclase</strong> para analizar patrones complejos 
+            <strong>K-MEANS</strong>, <strong>Autoencoder multiclase</strong>, <strong>DecisionTree</strong>,
+            <strong>ExtraTrees</strong>, <strong>LogisticRegression</strong> y <strong>RandomForest</strong> para analizar patrones complejos 
             y alertar sobre posibles irregularidades en la red en tiempo real.
         </p>
     </div>
@@ -174,6 +175,28 @@ def show_home_page():
             </p>
         </div>
         """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="background: {c.surface_overlay}; padding: 1.2rem 1.5rem; border-radius: 15px; border: 1px solid {c.border};">
+        <h3 style="margin-top: 0; color: {c.heading_primary};">🧠 Modelos Supervisados Agregados</h3>
+        <p style="margin-bottom: 0.75rem; color: {c.text_secondary};">
+            Estos modelos complementan a los algoritmos no supervisados para escenarios con datos etiquetados.
+            <strong>GradientBoosting</strong> queda descartado temporalmente.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem;">
+            <div style="padding: 0.8rem 1rem; background: rgba(56, 189, 248, 0.08); border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.2);">
+                <strong>DecisionTree</strong><br><span style="color: {c.text_secondary};">Clasificador interpretable basado en reglas.</span>
+            </div>
+            <div style="padding: 0.8rem 1rem; background: rgba(16, 185, 129, 0.08); border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <strong>ExtraTrees</strong><br><span style="color: {c.text_secondary};">Ensamble robusto de árboles aleatorios.</span>
+            </div>
+            <div style="padding: 0.8rem 1rem; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                <strong>RandomForest</strong><br><span style="color: {c.text_secondary};">Ensamble balanceado con buen rendimiento general.</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Interpretación de Resultados
     st.markdown("---")
@@ -257,7 +280,7 @@ def show_home_page():
         st.markdown(f"""
         <div style="background: {c.success_light}; padding: 1.5rem; border-radius: 12px; 
                     margin-bottom: 1rem; border: 2px solid {c.success};">
-            <h3 style="color: {c.success};">�� IForest (Isolation Forest)</h3>
+            <h3 style="color: {c.success};">🟢 IForest (Isolation Forest)</h3>
             <p style="line-height: 1.8; margin-top: 1rem;">
                 Algoritmo basado en árboles de decisión que aísla anomalías de forma eficiente. 
                 Excelente para detectar outliers en grandes volúmenes de datos.

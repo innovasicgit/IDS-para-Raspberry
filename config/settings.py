@@ -15,7 +15,15 @@ MAX_PACKETS = 50000
 MAX_DURATION_MIN = 1440
 
 # Configuración de modelos
-AVAILABLE_MODELS = ['IForest', 'OCSVM', 'KMEANS', 'AUTOENCODER']
+AVAILABLE_UNSUPERVISED_MODELS = ['IForest', 'OCSVM', 'KMEANS', 'AUTOENCODER']
+AVAILABLE_SUPERVISED_MODELS = [
+	'DecisionTree',
+	'ExtraTrees',
+	'GradientBoosting',
+	'LogisticRegression',
+	'RandomForest',
+]
+AVAILABLE_MODELS = AVAILABLE_UNSUPERVISED_MODELS + AVAILABLE_SUPERVISED_MODELS
 METRIC_TYPES = ['Externas', 'Internas']
 
 # Configuración de UI

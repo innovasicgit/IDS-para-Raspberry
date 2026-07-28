@@ -5,8 +5,58 @@ import streamlit as st
 from .model_utils import pred_threshold
 
 
+def _is_normal_like_label(label):
+    text = str(label).strip().lower()
+    normal_tokens = {
+        "0",
+        "normal",
+        "benigno",
+        "benign",
+        "legitimo",
+        "legitimo",
+        "clean",
+        "safe",
+    }
+    return text in normal_tokens
+
+
+def _infer_attack_class_index(classes):
+    """Infer positive (attack) class index for binary/multiclass classifiers."""
+    if classes is None or len(classes) == 0:
+        return 1
+
+    classes_arr = np.asarray(classes)
+
+    # Prefer explicit class 1 when present.
+    idx_ones = np.where(classes_arr == 1)[0]
+    if idx_ones.size > 0:
+        return int(idx_ones[0])
+
+    # Otherwise, pick a class that does not look like "normal".
+    non_normal = [i for i, c in enumerate(classes_arr) if not _is_normal_like_label(c)]
+    if len(non_normal) == 1:
+        return int(non_normal[0])
+
+    # Binary fallback: second class.
+    if len(classes_arr) >= 2:
+        return 1
+
+    return 0
+
+
+def _sanitize_numeric_frame(data):
+    """Convierte a numérico y elimina NaN/Inf para pipelines que esperan matriz puramente numérica."""
+    clean = data.copy()
+    clean = clean.replace([np.inf, -np.inf], np.nan)
+    clean = clean.apply(pd.to_numeric, errors='coerce')
+    clean = clean.fillna(0)
+    return clean
+
+
 def predecir(model, data, model_option):
     try:
+        data = data.copy()
+
         # Alinear columnas de entrada a lo esperado por el pipeline si es posible
         expected_cols = None
         if hasattr(model, 'feature_names_in_'):
@@ -25,14 +75,35 @@ def predecir(model, data, model_option):
                     data[col] = 0
             data = data[expected_cols]
 
+        # Sanitizar entrada para modelos que requieren matriz numérica sin NaN/Inf
+        # (especialmente pipelines con PCA como IForest/OCSVM).
+        if model_option in ['IForest', 'OCSVM', 'KMEANS', 'AUTOENCODER']:
+            for col in data.columns:
+                if data[col].dtype == object:
+                    lowered = data[col].astype(str).str.strip().str.lower()
+                    data[col] = lowered.replace({
+                        '': np.nan,
+                        'nan': np.nan,
+                        'none': np.nan,
+                        'null': np.nan,
+                    })
+
+            data = _sanitize_numeric_frame(data)
+        elif model_option == 'LogisticRegression':
+            # Se procesa en su wrapper dedicado para mantener compatibilidad
+            # con distintos pipelines serializados.
+            pass
+
         columnas_pca2=['componente1','componente2','componente3','componente4','componente5','componente6']
+
+        scores = None
+        predicciones = None
 
         if(model_option=='IForest'):
             scores = model.decision_function(data)
-            predicciones=pred_threshold(scores, -0.10)
+            predicciones = pred_threshold(scores, -0.10)['Pred'].values
         
-        if(model_option=='OCSVM'):
-            scores = None
+        elif(model_option=='OCSVM'):
             try:
                 scores = model.decision_function(data)
             except Exception:
@@ -48,10 +119,10 @@ def predecir(model, data, model_option):
                     pct = float(st.session_state.get('ocsvm_percentile', 0.45))
                     threshold = np.percentile(scores, 100 * pct)
                     predicciones = np.where(scores >= threshold, 0, 1)
-        if(model_option=='KMEANS'):
-            scores=""
-            predicciones=model.predict(data)
-        if(model_option=='AUTOENCODER'):
+        elif(model_option=='KMEANS'):
+            scores = None
+            predicciones = model.predict(data)
+        elif(model_option=='AUTOENCODER'):
             proba = None
             est = None
             try:
@@ -89,7 +160,58 @@ def predecir(model, data, model_option):
                     predicciones = model.predict(data)
                 except Exception:
                     predicciones = est.predict(data) if est is not None else np.zeros(len(data), dtype=int)
-                scores = ""
+                scores = None
+        else:
+            # Modelos supervisados de scikit-learn.
+            try:
+                if model_option == 'LogisticRegression':
+                    attack_threshold = float(st.session_state.get('supervised_attack_threshold', 0.70))
+                    lr_wrapper = LogisticRegressionClassifier(model, attack_threshold=attack_threshold)
+                    predicciones, scores = lr_wrapper.predict_with_scores(data)
+                else:
+                    if hasattr(model, 'predict_proba'):
+                        proba = model.predict_proba(data)
+                        classes = getattr(model, 'classes_', None)
+                        if isinstance(proba, np.ndarray) and proba.ndim == 2 and proba.shape[1] >= 2:
+                            attack_idx = _infer_attack_class_index(classes)
+                            attack_idx = max(0, min(attack_idx, proba.shape[1] - 1))
+                            scores = proba[:, attack_idx]
+
+                            attack_threshold = float(st.session_state.get('supervised_attack_threshold', 0.70))
+
+                            if classes is not None and len(classes) == proba.shape[1]:
+                                classes_arr = np.asarray(classes)
+                                if proba.shape[1] == 2:
+                                    normal_idx = 0 if attack_idx == 1 else 1
+                                    pred_idx = np.where(scores >= attack_threshold, attack_idx, normal_idx)
+                                    predicciones = classes_arr[pred_idx]
+                                else:
+                                    pred_idx = np.argmax(proba, axis=1)
+                                    pred_idx = np.where(scores >= attack_threshold, attack_idx, pred_idx)
+                                    predicciones = classes_arr[pred_idx]
+                            else:
+                                if proba.shape[1] == 2:
+                                    normal_idx = 0 if attack_idx == 1 else 1
+                                    predicciones = np.where(scores >= attack_threshold, attack_idx, normal_idx)
+                                else:
+                                    predicciones = np.argmax(proba, axis=1)
+
+                    if predicciones is None:
+                        predicciones = model.predict(data)
+            except Exception as pred_err:
+                expected_n = getattr(model, 'n_features_in_', None)
+                detail = ""
+                if expected_n is not None:
+                    detail = f" El modelo espera {expected_n} features y recibió {data.shape[1]}."
+                raise RuntimeError(
+                    f"Fallo en predict del modelo supervisado '{model_option}'."
+                    f" Verifica columnas/orden de features de entrada.{detail}"
+                ) from pred_err
+
+        if predicciones is None:
+            predicciones = np.zeros(len(data), dtype=int)
+
+        predicciones = np.asarray(predicciones).reshape(-1)
         pp3 = None
         try:
             if model_option in ['IForest','OCSVM']:

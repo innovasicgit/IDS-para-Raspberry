@@ -268,9 +268,14 @@ def show_guia_page():
     st.markdown("## 🤖 Modelos de Inteligencia Artificial Explicados")
     
     st.info("""
-    **💡 Nota importante**: Nuestro sistema utiliza 4 modelos diferentes de IA. 
+    **💡 Nota importante**: Nuestro sistema utiliza 8 modelos diferentes de IA. 
     Cada uno tiene sus propias fortalezas y es mejor para detectar ciertos tipos de amenazas. 
     Puedes elegir el que mejor se adapte a tus necesidades o probar varios para comparar resultados.
+    """)
+
+    st.info("""
+    **Modelos nuevos agregados:** DecisionTree, ExtraTrees y RandomForest.
+    **GradientBoosting** queda fuera de la guía por ahora.
     """)
     
     # IForest
@@ -739,7 +744,7 @@ def show_guia_page():
     """, unsafe_allow_html=True)
     
     # Tabs para métricas
-    tab_int, tab_rend = st.tabs(["📐 Métricas Internas", "⚡ Métricas de Rendimiento"])
+    tab_int, tab_ext, tab_rend = st.tabs(["📐 Métricas Internas", "🧪 Métricas Externas", "⚡ Métricas de Rendimiento"])
     
     with tab_int:
         st.markdown("### 📐 Métricas Internas (Calidad de Agrupamiento)")
@@ -854,6 +859,56 @@ def show_guia_page():
         **❌ POBRE:**  
         Silhouette < 0.3 o Calinski < 100 o Davies > 2.5
         """)
+
+    with tab_ext:
+        st.markdown("### 🧪 Métricas Externas (Datos Etiquetados)")
+
+        st.write("""
+        Estas métricas comparan la predicción del modelo contra la etiqueta real del paquete.
+        Se usan principalmente con modelos supervisados y requieren un CSV con una columna de verdad terreno.
+        """)
+
+        st.info("""
+        **Cuándo aparecen:** solo si seleccionas un modelo supervisado y cargas un dataset con etiquetas reales.
+        Sin etiquetas, el sistema solo muestra la predicción y omite estas métricas.
+        """)
+
+        col1, col2 = st.columns(2, gap="medium")
+        with col1:
+            st.success("🎯 **Accuracy**")
+            st.write("Porcentaje total de aciertos sobre todos los paquetes analizados.")
+            st.write("**Ideal:** cuanto más alto, mejor.")
+
+            st.success("🎯 **Precision**")
+            st.write("De todo lo que el modelo marcó como ataque, cuántos eran realmente ataques.")
+            st.write("**Ideal:** alto si quieres reducir falsos positivos.")
+
+            st.success("🎯 **Recall**")
+            st.write("De todos los ataques reales, cuántos logró detectar el modelo.")
+            st.write("**Ideal:** alto si quieres reducir falsos negativos.")
+
+        with col2:
+            st.success("🎯 **F1 Score**")
+            st.write("Balance entre Precision y Recall. Útil cuando necesitas un punto medio razonable.")
+            st.write("**Ideal:** lo más alto posible.")
+
+            st.success("🎯 **ROC AUC**")
+            st.write("Mide qué tan bien separa el modelo normales y ataques en distintos umbrales.")
+            st.write("**Ideal:** cercano a 1.0.")
+
+            st.success("🎯 **Matriz de Confusión**")
+            st.write("Muestra aciertos y errores por clase: normal vs ataque.")
+            st.write("**Ideal:** valores altos en la diagonal principal.")
+
+        st.divider()
+
+        st.markdown("#### 🧭 Interpretación práctica")
+        st.write("""
+        - Si **Precision** es baja, el modelo está generando demasiados falsos positivos.
+        - Si **Recall** es bajo, el modelo está dejando pasar ataques reales.
+        - Si **Accuracy** parece alta pero Recall es bajo, revisa el desbalance de clases.
+        - Si **ROC AUC** está cerca de 0.5, el modelo separa mal normales y ataques.
+        """)
     
     with tab_rend:
         st.markdown("### ⚡ Métricas de Rendimiento del Sistema")
@@ -935,10 +990,10 @@ def show_guia_page():
         import pandas as pd
         
         comparacion = pd.DataFrame({
-            "Modelo": ["IForest", "OCSVM", "K-MEANS", "Autoencoder"],
-            "Velocidad": ["⚡⚡⚡ Muy rápido", "⚡⚡ Rápido", "⚡⚡ Rápido", "⚡ Moderado"],
-            "Uso CPU": ["✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Alto"],
-            "Uso RAM": ["✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Alto"]
+            "Modelo": ["IForest", "OCSVM", "K-MEANS", "Autoencoder", "DecisionTree", "ExtraTrees", "LogisticRegression", "RandomForest"],
+            "Velocidad": ["⚡⚡⚡ Muy rápido", "⚡⚡ Rápido", "⚡⚡ Rápido", "⚡ Moderado", "⚡⚡ Rápido", "⚡ Rápido", "⚡⚡⚡ Muy rápido", "⚡ Rápido"],
+            "Uso CPU": ["✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Alto", "✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Moderado"],
+            "Uso RAM": ["✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Alto", "✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Moderado"]
         })
         
         st.dataframe(comparacion, use_container_width=True, hide_index=True)
@@ -957,9 +1012,13 @@ def show_guia_page():
                 "**IForest**: Para detección rápida y general",
                 "**OCSVM**: Para alta precisión con recursos moderados",
                 "**K-MEANS**: Para clasificar tipos específicos de ataques",
-                "**Autoencoder**: Para máxima precisión y detección avanzada"
+                "**Autoencoder**: Para máxima precisión y detección avanzada",
+                "**DecisionTree**: Para clasificaciones interpretables",
+                "**ExtraTrees**: Para un ensamble robusto con buen equilibrio",
+                "**LogisticRegression**: Para decisiones rápidas y ligeras",
+                "**RandomForest**: Para rendimiento sólido con datos etiquetados"
             ],
-            "tip": "Si no estás seguro, comienza con IForest para una evaluación rápida, luego usa Autoencoder para análisis detallado."
+            "tip": "Si no estás seguro, comienza con IForest para una evaluación rápida; si tienes datos etiquetados, prueba DecisionTree, ExtraTrees, LogisticRegression o RandomForest."
         },
         {
             "icon": "📊",
@@ -1064,6 +1123,7 @@ def show_guia_page():
         - **IForest y OCSVM**: ~85-95% de precisión en detección binaria (normal vs anómalo)
         - **K-MEANS**: ~80-90% en clasificación multiclase
         - **Autoencoder**: ~90-98% con el modelo entrenado correctamente
+        - **DecisionTree / ExtraTrees / LogisticRegression / RandomForest**: dependen del dataset etiquetado, el preprocesamiento y el umbral usado
         
         Los factores que afectan la precisión incluyen:
         - Calidad de los datos de captura
@@ -1114,7 +1174,7 @@ def show_guia_page():
         - ✅ Ejecutar varios modelos sobre los mismos datos simultáneamente
         - ✅ Comparar resultados lado a lado
         - ✅ Ver qué modelo es más confiable para tu tipo de red
-        - ✅ Identificar consenso entre modelos (si 3/4 modelos coinciden, es más confiable)
+        - ✅ Identificar consenso entre modelos (si 4/8 modelos coinciden, es más confiable)
         
         💡 **Mejor práctica**: Usa IForest para detección rápida, luego confirma con 
         Autoencoder para alta precisión.
@@ -1127,6 +1187,7 @@ def show_guia_page():
         - **IForest y OCSVM**: ✅ Sí, pueden detectar patrones anómalos nunca vistos (son modelos de detección de anomalías)
         - **K-MEANS**: ⚠️ Limitado, solo detecta si el ataque se agrupa de forma diferente
         - **Autoencoder**: ✅ Sí, mediante el error de reconstrucción puede identificar patrones completamente nuevos
+        - **DecisionTree / ExtraTrees / LogisticRegression / RandomForest**: ⚠️ Mejor para ataques ya conocidos en datos etiquetados; no son la mejor opción para zero-day puro
         
         Sin embargo:
         - No clasificarán el tipo específico si es un ataque totalmente nuevo

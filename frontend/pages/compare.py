@@ -3,6 +3,11 @@ Página de comparación de modelos.
 Permite ejecutar múltiples modelos sobre el mismo dataset y comparar resultados.
 """
 
+import sys
+import os
+# Agregar ruta raíz al PYTHONPATH para acceder a metricas.py
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
 import streamlit as st
 from config.theme import get_current_theme
 from pathlib import Path
@@ -13,14 +18,19 @@ import time
 import plotly.graph_objects as go
 from collections import Counter
 
-from backend.model_utils import load_model, dict_predict, pred_threshold
+from backend.model_utils import load_model, dict_predict
 from backend.predict import predecir
+from backend.notifications import (
+    ALERT_ATTACK_THRESHOLD,
+    ALERT_SUSPICIOUS_THRESHOLD,
+    get_alert_level_from_anomaly_percentage,
+)
 from backend.constants import (
-    IFOREST_MODEL_PATHS,
-    OCSVM_MODEL_PATH,
-    KMEANS_MODEL_PATHS,
-    AUTOENCODER_MODEL_PATH,
-    KMEANS_TXT_PATH
+    KMEANS_TXT_PATH,
+    MODEL_PATHS,
+    MODEL_TYPE_BY_ID,
+    SUPERVISED_MODEL_PATHS,
+    UNSUPERVISED_MODEL_PATHS,
 )
 import metricas
 
@@ -113,11 +123,10 @@ def show_compare_page():
 
         <h4 style="color: {c.heading_secondary}; margin-top: 1rem;">📊 Tipos de métricas disponibles</h4>
         <ul>
-            <li><strong style="color: {c.heading_secondary};">Internas</strong> — Evalúan la calidad de los clusters sin datos de referencia
-            (Silhouette, Calinski-Harabasz, Davies-Bouldin). Útil cuando <em>no tienes etiquetas reales</em>.</li>
-            <li><strong style="color: {c.heading_secondary};">Externas</strong> — Comparan las predicciones contra etiquetas reales conocidas
-            (Matriz de confusión, ROC AUC). Útil cuando <em>sí sabes cuáles son ataques reales</em>.</li>
-            <li><strong style="color: {c.heading_secondary};">Ninguna</strong> — Solo muestra conteos de detección y tiempos de ejecución.</li>
+            <li><strong style="color: {c.heading_secondary};">No supervisados → Internas</strong> — Evalúan la calidad de clusters sin etiquetas
+            (Silhouette, Calinski-Harabasz, Davies-Bouldin).</li>
+            <li><strong style="color: {c.heading_secondary};">Supervisados → Externas</strong> — Comparan contra etiquetas reales
+            (Matriz de confusión, Accuracy, Precision, Recall, F1, ROC AUC).</li>
         </ul>
 
         </div>
@@ -139,10 +148,18 @@ def show_compare_page():
     cfg_col1, cfg_col2 = st.columns([3, 2], gap="large")
 
     with cfg_col1:
+        model_options = list(UNSUPERVISED_MODEL_PATHS.keys()) + list(SUPERVISED_MODEL_PATHS.keys())
+        default_models = ['IForest', 'OCSVM', 'KMEANS']
+
+        def _fmt_model(opt):
+            model_group = MODEL_TYPE_BY_ID.get(opt, "No supervisados")
+            return f"{model_group} | {opt}"
+
         selected_models = st.multiselect(
             '🤖 Modelos a comparar',
-            ['IForest', 'OCSVM', 'KMEANS', 'AUTOENCODER'],
-            default=['IForest', 'OCSVM', 'KMEANS'],
+            model_options,
+            default=default_models,
+            format_func=_fmt_model,
             help='Selecciona 2 o más modelos para una comparación efectiva.'
         )
 
@@ -153,28 +170,50 @@ def show_compare_page():
                 'OCSVM': '🔵 **OCSVM** — Frontera alrededor del tráfico normal.',
                 'KMEANS': '🟠 **KMEANS** — Agrupa tráfico por similitud.',
                 'AUTOENCODER': '🔴 **Autoencoder** — Red neuronal multiclase.',
+                'DecisionTree': '🌳 **Decision Tree** — Clasificador supervisado basado en reglas.',
+                'ExtraTrees': '🌲 **Extra Trees** — Ensamble supervisado de árboles extremadamente aleatorios.',
+                'GradientBoosting': '📈 **Gradient Boosting** — Ensamble supervisado por boosting secuencial.',
+                'LogisticRegression': '📐 **Logistic Regression** — Clasificador lineal supervisado.',
+                'RandomForest': '🌴 **Random Forest** — Ensamble supervisado robusto de árboles.',
             }
             desc_text = " | ".join([model_descriptions.get(m, m) for m in selected_models])
             st.caption(desc_text)
 
     with cfg_col2:
-        metric_compare = st.selectbox(
-            '📏 Métricas de validación',
-            ['Internas', 'Externas', 'Ninguna'],
-            help='Internas: evalúan calidad de clusters. Externas: requieren etiquetas reales.'
-        )
+        selected_supervised = [m for m in selected_models if m in SUPERVISED_MODEL_PATHS]
+        selected_unsupervised = [m for m in selected_models if m in UNSUPERVISED_MODEL_PATHS]
+        st.markdown("**📏 Métricas automáticas por tipo**")
+        st.caption(f"No supervisados: Internas ({len(selected_unsupervised)})")
+        st.caption(f"Supervisados: Externas ({len(selected_supervised)})")
+
+        if selected_supervised:
+            if 'supervised_attack_threshold' not in st.session_state:
+                st.session_state['supervised_attack_threshold'] = 0.70
+            attack_thr = st.slider(
+                '🎯 Umbral de ataque (supervisados)',
+                min_value=0.05,
+                max_value=0.95,
+                value=float(st.session_state.get('supervised_attack_threshold', 0.70)),
+                step=0.01,
+                help='Mayor umbral reduce falsos positivos; menor umbral detecta más ataques.'
+            )
+            st.session_state['supervised_attack_threshold'] = float(attack_thr)
+            st.caption(f"Umbral activo: {attack_thr:.2f}")
 
         true_label_col = None
-        if metric_compare == 'Externas':
+        if selected_supervised:
             if data_source is not None:
-                posibles = data_source.columns.tolist()
-                true_label_col = st.selectbox(
-                    '🏷️ Columna de etiquetas reales',
-                    posibles,
-                    help='Selecciona la columna que contiene las clasificaciones reales (0=Normal, 1=Ataque).'
-                )
+                posibles = metricas.candidate_label_columns(data_source)
+                if posibles:
+                    true_label_col = st.selectbox(
+                        '🏷️ Columna de etiquetas reales',
+                        posibles,
+                        help='Necesaria para métricas externas de modelos supervisados (0=Normal, 1=Ataque o equivalentes).'
+                    )
+                else:
+                    st.info('📂 No se detectaron columnas de etiqueta válidas; se omitirán métricas externas.')
             else:
-                st.info('�� Carga datos con etiquetas reales para métricas externas.')
+                st.info('📂 Carga datos con etiquetas reales para métricas externas en modelos supervisados.')
 
     # Validación visual
     st.markdown("")
@@ -192,7 +231,7 @@ def show_compare_page():
         )
 
     if comparar:
-        _run_comparison(data_source, selected_models, metric_compare, true_label_col)
+        _run_comparison(data_source, selected_models, true_label_col)
 
 
 def _select_data_source():
@@ -261,37 +300,7 @@ def _prep_df(df: pd.DataFrame) -> pd.DataFrame:
 
 def _load_model_path(opt: str):
     """Obtener ruta del modelo según opción."""
-    return {
-        'IForest': IFOREST_MODEL_PATHS,
-        'OCSVM': OCSVM_MODEL_PATH,
-        'KMEANS': KMEANS_MODEL_PATHS,
-        'AUTOENCODER': AUTOENCODER_MODEL_PATH,
-    }.get(opt)
-
-
-def _predict(opt: str, model, df: pd.DataFrame):
-    """Ejecutar predicción según tipo de modelo."""
-    try:
-        if opt == 'IForest':
-            scores = model.decision_function(df)
-            y = pred_threshold(scores, -0.10)['Pred'].values
-            pp3 = model[0].transform(df)
-        elif opt == 'OCSVM':
-            scores = model.decision_function(df)
-            thr = np.percentile(scores, 100 * 0.45)
-            y = np.where(scores >= thr, 0, 1)
-            pp3 = model[0].transform(df)
-        elif opt == 'KMEANS':
-            y = model.predict(df)
-            pp3 = model[0].transform(df)
-        elif opt == 'AUTOENCODER':
-            y = model.predict(df)
-            pp3 = model[0].transform(df)
-        else:
-            return None, None
-        return pp3, y
-    except Exception:
-        return None, None
+    return MODEL_PATHS.get(opt)
 
 
 def _counts(opt: str, y):
@@ -321,21 +330,30 @@ def _counts(opt: str, y):
             'Reconnaissance': int(np.count_nonzero(y == 2)),
         }
 
+    if opt in SUPERVISED_MODEL_PATHS:
+        y_bin = metricas.to_binary_attack_labels(y)
+        normales = int((y_bin == 0).sum())
+        anomalos = int((y_bin == 1).sum())
+        return {'Normal': normales, 'Anómalo': anomalos, 'DDOS_TCP': 0, 'DDOS_UDP': 0, 'Reconnaissance': 0}
+
     normales = int((y == 0).sum())
     anomalos = int((y == 1).sum())
     return {'Normal': normales, 'Anómalo': anomalos, 'DDOS_TCP': 0, 'DDOS_UDP': 0, 'Reconnaissance': 0}
 
 
-def _run_comparison(data_source, selected_models, metric_compare, true_label_col):
+def _run_comparison(data_source, selected_models, true_label_col):
     """Ejecutar comparación de modelos."""
     if data_source is None:
         st.warning('⚠ Cargue datos o use la última captura antes de comparar.')
         return
 
-    dfp = _prep_df(data_source)
     y_true = None
-    if metric_compare == 'Externas' and true_label_col is not None and true_label_col in data_source.columns:
-        y_true = data_source[true_label_col].values
+    df_features = data_source.copy()
+    if true_label_col is not None and true_label_col in df_features.columns:
+        y_true = df_features[true_label_col].values
+        df_features = df_features.drop(columns=[true_label_col], errors='ignore')
+
+    dfp = _prep_df(df_features)
 
     filas = []
     progress_bar = st.progress(0, text="Ejecutando modelos...")
@@ -354,13 +372,15 @@ def _run_comparison(data_source, selected_models, metric_compare, true_label_col
             continue
 
         t0 = time.time()
-        pp3, y = _predict(opt, model, dfp)
+        pp3, y, scores = predecir(model, dfp, opt)
         pred_time = time.time() - t0
         conteos = _counts(opt, y)
         fila = {'Modelo': opt, **conteos, 'Tiempo (s)': round(float(pred_time), 4)}
+        model_type = MODEL_TYPE_BY_ID.get(opt, "No supervisados")
+        fila['Tipo'] = model_type
 
-        # Métricas internas
-        if metric_compare == 'Internas':
+        # Métricas internas para no supervisados.
+        if model_type == 'No supervisados':
             if y is not None and len(np.unique(y)) >= 2:
                 try:
                     s, c, d = metricas.metrica_internas(pd.DataFrame(pp3), y)
@@ -372,33 +392,15 @@ def _run_comparison(data_source, selected_models, metric_compare, true_label_col
                 st.info(f"Métricas internas no disponibles para {opt} (requiere ≥2 clases)")
                 fila.update({'Silhouette': None, 'Calinski': None, 'Davies': None})
 
-        # Métricas externas
-        if metric_compare == 'Externas' and y_true is not None and y is not None and len(y_true) == len(y):
+        # Métricas externas para supervisados.
+        if model_type == 'Supervisados' and y_true is not None and y is not None and len(y_true) == len(y):
             try:
-                from sklearn.metrics import confusion_matrix, roc_auc_score
+                fila.update(metricas.metricas_externas(y_true, y, y_score=scores))
+            except Exception as e:
+                st.warning(f"No se pudieron calcular métricas externas para {opt}: {str(e)}")
 
-                y_bin = None
-                if opt in ['KMEANS']:
-                    path2 = KMEANS_TXT_PATH
-                    mapping = dict_predict(path2)
-                    etiquetas = np.array([mapping.get(int(c), 'Desconocido') for c in y])
-                    y_bin = (etiquetas != 'Normal').astype(int)
-                elif opt == 'AUTOENCODER':
-                    y_bin = (y != 0).astype(int)
-                else:
-                    y_bin = y.astype(int)
-
-                cm = confusion_matrix(y_true, y_bin)
-                fila.update({'MatrizConfusion': cm})
-
-                if np.unique(y_true).size == 2 and np.unique(y_bin).size == 2:
-                    try:
-                        aucv = roc_auc_score(y_true, y_bin)
-                        fila.update({'ROC_AUC': round(float(aucv), 4)})
-                    except Exception:
-                        pass
-            except Exception:
-                pass
+        if model_type == 'Supervisados' and y_true is None:
+            st.info(f"{opt}: sin columna de etiquetas reales; se omiten métricas externas.")
 
         filas.append(fila)
 
@@ -410,7 +412,7 @@ def _run_comparison(data_source, selected_models, metric_compare, true_label_col
         st.info('Sin resultados para mostrar.')
         return
 
-    _display_results(filas, metric_compare)
+    _display_results(filas)
 
 
 def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
@@ -428,26 +430,28 @@ def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
 
         pct_ataque = (a / t) * 100
 
-        if pct_ataque == 0:
+        alert_level = get_alert_level_from_anomaly_percentage(pct_ataque)
+        if alert_level == 'normal':
             estado = "🟢"
             color = c.success
-            msg = f"no detectó amenazas. Todo el tráfico fue clasificado como normal."
-        elif pct_ataque < 5:
-            estado = "🟢"
-            color = c.success
-            msg = f"detectó un nivel mínimo de anomalías ({pct_ataque:.1f}%). La red se encuentra en buen estado."
-        elif pct_ataque < 20:
-            estado = "🟡"
-            color = c.warning
-            msg = f"detectó un {pct_ataque:.1f}% de tráfico anómalo. Se recomienda revisar los patrones detectados."
-        elif pct_ataque < 50:
+            msg = (
+                f"detectó un {pct_ataque:.1f}% de tráfico anómalo. "
+                f"Este nivel está dentro del margen normal (<{ALERT_SUSPICIOUS_THRESHOLD:.0f}%)."
+            )
+        elif alert_level == 'suspicious':
             estado = "🟠"
             color = c.warning_dark
-            msg = f"detectó un {pct_ataque:.1f}% de posibles ataques. Se requiere atención inmediata."
+            msg = (
+                f"detectó un {pct_ataque:.1f}% de posibles ataques. "
+                f"Nivel sospechoso ({ALERT_SUSPICIOUS_THRESHOLD:.0f}% a {ALERT_ATTACK_THRESHOLD:.0f}%)."
+            )
         else:
             estado = "🔴"
             color = c.error
-            msg = f"clasificó el {pct_ataque:.1f}% del tráfico como ataques. Situación crítica que requiere acción urgente."
+            msg = (
+                f"clasificó el {pct_ataque:.1f}% del tráfico como ataques. "
+                f"Situación crítica (≥{ALERT_ATTACK_THRESHOLD:.0f}%) que requiere acción urgente."
+            )
 
         insights.append(f'<p style="margin: 4px 0;"><strong style="color: {color};">{estado} {modelo}</strong>: {msg} '
                         f'<span style="color: rgba(240,250,254,0.5);">({int(n):,} normales / {int(a):,} ataques)</span></p>')
@@ -511,7 +515,7 @@ def _generate_time_insight(res_df):
     return "\n".join(insights)
 
 
-def _display_results(filas, metric_compare):
+def _display_results(filas):
     """Mostrar resultados de la comparación."""
     t = get_current_theme()
     c = t.colors
@@ -582,9 +586,18 @@ def _display_results(filas, metric_compare):
     with kpi_cols[1]:
         st.metric("📦 Predicciones totales", f"{total_paquetes // num_modelos:,}" if num_modelos > 0 else "0")
     with kpi_cols[2]:
-        delta_color = "normal" if pct_ataques < 10 else "inverse"
+        alert_level = get_alert_level_from_anomaly_percentage(pct_ataques)
+        if alert_level == 'normal':
+            delta_text = 'Bajo riesgo'
+            delta_color = 'normal'
+        elif alert_level == 'suspicious':
+            delta_text = 'Medio riesgo'
+            delta_color = 'off'
+        else:
+            delta_text = 'Alto riesgo'
+            delta_color = 'inverse'
         st.metric("🚨 Amenazas (promedio)", f"{pct_ataques:.1f}%",
-                   delta=f"{'Bajo' if pct_ataques < 10 else 'Medio' if pct_ataques < 30 else 'Alto'} riesgo",
+                   delta=delta_text,
                    delta_color=delta_color)
     with kpi_cols[3]:
         st.metric("⏱️ Tiempo promedio", f"{avg_time:.3f}s")
@@ -604,20 +617,17 @@ def _display_results(filas, metric_compare):
 
     cols = ['Modelo', 'Normal', 'Anómalo', 'DDOS_TCP', 'DDOS_UDP', 'Reconnaissance', 'Tiempo (s)']
 
-    if metric_compare == 'Internas':
-        for col in ['Silhouette', 'Calinski', 'Davies']:
-            if col in res_df.columns:
-                cols.append(col)
-
-    if metric_compare == 'Externas':
-        if 'ROC_AUC' in res_df.columns:
-            cols.append('ROC_AUC')
+    if 'Tipo' in res_df.columns:
+        cols.append('Tipo')
+    for col in ['Silhouette', 'Calinski', 'Davies', 'Accuracy', 'Precision', 'Recall', 'F1', 'ROC_AUC']:
+        if col in res_df.columns:
+            cols.append(col)
 
     cols_disponibles = [c for c in cols if c in res_df.columns]
     st.dataframe(res_df[cols_disponibles], use_container_width=True, hide_index=True)
 
     # Explicación de métricas internas
-    if metric_compare == 'Internas' and any(c in res_df.columns for c in ['Silhouette', 'Calinski', 'Davies']):
+    if any(c in res_df.columns for c in ['Silhouette', 'Calinski', 'Davies']):
         with st.expander("📖 ¿Qué significan estas métricas?"):
             st.markdown(f"""
             | Métrica | Qué mide | Valor ideal |
@@ -626,37 +636,38 @@ def _display_results(filas, metric_compare):
             | **Calinski-Harabasz** | Relación entre la dispersión entre clusters y dentro de clusters. | **Mayor es mejor** |
             | **Davies-Bouldin** | Similitud promedio entre clusters. | Cercano a **0** (mejor) |
 
+            Para modelos supervisados, además se muestran: **Accuracy, Precision, Recall, F1 y ROC AUC**.
+
             **En resumen:** Un buen modelo tiene Silhouette alto, Calinski alto y Davies bajo.
             """)
 
     st.markdown("")
 
     # ==================== MATRICES DE CONFUSIÓN ====================
-    if metric_compare == 'Externas':
-        has_cm = any('MatrizConfusion' in f and f['MatrizConfusion'] is not None for f in filas)
-        if has_cm:
-            st.markdown(f"""
-            <div style="background: rgba(245,158,11,0.06); padding: 1rem 1.2rem; border-radius: 12px;
-                        border: 1px solid rgba(245,158,11,0.15); margin-bottom: 0.5rem;">
-                <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">🧮 Matrices de Confusión</h3>
-                <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
-                    Comparan las predicciones del modelo vs las etiquetas reales. La diagonal principal (↘) muestra aciertos.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+    has_cm = any('MatrizConfusion' in f and f['MatrizConfusion'] is not None for f in filas)
+    if has_cm:
+        st.markdown(f"""
+        <div style="background: rgba(245,158,11,0.06); padding: 1rem 1.2rem; border-radius: 12px;
+                    border: 1px solid rgba(245,158,11,0.15); margin-bottom: 0.5rem;">
+            <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">🧮 Matrices de Confusión</h3>
+            <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
+                Comparan las predicciones del modelo vs las etiquetas reales. La diagonal principal (↘) muestra aciertos.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
-            cm_cols = st.columns(len(filas), gap="medium")
-            for idx, fila in enumerate(filas):
-                if 'MatrizConfusion' in fila and fila['MatrizConfusion'] is not None:
-                    with cm_cols[idx]:
-                        st.markdown(f"**{fila['Modelo']}**")
-                        cm_df = pd.DataFrame(
-                            fila['MatrizConfusion'],
-                            columns=['Pred: Normal', 'Pred: Ataque'],
-                            index=['Real: Normal', 'Real: Ataque']
-                        )
-                        st.dataframe(cm_df, use_container_width=True)
-            st.markdown("")
+        filas_cm = [f for f in filas if f.get('MatrizConfusion') is not None]
+        cm_cols = st.columns(len(filas_cm), gap="medium")
+        for idx, fila in enumerate(filas_cm):
+            with cm_cols[idx]:
+                st.markdown(f"**{fila['Modelo']}**")
+                cm_df = pd.DataFrame(
+                    fila['MatrizConfusion'],
+                    columns=['Pred: Normal', 'Pred: Ataque'],
+                    index=['Real: Normal', 'Real: Ataque']
+                )
+                st.dataframe(cm_df, use_container_width=True)
+        st.markdown("")
 
     # ==================== GRÁFICAS LADO A LADO ====================
     chart_col1, chart_col2 = st.columns(2, gap="large")

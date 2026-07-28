@@ -2,7 +2,30 @@
 import numpy as np
 import pandas as pd
 from sklearn import metrics
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 import info_sistema
+
+
+LABEL_COLUMN_NAME_HINTS = {
+    "label",
+    "labels",
+    "class",
+    "target",
+    "y",
+    "is_attack",
+    "attack",
+    "tipo_ataque",
+    "intrusion",
+    "anomaly",
+    "categoria",
+}
 
 
 def purity_score(y_true, y_pred):
@@ -10,6 +33,120 @@ def purity_score(y_true, y_pred):
     contingency_matrix = metrics.cluster.contingency_matrix(y_true, y_pred)
     # return purity
     return np.sum(np.amax(contingency_matrix, axis=0)) / np.sum(contingency_matrix)
+
+
+def _is_normal_label(value):
+    """Heurística para detectar etiquetas de tráfico normal."""
+    if pd.isna(value):
+        return True
+
+    if isinstance(value, (int, np.integer, float, np.floating)):
+        return int(value) == 0
+
+    text = str(value).strip().lower()
+    normal_tokens = {
+        "0",
+        "normal",
+        "benigno",
+        "benign",
+        "legitimo",
+        "legítimo",
+        "clean",
+        "safe",
+    }
+    return text in normal_tokens
+
+
+def to_binary_attack_labels(y):
+    """Convierte etiquetas arbitrarias a binario: 0=Normal, 1=Ataque."""
+    arr = np.asarray(y)
+    return np.array([0 if _is_normal_label(v) else 1 for v in arr], dtype=int)
+
+
+def is_plausible_label_series(series, max_unique=20):
+    """Valida si una serie parece una columna de etiquetas y no una feature continua."""
+    if series is None:
+        return False
+
+    s = pd.Series(series)
+    s = s.dropna()
+    if s.empty:
+        return False
+
+    # Evita columnas continuas tipo timestamp/delta_time.
+    unique_count = int(s.nunique())
+    if unique_count > max_unique:
+        return False
+
+    # Acepta binario clásico.
+    if pd.api.types.is_numeric_dtype(s):
+        uniq = set(pd.Series(s).astype(float).unique().tolist())
+        if uniq.issubset({-1.0, 0.0, 1.0}):
+            return True
+
+    # Acepta etiquetas de texto con tokens de tráfico normal/ataque.
+    lowered = s.astype(str).str.strip().str.lower()
+    normal_hits = lowered.map(_is_normal_label).sum()
+    attack_tokens = {"attack", "ataque", "intrusion", "intrusión", "malicious", "anomalo", "anómalo", "ddos", "dos"}
+    attack_hits = lowered.apply(lambda v: any(tok in v for tok in attack_tokens)).sum()
+    return bool(normal_hits > 0 or attack_hits > 0)
+
+
+def candidate_label_columns(df, max_unique=20):
+    """Devuelve columnas candidatas para etiquetas reales en métricas externas."""
+    if df is None or not isinstance(df, pd.DataFrame) or df.empty:
+        return []
+
+    cols = list(df.columns)
+    by_name = [
+        c for c in cols
+        if any(hint in str(c).strip().lower() for hint in LABEL_COLUMN_NAME_HINTS)
+    ]
+
+    valid_by_name = [c for c in by_name if is_plausible_label_series(df[c], max_unique=max_unique)]
+    if valid_by_name:
+        return valid_by_name
+
+    # Fallback: buscar por cardinalidad/forma si no hay nombres sugerentes.
+    return [c for c in cols if is_plausible_label_series(df[c], max_unique=max_unique)]
+
+
+def metricas_externas(y_true, y_pred, y_score=None):
+    """Calcula métricas externas binarias para detección de ataques.
+
+    Devuelve un dict con:
+    - Accuracy
+    - Precision
+    - Recall
+    - F1
+    - ROC_AUC (si es calculable)
+    - MatrizConfusion (2x2 con labels [0, 1])
+    """
+    y_true_bin = to_binary_attack_labels(y_true)
+    y_pred_bin = to_binary_attack_labels(y_pred)
+
+    if y_true_bin.shape[0] != y_pred_bin.shape[0]:
+        raise ValueError("y_true e y_pred deben tener la misma longitud")
+
+    out = {
+        "Accuracy": round(float(accuracy_score(y_true_bin, y_pred_bin)), 4),
+        "Precision": round(float(precision_score(y_true_bin, y_pred_bin, zero_division=0)), 4),
+        "Recall": round(float(recall_score(y_true_bin, y_pred_bin, zero_division=0)), 4),
+        "F1": round(float(f1_score(y_true_bin, y_pred_bin, zero_division=0)), 4),
+        "MatrizConfusion": confusion_matrix(y_true_bin, y_pred_bin, labels=[0, 1]),
+    }
+
+    # ROC AUC requiere ambas clases presentes en y_true.
+    if np.unique(y_true_bin).size == 2:
+        try:
+            if y_score is not None:
+                out["ROC_AUC"] = round(float(roc_auc_score(y_true_bin, np.asarray(y_score))), 4)
+            elif np.unique(y_pred_bin).size == 2:
+                out["ROC_AUC"] = round(float(roc_auc_score(y_true_bin, y_pred_bin)), 4)
+        except Exception:
+            pass
+
+    return out
 
 
 def metricas(df,tipo_ataque, Trans_cluster):

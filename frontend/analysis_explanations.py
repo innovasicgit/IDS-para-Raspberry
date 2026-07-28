@@ -6,6 +6,7 @@ Genera análisis contextualizados según los datos obtenidos.
 import numpy as np
 
 from backend.notifications import get_alert_level_from_anomaly_percentage
+from backend.constants import SUPERVISED_MODEL_PATHS
 
 
 def explicar_distribucion(labels, values, model_option):
@@ -15,7 +16,7 @@ def explicar_distribucion(labels, values, model_option):
     Args:
         labels: Lista de etiquetas (Normal, Anómalo, DDOS_TCP, etc.)
         values: Lista de valores correspondientes
-        model_option: Modelo usado (IForest, OCSVM, KMEANS, AUTOENCODER)
+        model_option: Modelo usado (no supervisado o supervisado)
     
     Returns:
         str: Explicación detallada de la distribución
@@ -31,7 +32,7 @@ def explicar_distribucion(labels, values, model_option):
         distribuciones[label] = {'cantidad': value, 'porcentaje': porcentaje}
     
     # Análisis según el tipo de modelo
-    if model_option in ['IForest', 'OCSVM']:
+    if model_option in ['IForest', 'OCSVM'] or model_option in SUPERVISED_MODEL_PATHS:
         # Modelos binarios: Normal vs Anómalo
         normal = distribuciones.get('Normal', {'cantidad': 0, 'porcentaje': 0})
         anomalo = distribuciones.get('Anómalo', {'cantidad': 0, 'porcentaje': 0})
