@@ -20,6 +20,11 @@ import psutil
 import requests
 import select
 from sklearn.metrics import roc_curve, auc
+
+print(
+    f"[SCRIPT_START] {time.time()}",
+    flush=True
+)
 """El fichero puente `autoencoder_classifier.py` en la raíz del proyecto
 expone la clase `AutoencoderClassifier` importándola desde
 `backend.autoencoderclassifier`. El import directo a ese módulo es más
@@ -39,6 +44,7 @@ from backend.capture_utils import (
     capturing_packets,
     type_packet,
     packet_df,
+    _normalize_dataframe_types,
 )
 from backend.predict import predecir, mostrar_metricas
 from backend.arp_filter import apply_realtime_arp_filter, get_arp_filter_description
@@ -92,7 +98,7 @@ def capture_via_api(duration_sec, backend_url):
             result = response.json()
             if result['status'] == 'success' and result['data']:
                 df = pd.DataFrame(result['data'])
-                return df
+                return _normalize_dataframe_types(df)
             else:
                 st.error(f"No se capturaron paquetes")
                 return None
@@ -118,48 +124,6 @@ def _format_model_label(model_id):
 
 def _is_supervised_model(model_id):
     return model_id in SUPERVISED_MODEL_PATHS
-
-
-def _normalize_dataframe_types(df):
-    """
-    Normaliza los tipos de datos del DataFrame para evitar problemas de serialización con PyArrow.
-    Asegura que todas las columnas numéricas sean del mismo tipo y sin valores mixtos.
-    
-    Args:
-        df: DataFrame a normalizar
-        
-    Returns:
-        DataFrame con tipos de datos normalizados
-    """
-    if df is None or df.empty:
-        return df
-    
-    df = df.copy()
-    
-    # Columnas que deberían ser numéricas
-    numeric_columns = [
-        'port_src', 'port_dst', 'frame_len', 'udp_len', 'ip_ttl', 'icmp_type',
-        'tos', 'ip_flags_rb', 'ip_flags_df', 'ip_flags_mf',
-        'tcp_flags_res', 'tcp_flags_ns', 'tcp_flags_cwr', 'tcp_flags_ecn', 
-        'tcp_flags_urg', 'tcp_flags_ack', 'tcp_flags_push', 'tcp_flags_reset',
-        'tcp_flags_syn', 'tcp_flags_fin', 'epoch_time'
-    ]
-    
-    for col in numeric_columns:
-        if col in df.columns:
-            try:
-                # Convertir a numeric, cualquier valor no convertible se reemplaza por 0
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype('float32')
-            except Exception:
-                df[col] = 0
-    
-    # Columnas que deberían ser string
-    string_columns = ['protocols', 'ip_src', 'ip_dst', 'delta_time']
-    for col in string_columns:
-        if col in df.columns:
-            df[col] = df[col].astype(str)
-    
-    return df
 
 
 def _compute_external_metrics(y_true, y_pred, scores=None):
@@ -237,6 +201,11 @@ def show_dashboard_page():
 
     if 'supervised_attack_threshold' not in st.session_state:
         st.session_state['supervised_attack_threshold'] = 0.70
+
+    for session_key in ('data', 'data_prediccion'):
+        session_value = st.session_state.get(session_key)
+        if isinstance(session_value, pd.DataFrame):
+            st.session_state[session_key] = _normalize_dataframe_types(session_value)
 
     # Estado para captura automática
     if 'auto_capture' not in st.session_state:
@@ -771,8 +740,7 @@ def show_dashboard_page():
             # Tabla de paquetes capturados (siempre visible debajo de la gráfica de tráfico)
             if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
                 st.markdown("### 📊 Paquetes Capturados")
-                display_df = _normalize_dataframe_types(st.session_state['data_prediccion'])
-                st.dataframe(display_df, use_container_width=True)
+                st.dataframe(st.session_state['data_prediccion'], use_container_width=True)
         
         # Mostrar tabla de paquetes capturados (captura manual completada, aún sin predicción)
         elif st.session_state.get('captura_manual_lista', False):
@@ -784,8 +752,7 @@ def show_dashboard_page():
                 # Mensaje temporal con conteo (6s)
                 msg_info = st.empty()
                 msg_info.info(f"📏 **{len(st.session_state.data)}** paquetes capturados · Presiona **Realizar Predicción** en el panel izquierdo para analizar.")
-                display_df = _normalize_dataframe_types(st.session_state.data)
-                st.dataframe(display_df, use_container_width=True)
+                st.dataframe(st.session_state.data, use_container_width=True)
                 time.sleep(3)
                 msg_listos.empty()
                 time.sleep(3)
@@ -984,6 +951,7 @@ def show_dashboard_page():
                 
                 # Limpiar valores vacíos y NaN
                 work_df = work_df.replace('', np.nan).fillna(0)
+                work_df = _normalize_dataframe_types(work_df)
 
                 start_time = time.time()
                 cpu_usage = psutil.cpu_percent(0)  # No bloquea (usa medición desde última llamada)
@@ -1107,6 +1075,8 @@ def show_dashboard_page():
                     'disco': disco2[3]
                 }
 
+                print("[PRED] state saved", flush=True)
+
                 st.success("✅ Predicción completada. Revisa los resultados en el panel de la derecha →")
                 st.rerun()  # Refrescar para mostrar resultados en col2
 
@@ -1193,11 +1163,10 @@ def show_dashboard_page():
                         if captured_data is not None and list(captured_data.columns) != ['value']:
                             if arp_mode != 'none':
                                 st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
-                            # Normalizar tipos de datos antes de guardar
-                            captured_data = _normalize_dataframe_types(captured_data)
-                            st.session_state.data = captured_data
+                            normalized_captured_data = _normalize_dataframe_types(captured_data)
+                            st.session_state.data = normalized_captured_data
                             # run_prediction_on_data hace st.rerun() al final
-                            run_prediction_on_data(captured_data, is_manual=False)
+                            run_prediction_on_data(normalized_captured_data, is_manual=False)
                         else:
                             st.warning('⚠️ No se capturaron paquetes en este ciclo.')
                             st.rerun()
@@ -1302,9 +1271,8 @@ def show_dashboard_page():
                         from backend.arp_filter import filter_arp_dataframe
                         if arp_mode != 'none':
                             captured_data = filter_arp_dataframe(captured_data, arp_mode)
-                        # Normalizar tipos de datos antes de guardar
-                        captured_data = _normalize_dataframe_types(captured_data)
-                        st.session_state.data = captured_data
+                        normalized_captured_data = _normalize_dataframe_types(captured_data)
+                        st.session_state.data = normalized_captured_data
                         st.session_state['captura_manual_lista'] = True
                         st.rerun()
                     else:
@@ -1331,6 +1299,7 @@ def show_dashboard_page():
                         st.error("❌ El archivo CSV está vacío o no contiene columnas válidas.")
                         data = None
                     else:
+                        data = _normalize_dataframe_types(data)
                         st.success("✅ Datos cargados exitosamente")
                         
                         with st.expander("📊 Vista previa de datos"):
@@ -1387,5 +1356,11 @@ def show_dashboard_page():
         if st.session_state.auto_capture.get('next_run_ts') is not None:
             remaining = st.session_state.auto_capture['next_run_ts'] - time.time()
             if remaining > 0:
+                print(
+                    f"[AUTO_DEBUG] fallback_rerun remaining={remaining} active={st.session_state.auto_capture.get('active')} "
+                    f"is_capturing={st.session_state.auto_capture.get('is_capturing')} next_run_ts={st.session_state.auto_capture.get('next_run_ts')}",
+                    flush=True,
+                )
                 time.sleep(1)
+                print("[AUTO_DEBUG] fallback_before_rerun", flush=True)
                 st.rerun()

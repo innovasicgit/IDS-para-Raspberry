@@ -4,6 +4,52 @@ from subprocess import PIPE, Popen
 import pandas as pd
 
 
+CAPTURE_NUMERIC_COLUMNS = {
+    'delta_time',
+    'port_src',
+    'port_dst',
+    'frame_len',
+    'udp_len',
+    'ip_ttl',
+    'icmp_type',
+    'tos',
+    'ip_flags_rb',
+    'ip_flags_df',
+    'ip_flags_mf',
+    'tcp_flags_res',
+    'tcp_flags_ns',
+    'tcp_flags_cwr',
+    'tcp_flags_ecn',
+    'tcp_flags_urg',
+    'tcp_flags_ack',
+    'tcp_flags_push',
+    'tcp_flags_reset',
+    'tcp_flags_syn',
+    'tcp_flags_fin',
+    'epoch_time',
+}
+
+
+def _normalize_dataframe_types(df):
+    """Normaliza tipos para evitar columnas mixtas al serializar o predecir."""
+    if df is None or df.empty:
+        return df
+
+    normalized = df.copy()
+
+    for column in CAPTURE_NUMERIC_COLUMNS.intersection(normalized.columns):
+        normalized[column] = pd.to_numeric(
+            normalized[column].astype(str).str.replace(',', '.', regex=False),
+            errors='coerce'
+        ).fillna(0)
+
+    for column in ('protocols', 'ip_src', 'ip_dst'):
+        if column in normalized.columns:
+            normalized[column] = normalized[column].astype('string').fillna('')
+
+    return normalized
+
+
 def _detect_active_interface():
     """Detecta la interfaz de red activa (con estado UP y carrier)."""
     try:

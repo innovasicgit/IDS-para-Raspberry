@@ -108,17 +108,20 @@ def predecir(model, data, model_option):
                 scores = model.decision_function(data)
             except Exception:
                 scores = None
+            # Este artefacto OCSVM quedó con la polaridad invertida respecto a la
+            # convención que usa el resto de la app, así que normalizamos siempre a
+            # 0=Normal y 1=Anómalo aquí.
             if st.session_state.get('ocsvm_use_sign', True):
                 pred_raw = model.predict(data)
-                predicciones = np.where(pred_raw == 1, 0, 1)
+                predicciones = np.where(pred_raw == 1, 1, 0)
             else:
                 if scores is None:
                     predicciones = model.predict(data)
-                    predicciones = np.where(predicciones == 1, 0, 1)
+                    predicciones = np.where(predicciones == 1, 1, 0)
                 else:
                     pct = float(st.session_state.get('ocsvm_percentile', 0.45))
                     threshold = np.percentile(scores, 100 * pct)
-                    predicciones = np.where(scores >= threshold, 0, 1)
+                    predicciones = np.where(scores >= threshold, 1, 0)
         elif(model_option=='KMEANS'):
             scores = None
             predicciones = model.predict(data)
