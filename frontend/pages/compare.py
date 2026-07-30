@@ -172,8 +172,6 @@ def show_compare_page():
                 'AUTOENCODER': '🔴 **Autoencoder** — Red neuronal multiclase.',
                 'DecisionTree': '🌳 **Decision Tree** — Clasificador supervisado basado en reglas.',
                 'ExtraTrees': '🌲 **Extra Trees** — Ensamble supervisado de árboles extremadamente aleatorios.',
-                'GradientBoosting': '📈 **Gradient Boosting** — Ensamble supervisado por boosting secuencial.',
-                'LogisticRegression': '📐 **Logistic Regression** — Clasificador lineal supervisado.',
                 'RandomForest': '🌴 **Random Forest** — Ensamble supervisado robusto de árboles.',
             }
             desc_text = " | ".join([model_descriptions.get(m, m) for m in selected_models])

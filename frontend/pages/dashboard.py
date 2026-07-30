@@ -1364,3 +1364,6 @@ def show_dashboard_page():
                 time.sleep(1)
                 print("[AUTO_DEBUG] fallback_before_rerun", flush=True)
                 st.rerun()
+            else:
+                print("[AUTO_DEBUG] fallback_due_forcing_rerun", flush=True)
+                st.rerun()
