@@ -147,7 +147,7 @@ def type_packet(packet_):
         'tcp_flags_ack', 'tcp_flags_push', 'tcp_flags_reset', 'tcp_flags_syn', 'tcp_flags_fin','epoch_time'
     ]
 
-    return {fieldnames[i]: [ordered_packet[i]] for i in range(len(fieldnames))}
+    return {fieldnames[i]: ordered_packet[i] for i in range(len(fieldnames))}
 
 
 def packet_df(type_packet_dict, df):
@@ -162,6 +162,13 @@ def packet_df(type_packet_dict, df):
         return None
     return df
 
+def build_dataframe_from_rows(rows):
+    """Construye el DataFrame una sola vez a partir de una lista de dicts.
+    Reemplaza la concatenación paquete a paquete (O(n^2)) por una sola
+    construcción O(n) al final de la captura."""
+    if not rows:
+        return None
+    return pd.DataFrame(rows)
 
 def apply_arp_filter(df, arp_limit_mode='low'):
     """

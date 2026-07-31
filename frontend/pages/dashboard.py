@@ -44,6 +44,7 @@ from backend.capture_utils import (
     capturing_packets,
     type_packet,
     packet_df,
+    build_dataframe_from_rows,
     _normalize_dataframe_types,
 )
 from backend.predict import predecir, mostrar_metricas
@@ -146,6 +147,62 @@ def _compute_external_metrics(y_true, y_pred, scores=None):
 
     return external_metrics, roc_curve_data
 
+def render_svg_gauge(value, min_val, max_val, title, icon, unit, zones, bar_color, threshold=None, text_color="#F0FAFE"):
+    """
+    Medidor semicircular en SVG puro — reemplaza go.Indicator de Plotly
+    para evitar el iframe (mejora la fluidez del scroll).
+    zones: lista de tuplas (inicio, fin, color) en las mismas unidades que 'value'.
+    """
+    import math
+    rng = max_val - min_val
+
+    def pct(v):
+        return max(0.0, min(100.0, (v - min_val) / rng * 100))
+
+    value_pct = pct(value)
+    cx, cy, r = 110, 110, 88
+    bg_stroke, bar_stroke = 16, 20
+    arc_d = f"M {cx - r} {cy} A {r} {r} 0 0 1 {cx + r} {cy}"
+
+    zone_svgs = []
+    for start, end, color in zones:
+        p_start, p_end = pct(start), pct(end)
+        length = p_end - p_start
+        zone_svgs.append(
+            f'<path d="{arc_d}" pathLength="100" fill="none" stroke="{color}" '
+            f'stroke-width="{bg_stroke}" stroke-dasharray="{length} {100 - length}" '
+            f'stroke-dashoffset="{-p_start}" opacity="0.35" />'
+        )
+
+    threshold_svg = ""
+    if threshold is not None:
+        p_th = pct(threshold)
+        angle = math.pi * (1 - p_th / 100)
+        x1 = cx + (r - bg_stroke / 2 - 2) * math.cos(angle)
+        y1 = cy - (r - bg_stroke / 2 - 2) * math.sin(angle)
+        x2 = cx + (r + bg_stroke / 2 + 6) * math.cos(angle)
+        y2 = cy - (r + bg_stroke / 2 + 6) * math.sin(angle)
+        threshold_svg = f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="{text_color}" stroke-width="3" stroke-linecap="round" />'
+
+    bar_svg = (
+        f'<path d="{arc_d}" pathLength="100" fill="none" stroke="{bar_color}" '
+        f'stroke-width="{bar_stroke}" stroke-dasharray="{value_pct} {100 - value_pct}" '
+        f'stroke-linecap="round" />'
+    )
+    number_text = f"{value:.0f}{unit}" if float(value).is_integer() else f"{value:.1f}{unit}"
+
+    return f"""
+    <div style="text-align:center;">
+        <div style="font-size:18px; font-weight:600; color:{text_color}; margin-bottom:4px;">{icon} {title}</div>
+        <svg viewBox="0 0 220 130" width="100%" style="max-width:260px;">
+            {''.join(zone_svgs)}
+            {threshold_svg}
+            {bar_svg}
+            <text x="110" y="100" text-anchor="middle" font-size="34" font-weight="700" fill="{text_color}">{number_text}</text>
+        </svg>
+    </div>
+    """
+
 # capture_local eliminada — la captura automática se hace inline con select.select()
 
 def show_dashboard_page():
@@ -229,37 +286,6 @@ def show_dashboard_page():
             margin-top: 0 !important;
             margin-bottom: 0.2rem !important;
             font-size: 1.6rem !important;
-        }}
-
-        /* ══════ SCROLL INDEPENDIENTE POR COLUMNA ══════ */
-        /* Bloque principal de 2 columnas: altura fija */
-        section[data-testid="stMain"] [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stHorizontalBlock"] [data-testid="column"]) {{
-            max-height: 100vh;
-        }}
-
-        /* Cada columna del dashboard: scroll propio */
-        section[data-testid="stMain"] [data-testid="column"] {{
-            height: calc(100vh - 80px) !important;
-            max-height: calc(100vh - 80px) !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-        }}
-
-        /* Scrollbar personalizado */
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar {{
-            width: 8px;
-        }}
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-track {{
-            background: {c.background};
-            border-radius: 10px;
-        }}
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb {{
-            background: {c.surface};
-            border-radius: 10px;
-            border: 2px solid {c.border};
-        }}
-        section[data-testid="stMain"] [data-testid="column"]::-webkit-scrollbar-thumb:hover {{
-            background: {c.primary};
         }}
 
         /* Animaciones suaves */
@@ -473,80 +499,26 @@ def show_dashboard_page():
                 with col_gauge1:
                     # Gauge de CPU
                     cpu_color = c.success if met['cpu'] < 60 else c.warning if met['cpu'] < 85 else c.error
-                    fig_cpu = go.Figure(go.Indicator(
-                        mode="gauge+number+delta",
-                        value=met['cpu'],
-                        domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "🖥️ Uso de CPU", 'font': {'size': 20, 'color': c.text_primary}},
-                        number={'suffix': "%", 'font': {'size': 40, 'color': c.text_primary}},
-                        delta={'reference': 50, 'increasing': {'color': c.error}, 'decreasing': {'color': c.success}},
-                        gauge={
-                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': c.text_primary},
-                            'bar': {'color': cpu_color, 'thickness': 0.75},
-                            'bgcolor': "rgba(0,0,0,0)",
-                            'borderwidth': 2,
-                            'bordercolor': c.text_primary,
-                            'steps': [
-                                {'range': [0, 60], 'color': 'rgba(0, 200, 83, 0.2)'},
-                                {'range': [60, 85], 'color': 'rgba(255, 167, 38, 0.2)'},
-                                {'range': [85, 100], 'color': 'rgba(255, 82, 82, 0.2)'}
-                            ],
-                            'threshold': {
-                                'line': {'color': c.text_primary, 'width': 4},
-                                'thickness': 0.75,
-                                'value': 85
-                            }
-                        }
-                    ))
-                    fig_cpu.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': c.text_primary},
-                        height=250,
-                        margin=dict(l=20, r=20, t=50, b=20)
+                    gauge_html = render_svg_gauge(
+                        value=met['cpu'], min_val=0, max_val=100,
+                        title="Uso de CPU", icon="🖥️", unit="%",
+                        zones=[(0, 60, c.success), (60, 85, c.warning), (85, 100, c.error)],
+                        bar_color=cpu_color, threshold=85, text_color=c.text_primary,
                     )
-                    st.plotly_chart(fig_cpu, use_container_width=True)
-                    # Estado textual
+                    st.markdown(gauge_html, unsafe_allow_html=True)
                     cpu_status = "✅ Normal" if met['cpu'] < 60 else "⚠️ Alto" if met['cpu'] < 85 else "🔥 Crítico"
                     st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {cpu_status}</div>", unsafe_allow_html=True)
                 
                 with col_gauge2:
                     # Gauge de Memoria
                     mem_color = c.success if met['memoria'] < 70 else c.warning if met['memoria'] < 85 else c.error
-                    fig_mem = go.Figure(go.Indicator(
-                        mode="gauge+number+delta",
-                        value=met['memoria'],
-                        domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "💾 Uso de Memoria RAM", 'font': {'size': 20, 'color': c.text_primary}},
-                        number={'suffix': "%", 'font': {'size': 40, 'color': c.text_primary}},
-                        delta={'reference': 50, 'increasing': {'color': c.error}, 'decreasing': {'color': c.success}},
-                        gauge={
-                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': c.text_primary},
-                            'bar': {'color': mem_color, 'thickness': 0.75},
-                            'bgcolor': "rgba(0,0,0,0)",
-                            'borderwidth': 2,
-                            'bordercolor': c.text_primary,
-                            'steps': [
-                                {'range': [0, 70], 'color': 'rgba(16, 185, 129, 0.2)'},
-                                {'range': [70, 85], 'color': 'rgba(245, 158, 11, 0.2)'},
-                                {'range': [85, 100], 'color': 'rgba(239, 68, 68, 0.2)'}
-                            ],
-                            'threshold': {
-                                'line': {'color': c.text_primary, 'width': 4},
-                                'thickness': 0.75,
-                                'value': 85
-                            }
-                        }
-                    ))
-                    fig_mem.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': c.text_primary},
-                        height=250,
-                        margin=dict(l=20, r=20, t=50, b=20)
+                    gauge_html = render_svg_gauge(
+                        value=met['memoria'], min_val=0, max_val=100,
+                        title="Uso de Memoria RAM", icon="💾", unit="%",
+                        zones=[(0, 70, c.success), (70, 85, c.warning), (85, 100, c.error)],
+                        bar_color=mem_color, threshold=85, text_color=c.text_primary,
                     )
-                    st.plotly_chart(fig_mem, use_container_width=True)
-                    # Estado textual
+                    st.markdown(gauge_html, unsafe_allow_html=True)
                     mem_status = "✅ Normal" if met['memoria'] < 70 else "⚠️ Alto" if met['memoria'] < 85 else "🚨 Crítico"
                     st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {mem_status}</div>", unsafe_allow_html=True)
                 
@@ -556,81 +528,26 @@ def show_dashboard_page():
                 with col_gauge3:
                     # Gauge de Disco
                     disk_color = c.success if met['disco'] < 70 else c.warning if met['disco'] < 85 else c.error
-                    fig_disk = go.Figure(go.Indicator(
-                        mode="gauge+number",
-                        value=met['disco'],
-                        domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "📀 Uso de Disco", 'font': {'size': 20, 'color': c.text_primary}},
-                        number={'suffix': "%", 'font': {'size': 40, 'color': c.text_primary}},
-                        gauge={
-                            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': c.text_primary},
-                            'bar': {'color': disk_color, 'thickness': 0.75},
-                            'bgcolor': "rgba(0,0,0,0)",
-                            'borderwidth': 2,
-                            'bordercolor': c.text_primary,
-                            'steps': [
-                                {'range': [0, 70], 'color': 'rgba(16, 185, 129, 0.2)'},
-                                {'range': [70, 85], 'color': 'rgba(245, 158, 11, 0.2)'},
-                                {'range': [85, 100], 'color': 'rgba(239, 68, 68, 0.2)'}
-                            ],
-                            'threshold': {
-                                'line': {'color': c.text_primary, 'width': 4},
-                                'thickness': 0.75,
-                                'value': 85
-                            }
-                        }
-                    ))
-                    fig_disk.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': c.text_primary},
-                        height=250,
-                        margin=dict(l=20, r=20, t=50, b=20)
+                    gauge_html = render_svg_gauge(
+                        value=met['disco'], min_val=0, max_val=100,
+                        title="Uso de Disco", icon="📀", unit="%",
+                        zones=[(0, 70, c.success), (70, 85, c.warning), (85, 100, c.error)],
+                        bar_color=disk_color, threshold=85, text_color=c.text_primary,
                     )
-                    st.plotly_chart(fig_disk, use_container_width=True)
-                    # Estado textual
+                    st.markdown(gauge_html, unsafe_allow_html=True)
                     disk_status = "✅ Espacio OK" if met['disco'] < 70 else "⚠️ Considerar limpieza" if met['disco'] < 85 else "🚨 Casi lleno"
                     st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {disk_status}</div>", unsafe_allow_html=True)
                 
                 with col_gauge4:
                     # Indicador de Tiempo (diferente estilo - más simple)
                     tiempo_color = c.success if met['tiempo'] < 5 else c.warning if met['tiempo'] < 15 else c.error
-                    # Calcular un porcentaje relativo (máximo esperado: 30 segundos)
-                    tiempo_pct = min((met['tiempo'] / 30) * 100, 100)
-                    
-                    fig_time = go.Figure(go.Indicator(
-                        mode="number+gauge",
-                        value=met['tiempo'],
-                        domain={'x': [0, 1], 'y': [0, 1]},
-                        title={'text': "⏱️ Tiempo de Análisis", 'font': {'size': 20, 'color': c.text_primary}},
-                        number={'suffix': " seg", 'font': {'size': 40, 'color': c.text_primary}},
-                        gauge={
-                            'axis': {'range': [None, 30], 'tickwidth': 1, 'tickcolor': c.text_primary},
-                            'bar': {'color': tiempo_color, 'thickness': 0.75},
-                            'bgcolor': "rgba(0,0,0,0)",
-                            'borderwidth': 2,
-                            'bordercolor': c.text_primary,
-                            'steps': [
-                                {'range': [0, 5], 'color': 'rgba(0, 200, 83, 0.2)'},
-                                {'range': [5, 15], 'color': 'rgba(255, 167, 38, 0.2)'},
-                                {'range': [15, 30], 'color': 'rgba(255, 82, 82, 0.2)'}
-                            ],
-                            'threshold': {
-                                'line': {'color': c.text_primary, 'width': 4},
-                                'thickness': 0.75,
-                                'value': 15
-                            }
-                        }
-                    ))
-                    fig_time.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': c.text_primary},
-                        height=250,
-                        margin=dict(l=20, r=20, t=50, b=20)
+                    gauge_html = render_svg_gauge(
+                        value=met['tiempo'], min_val=0, max_val=30,
+                        title="Tiempo de Análisis", icon="⏱️", unit=" seg",
+                        zones=[(0, 5, c.success), (5, 15, c.warning), (15, 30, c.error)],
+                        bar_color=tiempo_color, threshold=15, text_color=c.text_primary,
                     )
-                    st.plotly_chart(fig_time, use_container_width=True)
-                    # Estado textual
+                    st.markdown(gauge_html, unsafe_allow_html=True)
                     time_status = "⚡ Excelente" if met['tiempo'] < 5 else "✅ Bueno" if met['tiempo'] < 15 else "🐌 Lento"
                     st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Velocidad:</b> {time_status}</div>", unsafe_allow_html=True)
                 
@@ -1092,8 +1009,7 @@ def show_dashboard_page():
                     st.session_state.auto_capture['is_capturing'] = True
                     st.info('🚀 Ejecutando captura automática...')
                     process = capturing_packets(comm_arg)
-
-                    captured_data = None
+                    captured_rows = []
                     duration_sec = int(st.session_state.auto_capture['duration_sec'])
                     if duration_sec <= 0:
                         duration_sec = 60
@@ -1122,13 +1038,11 @@ def show_dashboard_page():
                         if packet_str:
                             packet_list = packet_str.split('\t')
                             protocol = packet_list[1] if len(packet_list) > 1 else ''
-
                             # Usar el filtro ARP en tiempo real
                             accept_packet = apply_realtime_arp_filter(protocol, arp_count, packets_count, arp_mode)
-
                             if accept_packet:
                                 type_packet_data = type_packet(packet_list)
-                                captured_data = packet_df(type_packet_data, captured_data)
+                                captured_rows.append(type_packet_data)
                                 if protocol == 'ARP':
                                     arp_count += 1
                                 packets_count += 1
@@ -1136,6 +1050,8 @@ def show_dashboard_page():
                         elapsed = time.time() - start_ts
                         frac = min(1.0, elapsed / duration_sec)
                         prog.progress(frac, text=f"Tiempo: {int(elapsed)}s / {duration_sec}s (Paquetes: {packets_count}, ARP: {arp_count})")
+
+                    captured_data = build_dataframe_from_rows(captured_rows)        
 
                     try:
                         process.terminate()
@@ -1227,6 +1143,7 @@ def show_dashboard_page():
                 else:
                     # Usar tshark local
                     info_placeholder = st.empty()
+                    captured_rows = []
                     info_placeholder.info("💻 Capturando desde interfaz local...")
                     process = capturing_packets(comm_arg)
                     
@@ -1241,14 +1158,26 @@ def show_dashboard_page():
                         # Parar por tiempo si está configurado
                         if manual_duration and (time.time() - start_ts) >= manual_duration:
                             break
-                        packet_str = process.stdout.readline().strip()
+                        # Lectura no bloqueante para evitar congelamientos
+                        packet_str = ""
+                        try:
+                            ready, _, _ = select.select([process.stdout], [], [], 0.5)
+                            if ready:
+                                packet_str = process.stdout.readline().strip()
+                        except Exception:
+                            packet_str = ""
+                        # Si el proceso terminó inesperadamente, salir del ciclo
+                        if process.poll() is not None:
+                            break
                         if packet_str:
                             packet_list = packet_str.split("\t")
                             type_packet_data = type_packet(packet_list)
-                            captured_data = packet_df(type_packet_data, captured_data)
+                            captured_rows.append(type_packet_data)
                             i += 1
                             pct = i / total_packets
                             progress_bar.progress(pct, text=f"📡 Capturando paquetes: **{i}/{total_packets}** ({pct*100:.0f}%)")
+
+                    captured_data = build_dataframe_from_rows(captured_rows)
 
                     try:
                         process.terminate()
@@ -1359,7 +1288,7 @@ def show_dashboard_page():
                 print(
                     f"[AUTO_DEBUG] fallback_rerun remaining={remaining} active={st.session_state.auto_capture.get('active')} "
                     f"is_capturing={st.session_state.auto_capture.get('is_capturing')} next_run_ts={st.session_state.auto_capture.get('next_run_ts')}",
-                    flush=True,
+                    flush=True, 
                 )
                 time.sleep(1)
                 print("[AUTO_DEBUG] fallback_before_rerun", flush=True)

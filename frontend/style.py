@@ -152,8 +152,8 @@ def _build_css(theme) -> str:
     /* ═══════════════════════ CARDS GLASSMORPHISM ═══════════════════════ */
     .metric-card {{
         background: {colors.gradient_card};
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
         padding: {spacing.lg};
         border-radius: {radius.xl};
         box-shadow: {theme.shadows.md};
@@ -186,8 +186,8 @@ def _build_css(theme) -> str:
 
     .card {{
         background: {colors.gradient_card};
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
         padding: {spacing.lg};
         border-radius: {radius.xl};
         box-shadow: {theme.shadows.sm};
@@ -203,10 +203,8 @@ def _build_css(theme) -> str:
         padding: {spacing.sm} {spacing.lg} !important;
         border-radius: {radius.md} !important;
         box-shadow: {theme.shadows.sm} !important;
-        transition: all {transitions.base} {transitions.ease} !important;
-        font-weight: {typo.weight_medium} !important;
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;        font-weight: {typo.weight_medium} !important;
         font-family: {typo.font_family} !important;
-        backdrop-filter: blur(4px) !important;
         position: relative !important;
         overflow: hidden !important;
     }}
@@ -313,7 +311,7 @@ def _build_css(theme) -> str:
         -webkit-text-fill-color: {colors.text_on_primary} !important;
         border-radius: {radius.md} !important;
         font-weight: {typo.weight_medium} !important;
-        transition: all {transitions.base} {transitions.ease} !important;
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;
     }}
 
     .stDownloadButton > button:hover {{
@@ -338,7 +336,7 @@ def _build_css(theme) -> str:
         background-color: {colors.surface} !important;
         border: 1px solid {colors.border} !important;
         border-radius: {radius.md} !important;
-        transition: all {transitions.base} {transitions.ease} !important;
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;
     }}
 
     .stTextInput > div > div > input:focus {{
@@ -513,8 +511,7 @@ def _build_css(theme) -> str:
         border-radius: 22px !important;
         padding: 0.55rem 1.1rem !important;
         width: 100% !important;
-        transition: all {transitions.base} {transitions.ease} !important;
-    }}
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;    }}
 
     section[data-testid="stSidebar"] [data-testid="stPopover"] > div:first-child > button:hover,
     section[data-testid="stSidebar"] [data-testid="stPopover"] button:hover {{
@@ -562,8 +559,7 @@ def _build_css(theme) -> str:
         border-radius: {radius.md} !important;
         padding: {spacing.md} !important;
         border: 1px solid {colors.border_subtle} !important;
-        transition: all {transitions.base} {transitions.ease} !important;
-    }}
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;    }}
 
     .streamlit-expanderHeader:hover {{
         border-color: {colors.border_active} !important;
@@ -659,7 +655,6 @@ def _build_css(theme) -> str:
         border: 1px solid {colors.popover_btn_border} !important;
         color: {colors.popover_btn_text} !important;
         font-weight: 500 !important;
-        backdrop-filter: blur(4px) !important;
     }}
 
     section[data-testid="stSidebar"] .stButton > button:hover {{
@@ -695,8 +690,7 @@ def _build_css(theme) -> str:
         background: transparent !important;
         color: {colors.nav_text} !important;
         font-weight: 400 !important;
-        transition: all {transitions.base} {transitions.ease} !important;
-        justify-content: flex-start !important;
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;        justify-content: flex-start !important;
     }}
     section[data-testid="stSidebar"] .stButton > button:hover {{
         background: {colors.nav_hover} !important;
@@ -754,7 +748,7 @@ def _build_css(theme) -> str:
         background-color: transparent;
         border-radius: {radius.md};
         padding: {spacing.sm} {spacing.lg};
-        transition: all {transitions.base} {transitions.ease};
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease};
         color: {colors.text_secondary} !important;
     }}
 
@@ -815,7 +809,7 @@ def _build_css(theme) -> str:
         border: 2px dashed {colors.border} !important;
         border-radius: {radius.xl} !important;
         background: {colors.surface_variant} !important;
-        transition: all {transitions.base} {transitions.ease} !important;
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;
     }}
 
     [data-testid="stFileUploader"]:hover {{
@@ -1122,7 +1116,7 @@ def _build_css(theme) -> str:
         border-radius: 18px !important;
         padding: 0.55rem 1rem !important;
         font-weight: 500 !important;
-        transition: all {transitions.base} {transitions.ease} !important;
+        transition: background, border-color, box-shadow, color, transform {transitions.base} {transitions.ease} !important;
     }}
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {{
         background: {colors.popover_btn_hover_bg} !important;

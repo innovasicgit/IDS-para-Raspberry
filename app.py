@@ -20,7 +20,6 @@ from config.theme import get_current_theme
 
 # Imports de frontend
 from frontend.style import setup_page_and_style
-from frontend.auth_ui import ensure_auth
 from frontend.home_page import show_home_page
 from frontend.pages.dashboard import show_dashboard_page
 from frontend.pages.compare import show_compare_page
