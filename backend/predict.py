@@ -89,11 +89,7 @@ def predecir(model, data, model_option):
                     })
 
             data = _sanitize_numeric_frame(data)
-        elif model_option == 'LogisticRegression':
-            # Se procesa en su wrapper dedicado para mantener compatibilidad
-            # con distintos pipelines serializados.
-            pass
-
+            
         columnas_pca2=['componente1','componente2','componente3','componente4','componente5','componente6']
 
         scores = None
@@ -167,37 +163,32 @@ def predecir(model, data, model_option):
         else:
             # Modelos supervisados de scikit-learn.
             try:
-                if model_option == 'LogisticRegression':
-                    attack_threshold = float(st.session_state.get('supervised_attack_threshold', 0.70))
-                    lr_wrapper = LogisticRegressionClassifier(model, attack_threshold=attack_threshold)
-                    predicciones, scores = lr_wrapper.predict_with_scores(data)
-                else:
-                    if hasattr(model, 'predict_proba'):
-                        proba = model.predict_proba(data)
-                        classes = getattr(model, 'classes_', None)
-                        if isinstance(proba, np.ndarray) and proba.ndim == 2 and proba.shape[1] >= 2:
-                            attack_idx = _infer_attack_class_index(classes)
-                            attack_idx = max(0, min(attack_idx, proba.shape[1] - 1))
-                            scores = proba[:, attack_idx]
+                if hasattr(model, 'predict_proba'):
+                    proba = model.predict_proba(data)
+                    classes = getattr(model, 'classes_', None)
+                    if isinstance(proba, np.ndarray) and proba.ndim == 2 and proba.shape[1] >= 2:
+                        attack_idx = _infer_attack_class_index(classes)
+                        attack_idx = max(0, min(attack_idx, proba.shape[1] - 1))
+                        scores = proba[:, attack_idx]
 
-                            attack_threshold = float(st.session_state.get('supervised_attack_threshold', 0.70))
+                        attack_threshold = float(st.session_state.get('supervised_attack_threshold', 0.70))
 
-                            if classes is not None and len(classes) == proba.shape[1]:
-                                classes_arr = np.asarray(classes)
-                                if proba.shape[1] == 2:
-                                    normal_idx = 0 if attack_idx == 1 else 1
-                                    pred_idx = np.where(scores >= attack_threshold, attack_idx, normal_idx)
-                                    predicciones = classes_arr[pred_idx]
-                                else:
-                                    pred_idx = np.argmax(proba, axis=1)
-                                    pred_idx = np.where(scores >= attack_threshold, attack_idx, pred_idx)
-                                    predicciones = classes_arr[pred_idx]
+                        if classes is not None and len(classes) == proba.shape[1]:
+                            classes_arr = np.asarray(classes)
+                            if proba.shape[1] == 2:
+                                normal_idx = 0 if attack_idx == 1 else 1
+                                pred_idx = np.where(scores >= attack_threshold, attack_idx, normal_idx)
+                                predicciones = classes_arr[pred_idx]
                             else:
-                                if proba.shape[1] == 2:
-                                    normal_idx = 0 if attack_idx == 1 else 1
-                                    predicciones = np.where(scores >= attack_threshold, attack_idx, normal_idx)
-                                else:
-                                    predicciones = np.argmax(proba, axis=1)
+                                pred_idx = np.argmax(proba, axis=1)
+                                pred_idx = np.where(scores >= attack_threshold, attack_idx, pred_idx)
+                                predicciones = classes_arr[pred_idx]
+                        else:
+                            if proba.shape[1] == 2:
+                                normal_idx = 0 if attack_idx == 1 else 1
+                                predicciones = np.where(scores >= attack_threshold, attack_idx, normal_idx)
+                            else:
+                                predicciones = np.argmax(proba, axis=1)
 
                     if predicciones is None:
                         predicciones = model.predict(data)
