@@ -22,6 +22,14 @@ UI (Streamlit):
 - `frontend/pages/compare.py`: comparación de múltiples modelos sobre el mismo dataset.
 - `frontend/pages/guia.py`: guía/explicaciones del sistema.
 
+Idiomas:
+
+- `config/i18n.py`: catálogo único de textos traducibles (español e inglés) y
+	selección de idioma por sesión.
+- El idioma se cambia desde el selector de la barra lateral. Al migrar textos
+	de cada página, deben usar `t("clave")`; no se deben crear páginas duplicadas
+	por idioma ni depender de la traducción automática del navegador.
+
 Backend (lógica):
 
 - `backend/capture_utils.py`: construcción del comando `tshark`, captura y parseo a DataFrame.
@@ -157,6 +165,14 @@ La app tiene 3 puntos principales donde “se enchufa” un modelo:
 	- `scores` (opcional) si tu modelo expone un score (útil para histogramas/umbrales)
 	- `pp3` (features) para métricas internas: el código intenta sacar el transformer del pipeline; si no, usa columnas numéricas.
 
+### Convención importante para modelos no supervisados
+
+- No asumas una conversión genérica con umbrales fijos para todos los modelos.
+- Cada artefacto puede devolver etiquetas distintas: por ejemplo, algunos usan `-1/1`, otros `0/1` y otros scores continuos.
+- En este repositorio, `IForest` se consume con su salida nativa en `backend/predict.predecir()` y luego se normaliza a la convención de la UI.
+- `OCSVM` también tiene tratamiento propio porque su polaridad puede variar según el entrenamiento.
+- Si agregas un nuevo modelo no supervisado, valida primero qué devuelve `predict()` y define explícitamente cómo mapearlo a la interfaz (`0=Normal`, `1=Anómalo` o la convención multiclase que corresponda).
+
 ### Checklist: modelo no supervisado binario (Normal/Anómalo)
 
 1. Añade el `.pkl` en `model/`.
@@ -167,6 +183,7 @@ La app tiene 3 puntos principales donde “se enchufa” un modelo:
 	 - Asegura que tu `y_pred` sea 0/1 para que conteos/alertas funcionen.
 4. En `backend/predict.py`:
 	 - Agrega el branch en `predecir()`.
+	 - Define la conversión exacta de la salida del modelo a la convención de la app; no reutilices el mapeo de otro modelo sin verificarlo.
 5. En `frontend/pages/compare.py`:
 	 - Agrega el modelo en la lista de `multiselect`.
 	 - Completa `_load_model_path()` y `_predict()`/`_counts()`.

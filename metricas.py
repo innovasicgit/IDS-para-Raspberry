@@ -11,6 +11,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 import info_sistema
+from backend.capture_utils import CAPTURE_FIELDNAMES
 
 
 LABEL_COLUMN_NAME_HINTS = {
@@ -26,6 +27,10 @@ LABEL_COLUMN_NAME_HINTS = {
     "anomaly",
     "categoria",
 }
+
+# Las columnas que genera la captura son features del tráfico, nunca etiquetas
+# reales (p. ej. tcp_flags_syn marca un inicio de conexión TCP, no un ataque).
+CAPTURE_FEATURE_COLUMNS = {c.lower() for c in CAPTURE_FIELDNAMES}
 
 
 def purity_score(y_true, y_pred):
@@ -75,21 +80,21 @@ def is_plausible_label_series(series, max_unique=20):
 
     # Evita columnas continuas tipo timestamp/delta_time.
     unique_count = int(s.nunique())
-    if unique_count > max_unique:
+    if unique_count < 2 or unique_count > max_unique:
         return False
 
-    # Acepta binario clásico.
+    # Acepta binario clásico, pero solo si existen ambas clases.
     if pd.api.types.is_numeric_dtype(s):
         uniq = set(pd.Series(s).astype(float).unique().tolist())
         if uniq.issubset({-1.0, 0.0, 1.0}):
-            return True
+            has_normal = 0.0 in uniq
+            has_attack = any(v != 0.0 for v in uniq)
+            return bool(has_normal and has_attack)
 
-    # Acepta etiquetas de texto con tokens de tráfico normal/ataque.
+    # Acepta etiquetas de texto con valores de tráfico normal y no normal.
     lowered = s.astype(str).str.strip().str.lower()
     normal_hits = lowered.map(_is_normal_label).sum()
-    attack_tokens = {"attack", "ataque", "intrusion", "intrusión", "malicious", "anomalo", "anómalo", "ddos", "dos"}
-    attack_hits = lowered.apply(lambda v: any(tok in v for tok in attack_tokens)).sum()
-    return bool(normal_hits > 0 or attack_hits > 0)
+    return bool(0 < normal_hits < len(lowered))
 
 
 def candidate_label_columns(df, max_unique=20):
@@ -97,7 +102,7 @@ def candidate_label_columns(df, max_unique=20):
     if df is None or not isinstance(df, pd.DataFrame) or df.empty:
         return []
 
-    cols = list(df.columns)
+    cols = [c for c in df.columns if str(c).strip().lower() not in CAPTURE_FEATURE_COLUMNS]
     by_name = [
         c for c in cols
         if any(hint in str(c).strip().lower() for hint in LABEL_COLUMN_NAME_HINTS)
@@ -128,9 +133,21 @@ def metricas_externas(y_true, y_pred, y_score=None):
     if y_true_bin.shape[0] != y_pred_bin.shape[0]:
         raise ValueError("y_true e y_pred deben tener la misma longitud")
 
+    if np.unique(y_true_bin).size < 2:
+        raise ValueError(
+            "Las etiquetas reales solo contienen una clase tras la normalización binaria; "
+            "se necesitan ambas clases (Normal y Ataque) para calcular métricas externas."
+        )
+
+    # Precision no está definida si el modelo no predijo ningún ataque (TP+FP=0);
+    # se devuelve None para mostrar "N/A" en vez de un 0 engañoso.
+    precision = None
+    if np.any(y_pred_bin == 1):
+        precision = round(float(precision_score(y_true_bin, y_pred_bin, zero_division=0)), 4)
+
     out = {
         "Accuracy": round(float(accuracy_score(y_true_bin, y_pred_bin)), 4),
-        "Precision": round(float(precision_score(y_true_bin, y_pred_bin, zero_division=0)), 4),
+        "Precision": precision,
         "Recall": round(float(recall_score(y_true_bin, y_pred_bin, zero_division=0)), 4),
         "F1": round(float(f1_score(y_true_bin, y_pred_bin, zero_division=0)), 4),
         "MatrizConfusion": confusion_matrix(y_true_bin, y_pred_bin, labels=[0, 1]),

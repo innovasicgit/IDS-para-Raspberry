@@ -1,8 +1,20 @@
+import glob
 import shlex
+import os
+import signal
+import tempfile
 import subprocess
-from subprocess import PIPE, Popen
+from subprocess import PIPE, DEVNULL, Popen
 import pandas as pd
 
+
+# Columnas (en orden) que genera type_packet para cada paquete capturado.
+CAPTURE_FIELDNAMES = [
+    'delta_time', 'protocols','ip_src','ip_dst','port_src', 'port_dst', 'frame_len',
+    'udp_len', 'ip_ttl', 'icmp_type', 'tos', 'ip_flags_rb', 'ip_flags_df', 'ip_flags_mf',
+    'tcp_flags_res', 'tcp_flags_ns', 'tcp_flags_cwr', 'tcp_flags_ecn', 'tcp_flags_urg',
+    'tcp_flags_ack', 'tcp_flags_push', 'tcp_flags_reset', 'tcp_flags_syn', 'tcp_flags_fin','epoch_time'
+]
 
 CAPTURE_NUMERIC_COLUMNS = {
     'delta_time',
@@ -103,8 +115,76 @@ def build_tshark_command() -> list:
 
 
 def capturing_packets(comm_arg):
-    process = Popen(comm_arg, stdout=PIPE, stderr=PIPE, text=True)
+    process = Popen(
+        comm_arg,
+        stdout=PIPE,
+        stderr=DEVNULL,
+        text=True,
+        bufsize=1,
+        start_new_session=True,
+    )
     return process
+
+
+def stop_capture_process(process, timeout=5):
+    if process is None:
+        return
+
+    stdout = getattr(process, 'stdout', None)
+    stderr = getattr(process, 'stderr', None)
+
+    try:
+        if process.poll() is None:
+            try:
+                process.terminate()
+                process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except Exception:
+                    pass
+                try:
+                    process.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except Exception:
+                        pass
+                    try:
+                        process.kill()
+                    except Exception:
+                        pass
+                    try:
+                        process.wait(timeout=timeout)
+                    except Exception:
+                        pass
+            except Exception:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except Exception:
+                    pass
+                try:
+                    process.kill()
+                except Exception:
+                    pass
+                try:
+                    process.wait(timeout=timeout)
+                except Exception:
+                    pass
+    finally:
+        for stream in (stdout, stderr):
+            try:
+                if stream is not None:
+                    stream.close()
+            except Exception:
+                pass
+
+        temp_dir = tempfile.gettempdir()
+        for temp_path in glob.glob(os.path.join(temp_dir, 'wireshark_*.pcapng*')):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
 
 
 def type_packet(packet_):
@@ -140,14 +220,7 @@ def type_packet(packet_):
         packet_[30], packet_[31], packet_[33]
     ]
 
-    fieldnames = [
-        'delta_time', 'protocols','ip_src','ip_dst','port_src', 'port_dst', 'frame_len',
-        'udp_len', 'ip_ttl', 'icmp_type', 'tos', 'ip_flags_rb', 'ip_flags_df', 'ip_flags_mf',
-        'tcp_flags_res', 'tcp_flags_ns', 'tcp_flags_cwr', 'tcp_flags_ecn', 'tcp_flags_urg',
-        'tcp_flags_ack', 'tcp_flags_push', 'tcp_flags_reset', 'tcp_flags_syn', 'tcp_flags_fin','epoch_time'
-    ]
-
-    return {fieldnames[i]: ordered_packet[i] for i in range(len(fieldnames))}
+    return {CAPTURE_FIELDNAMES[i]: ordered_packet[i] for i in range(len(CAPTURE_FIELDNAMES))}
 
 
 def packet_df(type_packet_dict, df):

@@ -5,6 +5,7 @@ Explicación detallada y accesible de todos los conceptos, modelos y funcionalid
 
 import streamlit as st
 from config.theme import get_current_theme
+from config.i18n import get_language, t, t_list
 from pathlib import Path
 import base64
 
@@ -12,8 +13,18 @@ import base64
 def show_guia_page():
     """Página educativa completa sobre el sistema IDS."""
 
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
+
+    st.markdown("""
+    <style>
+        .guide-translated { display: none; }
+        .guide-model-card.en > *:not(.guide-translated),
+        .guide-attack-card.en > *:not(.guide-translated) { display: none; }
+        .guide-model-card.en > .guide-translated,
+        .guide-attack-card.en > .guide-translated { display: block; }
+    </style>
+    """, unsafe_allow_html=True)
     
     # helper base64
     # el directorio "img" vive en la raíz del repo, no dentro de frontend/pages.
@@ -59,10 +70,10 @@ def show_guia_page():
         <div class="guia-header-content">
             <h1 style="color: {c.hero_title}; font-size: 3rem; margin-bottom: 1rem; 
                        text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">
-                📚 Guía Completa del Sistema IDS
+                {t('guide_title')}
             </h1>
             <h3 style="color: {c.hero_subtitle}; font-weight: 300; margin-bottom: 0; font-size: 1.3rem;">
-                Todo lo que necesitas saber para proteger tu red IoT
+                {t('guide_subtitle')}
             </h3>
         </div>
     </div>
@@ -70,39 +81,30 @@ def show_guia_page():
 
     # ==================== ¿QUÉ ES ESTE SISTEMA? ====================
     
-    st.markdown("## 🔰 ¿Qué es un Sistema de Detección de Intrusiones (IDS)?")
+    st.markdown(f"## {t('what_is_ids')}")
     
     st.markdown(f"""
     <div style="background: linear-gradient(135deg, {c.success_light} 0%, rgba(16, 185, 129, 0.05) 100%); 
                 padding: 2rem; border-radius: 15px; border-left: 5px solid {c.success}; margin: 1.5rem 0;">
         
-    <h3 style="color: {c.success}; margin-top: 0;">💡 Explicación Simple</h3>
+    <h3 style="color: {c.success}; margin-top: 0;">{t('guide_simple_explanation')}</h3>
     
     <p style="font-size: 1.15rem; line-height: 1.9; text-align: justify; margin-bottom: 1.5rem;">
-        Imagina que tu red de dispositivos conectados (IoT) es como tu casa. Un <strong>Sistema de Detección 
-        de Intrusiones (IDS)</strong> actúa como un <strong>guardia de seguridad inteligente</strong> que observa 
-        constantemente quién entra y sale, detectando cualquier comportamiento sospechoso.
+        {t('guide_intro_paragraph_1')}
     </p>
     
     <p style="font-size: 1.15rem; line-height: 1.9; text-align: justify; margin-bottom: 1.5rem;">
-        En el mundo digital, los "visitantes" son <strong>paquetes de datos</strong> que viajan por tu red. 
-        Nuestro sistema analiza cada uno de estos paquetes usando <strong>Inteligencia Artificial</strong> 
-        para identificar si son "visitantes normales" (tráfico legítimo) o "intrusos" (amenazas de seguridad).
+        {t('guide_intro_paragraph_2')}
     </p>
     
-    <h3 style="color: {c.success}; margin-top: 2rem;">🎯 ¿Por qué es importante?</h3>
+    <h3 style="color: {c.success}; margin-top: 2rem;">{t('guide_why_important')}</h3>
     
     <p style="font-size: 1.15rem; line-height: 1.9; text-align: justify;">
-        Los dispositivos IoT (cámaras, sensores, termostatos inteligentes, etc.) son objetivos atractivos 
-        para los atacantes porque muchas veces tienen <strong>seguridad limitada</strong>. Un ataque exitoso 
-        puede permitir a los hackers:
+        {t('guide_iot_risk')}
     </p>
     
     <ul style="font-size: 1.1rem; line-height: 1.8; margin-left: 1.5rem;">
-        <li>📹 <strong>Espiar</strong> tus cámaras de seguridad</li>
-        <li>🔐 <strong>Robar</strong> información sensible</li>
-        <li>💥 <strong>Usar tus dispositivos</strong> para atacar a otros (botnets)</li>
-        <li>⚠️ <strong>Interrumpir</strong> servicios críticos</li>
+        {''.join(f'<li>{item}</li>' for item in t_list('guide_iot_risk_items'))}
     </ul>
     
     </div>
@@ -111,41 +113,31 @@ def show_guia_page():
     # ==================== CÓMO FUNCIONA NUESTRO SISTEMA ====================
     
     st.markdown("---")
-    st.markdown("## ⚙️ ¿Cómo Funciona Nuestro Sistema?")
+    st.markdown(f"## {t('how_system_works')}")
     
     # Tabs para cada etapa del proceso
-    tab1, tab2, tab3, tab4 = st.tabs(["1️⃣ Captura", "2️⃣ Análisis", "3️⃣ Detección", "4️⃣ Alerta"])
+    tab1, tab2, tab3, tab4 = st.tabs([t('capture_tab'), t('analysis_tab'), t('detection_tab'), t('alert_tab')])
     
     with tab1:
         st.markdown(f"""
         <div style="padding: 1.5rem; background: rgba(19, 131, 167, 0.1); border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: {c.heading_secondary};">📡 Captura de Tráfico de Red</h3>
+        <h3 style="color: {c.heading_secondary};">{t('guide_capture_title')}</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>¿Qué es?</strong><br>
-            El sistema "escucha" toda la comunicación que pasa por tu red IoT, similar a como un micrófono 
-            capta sonidos en una habitación.
+            {t('guide_capture_text')}
         </p>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>¿Cómo lo hace?</strong><br>
-            Utilizamos una herramienta llamada <strong><u>tshark</u></strong> que captura "paquetes de datos" 
-            (pequeños fragmentos de información que viajan por la red). Cada paquete contiene:
+            
         </p>
         
         <ul style="font-size: 1.05rem; line-height: 1.7; margin-left: 1.5rem;">
-            <li>🏠 <strong>Dirección de origen</strong>: ¿Quién envió el mensaje?</li>
-            <li>🎯 <strong>Dirección de destino</strong>: ¿A quién va dirigido?</li>
-            <li>📦 <strong>Tipo de protocolo</strong>: ¿Qué tipo de comunicación es? (TCP, UDP, ICMP)</li>
-            <li>📏 <strong>Tamaño del paquete</strong>: ¿Cuántos datos se están enviando?</li>
-            <li>⏱️ <strong>Marca de tiempo</strong>: ¿Cuándo se envió?</li>
-            <li>🔢 <strong>Puertos</strong>: ¿Qué servicios están comunicándose?</li>
+            {''.join(f'<li>{item}</li>' for item in t_list('guide_capture_items'))}
         </ul>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify; margin-top: 1.5rem;">
-            <strong>💡 Analogía:</strong> Es como tener una cámara de seguridad que graba todo 
-            lo que sucede en tu red, registrando cada "movimiento" (paquete de datos).
+            {t('guide_capture_analogy')}
         </p>
         
         </div>
@@ -155,35 +147,22 @@ def show_guia_page():
         st.markdown(f"""
         <div style="padding: 1.5rem; background: {c.warning_light}; border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: {c.warning};">🔬 Análisis y Preprocesamiento</h3>
+        <h3 style="color: {c.warning};">{t('guide_analysis_title')}</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>¿Qué sucede aquí?</strong><br>
-            Los datos capturados se "limpian" y "organizan" para que la Inteligencia Artificial 
-            pueda entenderlos mejor.
+            {t('guide_analysis_text')}
         </p>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>Pasos del procesamiento:</strong>
+            
         </p>
         
         <ol style="font-size: 1.05rem; line-height: 1.7; margin-left: 1.5rem;">
-            <li><strong>Normalización</strong>: Convertir todos los valores a un formato estándar 
-                (como convertir todas las medidas a metros en vez de tener algunas en pies y otras en metros)</li>
-            <li><strong>Filtrado</strong>: Eliminar datos irrelevantes o incompletos</li>
-            <li><strong>Extracción de características</strong>: Identificar patrones importantes como:
-                <ul style="margin-top: 0.5rem;">
-                    <li>🔄 Frecuencia de paquetes por segundo</li>
-                    <li>📊 Distribución de tamaños de paquetes</li>
-                    <li>🌐 Patrones de comunicación entre dispositivos</li>
-                    <li>⏰ Intervalos de tiempo entre paquetes</li>
-                </ul>
-            </li>
+            {''.join(f'<li>{item}</li>' for item in t_list('guide_analysis_items'))}
         </ol>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify; margin-top: 1.5rem;">
-            <strong>💡 Analogía:</strong> Es como organizar y clasificar todas las grabaciones de la cámara 
-            de seguridad, marcando eventos importantes como "persona entrando", "puerta abriéndose", etc.
+            {t('guide_analysis_analogy')}
         </p>
         
         </div>
@@ -193,39 +172,22 @@ def show_guia_page():
         st.markdown(f"""
         <div style="padding: 1.5rem; background: {c.surface_variant}; border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: {c.heading_secondary};">🧠 Detección con Inteligencia Artificial</h3>
+        <h3 style="color: {c.heading_secondary};">{t('guide_detection_title')}</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>¿Cómo detecta amenazas?</strong><br>
-            Aquí es donde entra la magia de la Inteligencia Artificial. Los modelos han "aprendido" 
-            cómo se ve el tráfico normal analizando miles o millones de ejemplos previos.
+            {t('guide_detection_text')}
         </p>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>El proceso de detección:</strong>
+            
         </p>
         
         <ol style="font-size: 1.05rem; line-height: 1.7; margin-left: 1.5rem;">
-            <li><strong>Comparación con lo "normal"</strong>: El modelo compara los nuevos datos 
-                con lo que ha aprendido que es tráfico legítimo</li>
-            <li><strong>Cálculo de "extrañeza"</strong>: Asigna una puntuación que indica qué tan 
-                diferente es el tráfico actual de lo esperado</li>
-            <li><strong>Clasificación</strong>: Decide si el tráfico es:
-                <ul style="margin-top: 0.5rem;">
-                    <li>✅ <span style="color: {c.success};"><strong>Normal</strong></span>: 
-                        Comportamiento esperado y seguro</li>
-                    <li>⚠️ <span style="color: {c.warning};"><strong>Sospechoso</strong></span>: 
-                        Algo inusual pero no necesariamente peligroso</li>
-                    <li>🚨 <span style="color: {c.error};"><strong>Ataque</strong></span>: 
-                        Amenaza identificada (DDoS, Reconnaissance, etc.)</li>
-                </ul>
-            </li>
+            {''.join(f'<li>{item}</li>' for item in t_list('guide_detection_items'))}
         </ol>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify; margin-top: 1.5rem;">
-            <strong>💡 Analogía:</strong> Es como un experto en seguridad que, después de años de experiencia, 
-            puede identificar inmediatamente cuando algo no está bien solo observando el comportamiento 
-            de las personas en un edificio.
+            {t('guide_detection_analogy')}
         </p>
         
         </div>
@@ -235,28 +197,22 @@ def show_guia_page():
         st.markdown(f"""
         <div style="padding: 1.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 12px; margin: 1rem 0;">
         
-        <h3 style="color: {c.error};">🚨 Generación de Alertas y Reportes</h3>
+        <h3 style="color: {c.error};">{t('guide_alert_title')}</h3>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>¿Qué pasa cuando se detecta una amenaza?</strong><br>
-            El sistema genera alertas visuales y reportes detallados para que puedas tomar acción inmediata.
+            {t('guide_alert_text')}
         </p>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            <strong>Tipos de alertas:</strong>
+            
         </p>
         
         <ul style="font-size: 1.05rem; line-height: 1.7; margin-left: 1.5rem;">
-            <li>📊 <strong>Gráficos en tiempo real</strong>: Visualización instantánea de amenazas detectadas</li>
-            <li>📈 <strong>Métricas detalladas</strong>: Porcentajes de tráfico normal vs anómalo</li>
-            <li>🎯 <strong>Clasificación de ataques</strong>: Identifica el tipo específico de amenaza</li>
-            <li>📄 <strong>Reportes PDF</strong>: Documentos descargables con análisis completo</li>
-            <li>💡 <strong>Recomendaciones</strong>: Sugerencias de acciones para mitigar el ataque</li>
+            {''.join(f'<li>{item}</li>' for item in t_list('guide_alert_items'))}
         </ul>
         
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify; margin-top: 1.5rem;">
-            <strong>💡 Analogía:</strong> Como cuando tu sistema de alarma de casa detecta un intruso 
-            y te envía una notificación al móvil con imágenes, ubicación y recomendaciones de qué hacer.
+            {t('guide_alert_analogy')}
         </p>
         
         </div>
@@ -265,25 +221,19 @@ def show_guia_page():
     # ==================== MODELOS DE IA EXPLICADOS ====================
     
     st.markdown("---")
-    st.markdown("## 🤖 Modelos de Inteligencia Artificial Explicados")
+    st.markdown(f"## {t('explained_ai_models')}")
     
-    st.info("""
-    **💡 Nota importante**: Nuestro sistema utiliza 8 modelos diferentes de IA. 
-    Cada uno tiene sus propias fortalezas y es mejor para detectar ciertos tipos de amenazas. 
-    Puedes elegir el que mejor se adapte a tus necesidades o probar varios para comparar resultados.
-    """)
+    st.info(t("guide_models_note"))
 
-    st.info("""
-    **Modelos nuevos agregados:** DecisionTree, ExtraTrees y RandomForest.
-    **GradientBoosting** queda fuera de la guía por ahora.
-    """)
+    st.info(t("guide_models_added"))
     
     # IForest
-    with st.expander("🌳 **IForest (Isolation Forest)** - El Detective de Patrones Extraños", expanded=False):
+    with st.expander(t("iforest_guide_title"), expanded=False):
         st.markdown(f"""
-        <div style="padding: 1rem; background: {c.success_light}; border-radius: 10px;">
+        <div class="guide-model-card {get_language()}" style="padding: 1rem; background: {c.success_light}; border-radius: 10px;">
+        <div class="guide-translated">{t('guide_iforest_body')}</div>
         
-        <h4 style="color: {c.success};">🎯 ¿Qué es y cómo funciona?</h4>
+            <h4 style="color: {c.success};">{t('model_what_how')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>Isolation Forest</strong> funciona con un principio simple pero poderoso: 
@@ -298,7 +248,7 @@ def show_guia_page():
             persona de la fiesta para notar que el dinosaurio es diferente.
         </p>
         
-        <h4 style="color: {c.success}; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+            <h4 style="color: {c.success}; margin-top: 1.5rem;">{t('model_technical')}</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Construcción de árboles</strong>: Crea múltiples "árboles de decisión" aleatorios</li>
@@ -336,11 +286,12 @@ def show_guia_page():
         """, unsafe_allow_html=True)
     
     # OCSVM
-    with st.expander("🎯 **OCSVM (One-Class SVM)** - El Guardián del Perímetro", expanded=False):
+    with st.expander(t("ocsvm_guide_title"), expanded=False):
         st.markdown(f"""
-        <div style="padding: 1rem; background: rgba(33, 150, 243, 0.08); border-radius: 10px;">
+        <div class="guide-model-card {get_language()}" style="padding: 1rem; background: rgba(33, 150, 243, 0.08); border-radius: 10px;">
+        <div class="guide-translated">{t('guide_ocsvm_body')}</div>
         
-        <h4 style="color: {c.heading_secondary};">🎯 ¿Qué es y cómo funciona?</h4>
+            <h4 style="color: {c.heading_secondary};">{t('model_what_how')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>One-Class SVM</strong> aprende a crear una "frontera" o "perímetro de seguridad" 
@@ -354,7 +305,7 @@ def show_guia_page():
             o potencial intruso.
         </p>
         
-        <h4 style="color: {c.heading_secondary}; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+            <h4 style="color: {c.heading_secondary}; margin-top: 1.5rem;">{t('model_technical')}</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Aprendizaje de la normalidad</strong>: Estudia solo ejemplos de tráfico legítimo</li>
@@ -396,11 +347,12 @@ def show_guia_page():
         """, unsafe_allow_html=True)
     
     # K-MEANS
-    with st.expander("🎨 **K-MEANS** - El Organizador Inteligente", expanded=False):
+    with st.expander(t("kmeans_guide_title"), expanded=False):
         st.markdown(f"""
-        <div style="padding: 1rem; background: {c.warning_light}; border-radius: 10px;">
+        <div class="guide-model-card {get_language()}" style="padding: 1rem; background: {c.warning_light}; border-radius: 10px;">
+        <div class="guide-translated">{t('guide_kmeans_body')}</div>
         
-        <h4 style="color: {c.warning};">🎯 ¿Qué es y cómo funciona?</h4>
+            <h4 style="color: {c.warning};">{t('model_what_how')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>K-MEANS</strong> es un algoritmo de agrupamiento (clustering) que organiza el tráfico 
@@ -415,7 +367,7 @@ def show_guia_page():
             Si aparece algo extraño (como una piedra), quedará en un grupo aparte o muy lejos de los demás.
         </p>
         
-        <h4 style="color: {c.warning}; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+        <h4 style="color: {c.warning}; margin-top: 1.5rem;">{t('model_technical')}</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Inicialización de centroides</strong>: Elige K puntos centrales aleatorios 
@@ -472,11 +424,12 @@ def show_guia_page():
         """, unsafe_allow_html=True)
     
     # AUTOENCODER
-    with st.expander("🧬 **AUTOENCODER Multiclase** - El Experto en Patrones Profundos", expanded=False):
+    with st.expander(t("autoencoder_guide_title"), expanded=False):
         st.markdown(f"""
-        <div style="padding: 1rem; background: {c.surface_variant}; border-radius: 10px;">
+        <div class="guide-model-card {get_language()}" style="padding: 1rem; background: {c.surface_variant}; border-radius: 10px;">
+        <div class="guide-translated">{t('guide_autoencoder_body')}</div>
         
-        <h4 style="color: {c.heading_secondary};">🎯 ¿Qué es y cómo funciona?</h4>
+        <h4 style="color: {c.heading_secondary};">{t('model_what_how')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             Un <strong>Autoencoder</strong> es una red neuronal profunda (Deep Learning) que aprende a 
@@ -495,7 +448,7 @@ def show_guia_page():
             </ul>
         </p>
         
-        <h4 style="color: {c.heading_secondary}; margin-top: 1.5rem;">🔍 ¿Cómo lo hace técnicamente?</h4>
+        <h4 style="color: {c.heading_secondary}; margin-top: 1.5rem;">{t('model_technical')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             El Autoencoder tiene dos partes principales:
@@ -575,14 +528,15 @@ def show_guia_page():
     # ==================== TIPOS DE ATAQUES EXPLICADOS ====================
     
     st.markdown("---")
-    st.markdown("## 🚨 Tipos de Ataques que Detectamos")
+    st.markdown(f"## {t('detected_attack_types')}")
     
     col1, col2 = st.columns(2, gap="medium")
     
     with col1:
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%); 
+        <div class="guide-attack-card {get_language()}" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%); 
                     padding: 1.5rem; border-radius: 15px; border-left: 5px solid {c.error}; margin: 1rem 0; height: 100%;">
+        <div class="guide-translated">{t('guide_ddos_tcp_body')}</div>
         
         <h3 style="color: {c.error};">🔴 DDoS TCP</h3>
         <h4 style="color: {c.error}; font-size: 1.1rem;">Ataque de Denegación de Servicio vía TCP</h4>
@@ -624,8 +578,9 @@ def show_guia_page():
     
     with col2:
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, {c.warning_light} 0%, rgba(245, 158, 11, 0.05) 100%); 
+        <div class="guide-attack-card {get_language()}" style="background: linear-gradient(135deg, {c.warning_light} 0%, rgba(245, 158, 11, 0.05) 100%); 
                     padding: 1.5rem; border-radius: 15px; border-left: 5px solid {c.warning}; margin: 1rem 0; height: 100%;">
+        <div class="guide-translated">{t('guide_ddos_udp_body')}</div>
         
         <h3 style="color: {c.warning};">🟠 DDoS UDP</h3>
         <h4 style="color: {c.warning}; font-size: 1.1rem;">Ataque de Denegación de Servicio vía UDP</h4>
@@ -668,11 +623,12 @@ def show_guia_page():
     
     # Reconnaissance
     st.markdown(f"""
-    <div style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%); 
+    <div class="guide-attack-card {get_language()}" style="background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%); 
                 padding: 1.5rem; border-radius: 15px; border-left: 5px solid {c.primary}; margin: 1rem 0;">
+    <div class="guide-translated">{t('guide_recon_body')}</div>
     
     <h3 style="color: {c.heading_secondary};">🔵 Reconnaissance (Reconocimiento)</h3>
-    <h4 style="color: {c.heading_secondary}; font-size: 1.1rem;">Escaneo y Mapeo de Red</h4>
+    <h4 style="color: {c.heading_secondary}; font-size: 1.1rem;">{t('reconnaissance_subtitle')}</h4>
     
     <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
         <strong>¿Qué es?</strong><br>
@@ -732,268 +688,207 @@ def show_guia_page():
     # ==================== INTERPRETACIÓN DE MÉTRICAS ====================
     
     st.markdown("---")
-    st.markdown("## 📊 Entendiendo las Métricas del Sistema")
+    st.markdown(f"## {t('understanding_metrics')}")
     
     st.markdown(f"""
     <div style="background: rgba(103, 58, 183, 0.1); padding: 1.5rem; border-radius: 15px; margin: 1.5rem 0;">
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify;">
-            El sistema muestra diferentes tipos de métricas para ayudarte a entender la calidad 
-            de las detecciones y el rendimiento. Aquí te explicamos cada una en términos simples.
+            {t('guide_metrics_intro_html')}
         </p>
     </div>
     """, unsafe_allow_html=True)
     
     # Tabs para métricas
-    tab_int, tab_ext, tab_rend = st.tabs(["📐 Métricas Internas", "🧪 Métricas Externas", "⚡ Métricas de Rendimiento"])
+    tab_int, tab_ext, tab_rend = st.tabs([t("internal_tab"), t("external_tab"), t("performance_tab")])
     
     with tab_int:
-        st.markdown("### 📐 Métricas Internas (Calidad de Agrupamiento)")
+        st.markdown(t("internal_metrics_heading"))
         
-        st.write("""
-        Estas métricas evalúan qué tan bien el modelo ha agrupado o separado los datos. 
-        Son especialmente útiles para modelos como K-MEANS.
-        """)
+        st.write(t("metrics_intro"))
         
         # Silhouette Score
-        st.success("🟢 **Silhouette Score (Coeficiente de Silueta)**")
+        st.success(t("silhouette_title"))
         
-        st.write("**¿Qué mide?**")
-        st.write("""
-        Qué tan bien está cada punto asignado a su cluster. Mide si los puntos están más cerca 
-        de su propio grupo que de otros grupos.
-        """)
+        st.write(t("what_measures"))
+        st.write(t("silhouette_detail"))
         
-        st.write("**💡 Analogía:**")
-        st.write("""
-        Imagina grupos de amigos en una fiesta. Un Silhouette alto significa que cada grupo 
-        está claramente separado (amigos cerca entre sí, grupos alejados). Un Silhouette bajo 
-        significa que los grupos están mezclados.
-        """)
+        st.write(t("analogy"))
+        st.write(t("silhouette_analogy_detail"))
         
-        st.write("**📊 Cómo interpretar:**")
+        st.write(t("how_to_interpret"))
         col1, col2 = st.columns(2, gap="small")
         with col1:
-            st.write("- **+1**: Perfecto ✅")
-            st.write("- **0.7 a 1.0**: Excelente 🌟")
-            st.write("- **0.5 a 0.7**: Buena separación ✅")
+            st.write(t("silhouette_perfect"))
+            st.write(t("silhouette_excellent"))
+            st.write(t("silhouette_good"))
         with col2:
-            st.write("- **0.25 a 0.5**: Razonable ⚠️")
-            st.write("- **< 0.25**: Mala separación ❌")
-            st.write("- **Negativo**: Muy malo ⛔")
+            st.write(t("silhouette_fair"))
+            st.write(t("silhouette_poor"))
+            st.write(t("silhouette_bad"))
         
         st.divider()
         
         # Calinski-Harabasz
-        st.info("🔵 **Calinski-Harabasz Index**")
+        st.info(t("calinski_index"))
         
-        st.write("**¿Qué mide?**")
-        st.write("""
-        La relación entre la separación entre clusters y la compacidad dentro de cada cluster. 
-        **Valores más altos = mejor agrupamiento.**
-        """)
+        st.write(t("what_measures_heading"))
+        st.write(t("calinski_detail"))
         
-        st.write("**💡 Analogía:**")
-        st.write("""
-        Mide qué tan "apretados" están los grupos internamente y qué tan "separados" están 
-        entre sí. Como islas bien definidas en el océano vs. archipiélagos confusos.
-        """)
+        st.write(t("analogy_heading"))
+        st.write(t("calinski_analogy"))
         
-        st.write("**📊 Cómo interpretar:**")
+        st.write(t("interpret_heading"))
         col1, col2 = st.columns(2, gap="small")
         with col1:
-            st.write("- **> 1000**: Excelente ✅")
-            st.write("- **500 - 1000**: Bueno ✅")
+            st.write(t("calinski_excellent"))
+            st.write(t("calinski_good"))
         with col2:
-            st.write("- **100 - 500**: Aceptable ⚠️")
-            st.write("- **< 100**: Pobre ❌")
+            st.write(t("calinski_fair"))
+            st.write(t("calinski_poor"))
         
-        st.warning("📌 **Nota:** No tiene límite superior. En seguridad, valores > 500 indican buena separación.")
+        st.warning(t("calinski_note"))
         
         st.divider()
         
         # Davies-Bouldin
-        st.warning("🟠 **Davies-Bouldin Index**")
+        st.warning(t("davies_index"))
         
-        st.write("**¿Qué mide?**")
-        st.write("""
-        La similitud promedio entre cada cluster y su cluster más similar. 
-        **⚠️ Valores MÁS BAJOS son MEJORES** (inverso a las otras métricas).
-        """)
+        st.write(t("what_measures_heading"))
+        st.write(t("davies_detail"))
         
-        st.write("**💡 Analogía:**")
-        st.write("""
-        Mide qué tan confundibles son los grupos entre sí. Un valor bajo significa que 
-        cada grupo es único y distintivo. Un valor alto significa que los grupos se parecen mucho.
-        """)
+        st.write(t("analogy_heading"))
+        st.write(t("davies_analogy"))
         
-        st.write("**📊 Cómo interpretar:**")
+        st.write(t("interpret_heading"))
         col1, col2 = st.columns(2, gap="small")
         with col1:
-            st.write("- **0**: Perfecto (teórico) ✅")
-            st.write("- **0 - 0.5**: Excelente 🌟")
-            st.write("- **0.5 - 1.0**: Bueno ✅")
+            st.write(t("davies_perfect"))
+            st.write(t("davies_excellent"))
+            st.write(t("davies_good"))
         with col2:
-            st.write("- **1.0 - 2.0**: Aceptable ⚠️")
-            st.write("- **> 2.0**: Malo ❌")
+            st.write(t("davies_fair"))
+            st.write(t("davies_poor"))
         
-        st.error("⚠️ **Importante:** Menor es mejor. Valores > 2 indican confusión entre tráfico normal y ataques.")
+        st.error(t("davies_note"))
         
         st.divider()
         
         # Combinación de métricas
-        st.subheader("🎯 Combinando las Tres Métricas")
+        st.subheader(t("combine_metrics"))
         
-        st.write("Para una evaluación completa, observa las tres métricas juntas:")
+        st.write(t("complete_evaluation"))
         
-        st.success("""
-        **✅ EXCELENTE:**  
-        Silhouette > 0.5 + Calinski > 500 + Davies < 1.0
-        """)
+        st.success(t("excellent_metrics"))
         
-        st.warning("""
-        **⚠️ ACEPTABLE:**  
-        Silhouette > 0.3 + Calinski > 200 + Davies < 2.0
-        """)
+        st.warning(t("acceptable_metrics"))
         
-        st.error("""
-        **❌ POBRE:**  
-        Silhouette < 0.3 o Calinski < 100 o Davies > 2.5
-        """)
+        st.error(t("poor_metrics"))
 
     with tab_ext:
-        st.markdown("### 🧪 Métricas Externas (Datos Etiquetados)")
+        st.markdown(t("external_metrics_heading"))
 
-        st.write("""
-        Estas métricas comparan la predicción del modelo contra la etiqueta real del paquete.
-        Se usan principalmente con modelos supervisados y requieren un CSV con una columna de verdad terreno.
-        """)
+        st.write(t("external_metrics_intro"))
 
-        st.info("""
-        **Cuándo aparecen:** solo si seleccionas un modelo supervisado y cargas un dataset con etiquetas reales.
-        Sin etiquetas, el sistema solo muestra la predicción y omite estas métricas.
-        """)
+        st.info(t("external_metrics_when"))
 
         col1, col2 = st.columns(2, gap="medium")
         with col1:
-            st.success("🎯 **Accuracy**")
-            st.write("Porcentaje total de aciertos sobre todos los paquetes analizados.")
-            st.write("**Ideal:** cuanto más alto, mejor.")
+            st.success(t("accuracy_metric"))
+            st.write(t("accuracy_detail"))
+            st.write(t("accuracy_ideal"))
 
-            st.success("🎯 **Precision**")
-            st.write("De todo lo que el modelo marcó como ataque, cuántos eran realmente ataques.")
-            st.write("**Ideal:** alto si quieres reducir falsos positivos.")
+            st.success(t("precision_metric"))
+            st.write(t("precision_detail"))
+            st.write(t("precision_ideal"))
 
-            st.success("🎯 **Recall**")
-            st.write("De todos los ataques reales, cuántos logró detectar el modelo.")
-            st.write("**Ideal:** alto si quieres reducir falsos negativos.")
+            st.success(t("recall_metric"))
+            st.write(t("recall_detail"))
+            st.write(t("recall_ideal"))
 
         with col2:
-            st.success("🎯 **F1 Score**")
-            st.write("Balance entre Precision y Recall. Útil cuando necesitas un punto medio razonable.")
-            st.write("**Ideal:** lo más alto posible.")
+            st.success(t("f1_metric"))
+            st.write(t("f1_detail"))
+            st.write(t("f1_ideal"))
 
-            st.success("🎯 **ROC AUC**")
-            st.write("Mide qué tan bien separa el modelo normales y ataques en distintos umbrales.")
-            st.write("**Ideal:** cercano a 1.0.")
+            st.success(t("roc_metric"))
+            st.write(t("roc_detail"))
+            st.write(t("roc_ideal"))
 
-            st.success("🎯 **Matriz de Confusión**")
-            st.write("Muestra aciertos y errores por clase: normal vs ataque.")
-            st.write("**Ideal:** valores altos en la diagonal principal.")
+            st.success(t("confusion_metric"))
+            st.write(t("confusion_detail"))
+            st.write(t("confusion_ideal"))
 
         st.divider()
 
-        st.markdown("#### 🧭 Interpretación práctica")
-        st.write("""
-        - Si **Precision** es baja, el modelo está generando demasiados falsos positivos.
-        - Si **Recall** es bajo, el modelo está dejando pasar ataques reales.
-        - Si **Accuracy** parece alta pero Recall es bajo, revisa el desbalance de clases.
-        - Si **ROC AUC** está cerca de 0.5, el modelo separa mal normales y ataques.
-        """)
+        st.markdown(t("practical_interpretation"))
+        st.write(t("practical_metrics"))
     
     with tab_rend:
-        st.markdown("### ⚡ Métricas de Rendimiento del Sistema")
+        st.markdown(t("performance_heading"))
         
-        st.write("""
-        Estas métricas te muestran cómo está funcionando tu sistema en términos de recursos 
-        computacionales. Son importantes para asegurar que el IDS no sobrecargue tus dispositivos.
-        """)
+        st.write(t("performance_intro"))
         
         # Grid de métricas de rendimiento (2 columnas)
         col1, col2 = st.columns(2, gap="medium")
         
         with col1:
-            st.info("🖥️ **% CPU (Procesador)**")
-            st.write("**¿Qué mide?**")
-            st.write("El porcentaje del procesador que está usando el sistema para hacer los análisis.")
+            st.info(t("cpu_metric"))
+            st.write(t("what_measures_short"))
+            st.write(t("cpu_detail"))
             
-            st.write("**💡 Analogía:**")
-            st.write("Como el porcentaje de tu cerebro que usas para una tarea. Si usas el 100%, no puedes hacer nada más al mismo tiempo.")
+            st.write(t("analogy_short"))
+            st.write(t("cpu_analogy"))
             
-            st.write("**📊 Valores típicos:**")
-            st.write("- **0-30%**: Bajo uso, óptimo ✅")
-            st.write("- **30-70%**: Uso moderado ⚠️")
-            st.write("- **70-90%**: Uso alto ⚠️")
-            st.write("- **> 90%**: Sobrecarga ❌")
+            st.write(t("typical_values"))
+            st.write(t("cpu_low")); st.write(t("cpu_moderate")); st.write(t("cpu_high")); st.write(t("cpu_overload"))
         
         with col2:
-            st.info("💾 **% Memoria (RAM)**")
-            st.write("**¿Qué mide?**")
-            st.write("El porcentaje de memoria RAM que está usando el sistema.")
+            st.info(t("ram_metric"))
+            st.write(t("what_measures_short"))
+            st.write(t("ram_detail"))
             
-            st.write("**💡 Analogía:**")
-            st.write("Como el espacio en tu escritorio. Si está muy lleno, es difícil trabajar en nuevas tareas.")
+            st.write(t("analogy_short"))
+            st.write(t("ram_analogy"))
             
-            st.write("**📊 Valores típicos:**")
-            st.write("- **0-50%**: Uso saludable ✅")
-            st.write("- **50-75%**: Uso moderado ⚠️")
-            st.write("- **75-90%**: Uso alto ⚠️")
-            st.write("- **> 90%**: Memoria casi llena ❌")
+            st.write(t("typical_values")); st.write(t("ram_healthy")); st.write(t("ram_moderate")); st.write(t("ram_high")); st.write(t("ram_full"))
         
         st.divider()
         
         col3, col4 = st.columns(2, gap="medium")
         
         with col3:
-            st.warning("📀 **% Disco (Almacenamiento)**")
-            st.write("**¿Qué mide?**")
-            st.write("El porcentaje del disco duro que está ocupado.")
+            st.warning(t("disk_metric"))
+            st.write(t("what_measures_short"))
+            st.write(t("disk_detail"))
             
-            st.write("**💡 Analogía:**")
-            st.write("Como el espacio en tu armario. Si está lleno, no puedes guardar más cosas.")
+            st.write(t("analogy_short"))
+            st.write(t("disk_analogy"))
             
-            st.write("**📊 Valores típicos:**")
-            st.write("- **0-70%**: Espacio suficiente ✅")
-            st.write("- **70-85%**: Considerar limpieza ⚠️")
-            st.write("- **85-95%**: Poco espacio ⚠️")
-            st.write("- **> 95%**: Crítico ❌")
+            st.write(t("typical_values")); st.write(t("disk_enough")); st.write(t("disk_clean")); st.write(t("disk_low")); st.write(t("disk_critical"))
         
         with col4:
-            st.success("⏱️ **Tiempo (segundos)**")
-            st.write("**¿Qué mide?**")
-            st.write("Cuánto tiempo tardó el modelo en analizar los datos y hacer la predicción.")
+            st.success(t("time_metric"))
+            st.write(t("what_measures_short"))
+            st.write(t("time_detail"))
             
-            st.write("**💡 Importancia:**")
-            st.write("Para detección en tiempo real, necesitas tiempos bajos para responder rápidamente.")
+            st.write(t("importance_short"))
+            st.write(t("time_importance"))
             
-            st.write("**📊 Valores típicos (1000 paquetes):**")
-            st.write("- **< 2s**: Muy rápido ✅")
-            st.write("- **2-5s**: Rápido ✅")
-            st.write("- **5-10s**: Aceptable ⚠️")
-            st.write("- **> 10s**: Lento ❌")
+            st.write(t("typical_packets")); st.write(t("time_very_fast")); st.write(t("time_fast")); st.write(t("time_fair")); st.write(t("time_slow"))
         
         st.divider()
         
         # Tabla comparativa
-        st.subheader("⚙️ Comparación entre Modelos")
+        st.subheader(t("models_comparison"))
         
         # Crear tabla con pandas
         import pandas as pd
         
         comparacion = pd.DataFrame({
-            "Modelo": ["IForest", "OCSVM", "K-MEANS", "Autoencoder", "DecisionTree", "ExtraTrees", "LogisticRegression", "RandomForest"],
-            "Velocidad": ["⚡⚡⚡ Muy rápido", "⚡⚡ Rápido", "⚡⚡ Rápido", "⚡ Moderado", "⚡⚡ Rápido", "⚡ Rápido", "⚡⚡⚡ Muy rápido", "⚡ Rápido"],
-            "Uso CPU": ["✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Alto", "✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Moderado"],
-            "Uso RAM": ["✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Alto", "✅ Bajo", "⚠️ Moderado", "✅ Bajo", "⚠️ Moderado"]
+            t("guide_table_model"): ["IForest", "OCSVM", "K-MEANS", "Autoencoder", "DecisionTree", "ExtraTrees", "LogisticRegression", "RandomForest"],
+            t("guide_table_speed"): t_list("guide_table_speed_values"),
+            t("guide_table_cpu"): t_list("guide_table_cpu_values"),
+            t("guide_table_ram"): t_list("guide_table_ram_values")
         })
         
         st.dataframe(comparacion, use_container_width=True, hide_index=True)
@@ -1001,80 +896,32 @@ def show_guia_page():
     # ==================== GUÍA DE USO PASO A PASO ====================
     
     st.markdown("---")
-    st.markdown("## 📖 Guía de Uso Paso a Paso")
+    st.markdown(f"## {t('step_by_step_guide')}")
     
     steps = [
         {
             "icon": "🔌",
-            "title": "Paso 1: Seleccionar Modelo",
-            "description": "En el Panel de Control, elige el modelo de detección que deseas usar.",
-            "details": [
-                "**IForest**: Para detección rápida y general",
-                "**OCSVM**: Para alta precisión con recursos moderados",
-                "**K-MEANS**: Para clasificar tipos específicos de ataques",
-                "**Autoencoder**: Para máxima precisión y detección avanzada",
-                "**DecisionTree**: Para clasificaciones interpretables",
-                "**ExtraTrees**: Para un ensamble robusto con buen equilibrio",
-                "**LogisticRegression**: Para decisiones rápidas y ligeras",
-                "**RandomForest**: Para rendimiento sólido con datos etiquetados"
-            ],
-            "tip": "Si no estás seguro, comienza con IForest para una evaluación rápida; si tienes datos etiquetados, prueba DecisionTree, ExtraTrees, LogisticRegression o RandomForest."
+            "title_key": "steps_model_title", "description_key": "steps_model_desc", "details_key": "steps_model_details", "tip_key": "steps_model_tip"
         },
         {
             "icon": "📊",
-            "title": "Paso 2: Seleccionar Tipo de Métrica",
-            "description": "Elige qué métricas quieres ver para evaluar el modelo.",
-            "details": [
-                "**Internas**: Silhouette, Calinski, Davies (para evaluar calidad de agrupamiento)",
-                "**Externas**: Requiere datos etiquetados para comparar con valores reales"
-            ],
-            "tip": "Para uso normal, selecciona 'Internas'. Solo usa 'Externas' si tienes un dataset con etiquetas conocidas."
+            "title_key": "steps_metric_title", "description_key": "steps_metric_desc", "details_key": "steps_metric_details", "tip_key": "steps_metric_tip"
         },
         {
             "icon": "📡",
-            "title": "Paso 3: Capturar Paquetes",
-            "description": "Decide entre captura manual o automática según tus necesidades.",
-            "details": [
-                "**Manual**: Tú controlas cuándo iniciar y detener",
-                "**Automática**: El sistema captura periódicamente según el intervalo configurado",
-                "Puedes configurar: número de paquetes, duración, intervalos"
-            ],
-            "tip": "Para monitoreo continuo, usa captura automática. Para análisis puntuales, usa manual."
+            "title_key": "steps_capture_title", "description_key": "steps_capture_desc", "details_key": "steps_capture_details", "tip_key": "steps_capture_tip"
         },
         {
             "icon": "🖱️",
-            "title": "Paso 4: Realizar Predicción",
-            "description": "Haz clic en '🚀 Realizar Predicción' para analizar los datos capturados.",
-            "details": [
-                "El modelo procesará los paquetes capturados",
-                "Verás resultados en tiempo real",
-                "Se generarán gráficos y estadísticas automáticamente"
-            ],
-            "tip": "Espera a que la captura termine antes de realizar la predicción."
+            "title_key": "steps_predict_title", "description_key": "steps_predict_desc", "details_key": "steps_predict_details", "tip_key": "steps_predict_tip"
         },
         {
             "icon": "📊",
-            "title": "Paso 5: Interpretar Resultados",
-            "description": "Revisa los gráficos, métricas y clasificaciones.",
-            "details": [
-                "**Gráfico de torta**: Distribución porcentual de clases",
-                "**Gráfico de barras**: Cantidad de cada tipo de tráfico",
-                "**Métricas**: Calidad del agrupamiento y rendimiento",
-                "**Patrón de tráfico**: Visualización temporal de anomalías"
-            ],
-            "tip": "Si ves muchas anomalías o ataques, verifica primero si son falsos positivos antes de tomar acciones drásticas."
+            "title_key": "steps_results_title", "description_key": "steps_results_desc", "details_key": "steps_results_details", "tip_key": "steps_results_tip"
         },
         {
             "icon": "📄",
-            "title": "Paso 6: Generar Reporte",
-            "description": "Descarga un reporte PDF con todos los detalles del análisis.",
-            "details": [
-                "Incluye resumen ejecutivo",
-                "Gráficos y estadísticas",
-                "Descripción de amenazas detectadas",
-                "Recomendaciones de seguridad"
-            ],
-            "tip": "Guarda los reportes para llevar un historial y poder comparar el comportamiento de tu red a lo largo del tiempo."
+            "title_key": "steps_report_title", "description_key": "steps_report_desc", "details_key": "steps_report_details", "tip_key": "steps_report_tip"
         }
     ]
     
@@ -1089,24 +936,24 @@ def show_guia_page():
         }
         color = color_map.get(idx, c.quaternary)
         
-        details_html = ''.join([f'<li>{detail}</li>' for detail in step['details']])
+        details_html = ''.join([f'<li>{detail}</li>' for detail in t(step['details_key'])])
         
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, {color}15 0%, {color}05 100%); 
                     padding: 1.5rem; border-radius: 12px; border-left: 5px solid {color}; margin: 1rem 0;">
             <h3 style="color: {color}; margin-top: 0;">
                 <span style="font-size: 2rem; margin-right: 0.5rem;">{step['icon']}</span>
-                {step['title']}
+                {t(step['title_key'])}
             </h3>
             <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1rem;">
-                {step['description']}
+                {t(step['description_key'])}
             </p>
             <ul style="font-size: 1.05rem; line-height: 1.7; margin-left: 1.5rem;">
                 {details_html}
             </ul>
             </ul>
             <div style="background: rgba(255, 235, 59, 0.15); padding: 1rem; border-radius: 8px; margin-top: 1rem; border-left: 3px solid {c.warning};">
-                <strong style="color: {c.warning};">💡 Consejo:</strong> {step['tip']}
+                <strong style="color: {c.warning};">{t('guide_tip')}</strong> {t(step['tip_key'])}
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1114,109 +961,30 @@ def show_guia_page():
     # ==================== PREGUNTAS FRECUENTES ====================
     
     st.markdown("---")
-    st.markdown("## ❓ Preguntas Frecuentes (FAQ)")
+    st.markdown(f"## {t('faq')}")
     
-    with st.expander("❓ ¿Qué tan preciso es el sistema?", expanded=False):
-        st.markdown(f"""
-        La precisión depende del modelo seleccionado y de la calidad de los datos de entrenamiento:
-        
-        - **IForest y OCSVM**: ~85-95% de precisión en detección binaria (normal vs anómalo)
-        - **K-MEANS**: ~80-90% en clasificación multiclase
-        - **Autoencoder**: ~90-98% con el modelo entrenado correctamente
-        - **DecisionTree / ExtraTrees / LogisticRegression / RandomForest**: dependen del dataset etiquetado, el preprocesamiento y el umbral usado
-        
-        Los factores que afectan la precisión incluyen:
-        - Calidad de los datos de captura
-        - Variabilidad del tráfico normal en tu red específica
-        - Tipos de ataques (algunos son más fáciles de detectar que otros)
-        - Configuración de parámetros del modelo
-        """)
+    with st.expander(t("faq_accuracy_title"), expanded=False):
+        st.markdown(t("faq_accuracy"))
     
-    with st.expander("❓ ¿Cuántos paquetes debo capturar?", expanded=False):
-        st.markdown(f"""
-        Depende de tu objetivo:
-        
-        - **Pruebas rápidas**: 100-500 paquetes (2-5 segundos de tráfico)
-        - **Análisis estándar**: 1,000-5,000 paquetes (1-3 minutos)
-        - **Análisis profundo**: 10,000+ paquetes (5+ minutos)
-        - **Monitoreo continuo**: Capturas automáticas cada 5-10 minutos
-        
-        💡 **Recomendación**: Comienza con 1,000 paquetes. Si tu red es muy activa, 
-        podrías necesitar menos; si es tranquila, captura más para tener datos suficientes.
-        """)
+    with st.expander(t("faq_packets_title"), expanded=False):
+        st.markdown(t("faq_packets"))
     
-    with st.expander("❓ ¿Qué hago si detecto un ataque?", expanded=False):
-        st.markdown(f"""
-        Sigue estos pasos:
-        
-        1. **No entres en pánico**: Verifica primero si es un falso positivo
-        2. **Confirma la amenaza**:
-           - Ejecuta el análisis con otro modelo
-           - Revisa las IPs de origen en los datos capturados
-           - Verifica si los patrones son consistentes
-        
-        3. **Acciones inmediatas** según el tipo de ataque:
-           - **DDoS**: Activa rate limiting, bloquea IPs ofensoras
-           - **Reconnaissance**: Restringe respuestas, habilita logging detallado
-        
-        4. **Documenta todo**:
-           - Descarga el reporte PDF
-           - Guarda los datos capturados en CSV
-           - Anota fecha, hora y circunstancias
-        
-        5. **Monitoreo continuo**: Activa captura automática para vigilar si el ataque persiste
-        """)
+    with st.expander(t("faq_attack_title"), expanded=False):
+        st.markdown(t("faq_attack"))
     
-    with st.expander("❓ ¿Puedo usar múltiples modelos a la vez?", expanded=False):
-        st.markdown(f"""
-        Sí, y es muy recomendable. Ve a la página **"Comparar Modelos"** donde puedes:
-        
-        - ✅ Ejecutar varios modelos sobre los mismos datos simultáneamente
-        - ✅ Comparar resultados lado a lado
-        - ✅ Ver qué modelo es más confiable para tu tipo de red
-        - ✅ Identificar consenso entre modelos (si 4/8 modelos coinciden, es más confiable)
-        
-        💡 **Mejor práctica**: Usa IForest para detección rápida, luego confirma con 
-        Autoencoder para alta precisión.
-        """)
+    with st.expander(t("faq_multiple_title"), expanded=False):
+        st.markdown(t("faq_multiple"))
     
-    with st.expander("❓ ¿El sistema puede detectar ataques nuevos (zero-day)?", expanded=False):
-        st.markdown(f"""
-        **Parcialmente**, depende del modelo:
-        
-        - **IForest y OCSVM**: ✅ Sí, pueden detectar patrones anómalos nunca vistos (son modelos de detección de anomalías)
-        - **K-MEANS**: ⚠️ Limitado, solo detecta si el ataque se agrupa de forma diferente
-        - **Autoencoder**: ✅ Sí, mediante el error de reconstrucción puede identificar patrones completamente nuevos
-        - **DecisionTree / ExtraTrees / LogisticRegression / RandomForest**: ⚠️ Mejor para ataques ya conocidos en datos etiquetados; no son la mejor opción para zero-day puro
-        
-        Sin embargo:
-        - No clasificarán el tipo específico si es un ataque totalmente nuevo
-        - Aparecerán como "Anómalo" o podrían caer en categorías conocidas similares
-        - El Autoencoder es el mejor para esto gracias a su capacidad de reconstrucción
-        """)
+    with st.expander(t("faq_zero_day_title"), expanded=False):
+        st.markdown(t("faq_zero_day"))
     
-    with st.expander("❓ ¿Afectará el rendimiento de mi red?", expanded=False):
-        st.markdown(f"""
-        **No**, el sistema solo "escucha" el tráfico pasivamente:
-        
-        - ✅ No intercepta ni modifica paquetes
-        - ✅ No añade latencia a las comunicaciones
-        - ✅ Solo consume recursos en el dispositivo donde se ejecuta (CPU, RAM)
-        - ✅ El consumo de ancho de banda es mínimo (solo lectura)
-        
-        **Impacto típico**:
-        - CPU: 5-30% durante análisis activo
-        - RAM: 200-800 MB dependiendo del modelo y cantidad de datos
-        - Red: < 1% del ancho de banda disponible
-        
-        💡 **Recomendación**: Ejecuta el sistema en un dispositivo dedicado (ej: Raspberry Pi) 
-        para no afectar otros servicios.
-        """)
+    with st.expander(t("faq_impact_title"), expanded=False):
+        st.markdown(t("faq_impact"))
 
     # ==================== CONSEJOS Y MEJORES PRÁCTICAS ====================
     
     st.markdown("---")
-    st.markdown("## 💡 Consejos y Mejores Prácticas")
+    st.markdown(f"## {t('best_practices')}")
     
     col1, col2 = st.columns(2, gap="medium")
     
@@ -1224,14 +992,9 @@ def show_guia_page():
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, {c.success_light} 0%, rgba(16, 185, 129, 0.05) 100%); 
                     padding: 1.5rem; border-radius: 12px; height: 100%;">
-            <h3 style="color: {c.success};">✅ Buenas Prácticas</h3>
+            <h3 style="color: {c.success};">{t('guide_good_practices_title')}</h3>
             <ul style="font-size: 1.05rem; line-height: 1.8;">
-                <li><strong>Establece una línea base</strong>: Ejecuta el sistema durante varios días en tráfico normal para entender qué es "normal" en tu red</li>
-                <li><strong>Monitoreo regular</strong>: Configura capturas automáticas para vigilancia continua</li>
-                <li><strong>Compara modelos</strong>: No te fíes de un solo modelo, usa la función de comparación</li>
-                <li><strong>Guarda reportes</strong>: Mantén un histórico de análisis para detectar tendencias</li>
-                <li><strong>Ajusta umbrales</strong>: Usa las opciones de desarrollador para afinar la sensibilidad</li>
-                <li><strong>Actualiza modelos</strong>: Re-entrena periódicamente con datos nuevos de tu red</li>
+                {''.join(f'<li>{item}</li>' for item in t_list('guide_good_practices'))}
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -1240,14 +1003,9 @@ def show_guia_page():
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%); 
                     padding: 1.5rem; border-radius: 12px; height: 100%;">
-            <h3 style="color: {c.error};">❌ Errores Comunes</h3>
+            <h3 style="color: {c.error};">{t('guide_common_errors_title')}</h3>
             <ul style="font-size: 1.05rem; line-height: 1.8;">
-                <li><strong>Capturar muy pocos datos</strong>: < 100 paquetes no son representativos</li>
-                <li><strong>Ignorar el contexto</strong>: Una "anomalía" puede ser simplemente un patrón nuevo legítimo</li>
-                <li><strong>No verificar falsos positivos</strong>: Siempre confirma antes de bloquear IPs</li>
-                <li><strong>Usar un solo modelo</strong>: Diferentes modelos tienen diferentes fortalezas</li>
-                <li><strong>No monitorear recursos</strong>: Vigila el uso de CPU/RAM para evitar sobrecargas</li>
-                <li><strong>Olvidar documentar</strong>: Descarga y guarda los reportes para análisis posterior</li>
+                {''.join(f'<li>{item}</li>' for item in t_list('guide_common_errors'))}
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -1282,13 +1040,12 @@ def show_guia_page():
     </style>
     <div class="guia-footer">
         <div class="guia-footer-content">
-            <h2 style="color: {c.hero_title}; margin-bottom: 1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">🎓 ¡Felicitaciones!</h2>
+            <h2 style="color: {c.hero_title}; margin-bottom: 1rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">{t('guide_congratulations')}</h2>
             <p style="color: {c.hero_subtitle}; font-size: 1.2rem; line-height: 1.8; margin-bottom: 1.5rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
-                Ahora tienes todo el conocimiento necesario para usar este sistema de detección de intrusiones 
-                de manera efectiva y proteger tu red IoT.
+                {t('guide_footer_text')}
             </p>
             <p style="color: {c.hero_title}; font-size: 1.1rem; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
-                🚀 <strong>Estás listo para comenzar. ¡Ve al Panel de Control y empieza a proteger tu red!</strong>
+                {t('guide_footer_cta')}
             </p>
         </div>
     </div>

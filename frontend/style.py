@@ -5,13 +5,14 @@ Soporta tema oscuro y claro dinámicamente.
 """
 
 import streamlit as st
+from config.i18n import t
 from config.theme import get_current_theme
 
 
 def setup_page_and_style():
     """Configurar página y aplicar estilos del tema."""
     st.set_page_config(
-        page_title="Sistema IDS IoT - Detección de Intrusiones",
+        page_title=t("page_title"),
         page_icon="🛡",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -20,8 +21,8 @@ def setup_page_and_style():
     if "theme_mode" not in st.session_state:
         st.session_state.theme_mode = "dark"
     
-    t = get_current_theme()
-    css = generate_custom_css(t)
+    theme = get_current_theme()
+    css = generate_custom_css(theme)
     st.markdown(css, unsafe_allow_html=True)
 
 

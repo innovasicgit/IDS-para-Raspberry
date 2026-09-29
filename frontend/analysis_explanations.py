@@ -7,6 +7,7 @@ import numpy as np
 
 from backend.notifications import get_alert_level_from_anomaly_percentage
 from backend.constants import SUPERVISED_MODEL_PATHS
+from config.i18n import t
 
 
 def explicar_distribucion(labels, values, model_option):
@@ -23,7 +24,7 @@ def explicar_distribucion(labels, values, model_option):
     """
     total = sum(values)
     if total == 0:
-        return "⚠️ No se detectaron paquetes para analizar."
+        return t("no_packets_to_analyze")
     
     # Crear diccionario de porcentajes
     distribuciones = {}
@@ -37,14 +38,14 @@ def explicar_distribucion(labels, values, model_option):
         normal = distribuciones.get('Normal', {'cantidad': 0, 'porcentaje': 0})
         anomalo = distribuciones.get('Anómalo', {'cantidad': 0, 'porcentaje': 0})
         
-        explicacion = f"### 🔍 Análisis de la Distribución\n\n"
+        explicacion = f"### {t('distribution_analysis')}\n\n"
 
         # Unificar con los umbrales oficiales de alerta (backend.notifications).
         anomaly_pct = float(anomalo['porcentaje'])
         alert_level = get_alert_level_from_anomaly_percentage(anomaly_pct)
 
         if alert_level == 'normal':
-            explicacion += f"✅ **Estado: NORMAL**\n\n"
+            explicacion += f"✅ **{t('status_normal')}**\n\n"
             explicacion += (
                 f"Se detectó **{anomaly_pct:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes) y "
                 f"**{normal['porcentaje']:.1f}% de tráfico normal** ({normal['cantidad']:,} paquetes). "
@@ -52,7 +53,7 @@ def explicar_distribucion(labels, values, model_option):
                 f"💡 **Recomendación:** Mantener monitoreo regular y revisar anomalías si se repiten."
             )
         elif alert_level == 'suspicious':
-            explicacion += f"⚠️ **Estado: SOSPECHOSO - REQUIERE ATENCIÓN**\n\n"
+            explicacion += f"⚠️ **{t('status_suspicious_attention')}**\n\n"
             explicacion += (
                 f"Se detectó **{anomaly_pct:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes), "
                 f"lo cual supera el umbral de operación normal. Esto podría indicar:\n"
@@ -62,7 +63,7 @@ def explicar_distribucion(labels, values, model_option):
                 f"⚠️ **Recomendación:** Investigar los paquetes anómalos y reforzar reglas de seguridad."
             )
         else:
-            explicacion += f"🚨 **Estado: CRÍTICO - ACCIÓN INMEDIATA REQUERIDA**\n\n"
+            explicacion += f"🚨 **{t('status_critical_action')}**\n\n"
             explicacion += (
                 f"¡ALERTA! Se detectó **{anomaly_pct:.1f}% de tráfico anómalo** ({anomalo['cantidad']:,} paquetes). "
                 f"Este nivel sugiere un evento severo o ataque activo.\n\n"
@@ -83,24 +84,24 @@ def explicar_distribucion(labels, values, model_option):
         ataques_totales = ddos_tcp['cantidad'] + ddos_udp['cantidad'] + recon['cantidad']
         porcentaje_ataques = (ataques_totales / total) * 100
         
-        explicacion = f"### 🔍 Análisis Detallado de Amenazas\n\n"
+        explicacion = f"### {t('threat_analysis')}\n\n"
 
         # Unificar con los umbrales oficiales de alerta.
         alert_level = get_alert_level_from_anomaly_percentage(porcentaje_ataques)
         if alert_level == 'normal':
-            explicacion += f"✅ **Estado: NORMAL**\n\n"
+            explicacion += f"✅ **{t('status_normal')}**\n\n"
             explicacion += (
                 f"Se detectó **{porcentaje_ataques:.1f}%** de tráfico asociado a amenazas "
                 f"({ataques_totales:,} paquetes). Este nivel está dentro del margen definido por el sistema.\n\n"
             )
         elif alert_level == 'suspicious':
-            explicacion += f"⚠️ **Estado: SOSPECHOSO - AMENAZAS DETECTADAS**\n\n"
+            explicacion += f"⚠️ **{t('status_suspicious_threats')}**\n\n"
             explicacion += (
                 f"Se identificaron **{ataques_totales:,} paquetes** ({porcentaje_ataques:.1f}% del total). "
                 f"Se recomienda análisis y mitigación.\n\n"
             )
         else:
-            explicacion += f"🚨 **Estado: CRÍTICO - ATAQUE EN CURSO**\n\n"
+            explicacion += f"🚨 **{t('status_attack_in_progress')}**\n\n"
             explicacion += (
                 f"¡ALERTA! **{porcentaje_ataques:.1f}%** del tráfico es malicioso "
                 f"({ataques_totales:,} paquetes). Acción inmediata requerida.\n\n"
@@ -157,7 +158,7 @@ def explicar_metricas_rendimiento(tiempo, cpu, memoria, disco):
     Returns:
         str: Explicación de las métricas
     """
-    explicacion = "### ⚙️ Interpretación de Métricas de Rendimiento\n\n"
+    explicacion = f"### {t('performance_interpretation')}\n\n"
     
     # Análisis del tiempo
     if tiempo < 1:
@@ -262,7 +263,7 @@ def explicar_patron_trafico(datos_para_grafica):
         # Calcular variabilidad
         coef_variacion = (std / promedio) * 100 if promedio > 0 else 0
         
-        explicacion = "### 📊 Análisis del Patrón de Tráfico\n\n"
+        explicacion = f"### {t('traffic_pattern_analysis')}\n\n"
         
         # Interpretación general
         if coef_variacion < 20:
@@ -327,11 +328,11 @@ def generar_resumen_general(resumen_prediccion, metricas_rendimiento, model_opti
     values = resumen_prediccion['values']
     total = sum(values)
     
-    resumen = "## 📋 Resumen Ejecutivo de la Predicción\n\n"
+    resumen = f"## {t('executive_prediction_summary')}\n\n"
     resumen += "---\n\n"
     
     # 1. Datos analizados
-    resumen += f"### 📊 Volumen de Datos\n"
+    resumen += f"### {t('data_volume')}\n"
     resumen += f"- **Total de paquetes analizados:** {total:,}\n"
     resumen += f"- **Modelo de detección:** {model_option}\n"
     resumen += f"- **Tiempo de procesamiento:** {metricas_rendimiento['tiempo']:.2f} segundos\n\n"
@@ -367,7 +368,7 @@ def generar_resumen_general(resumen_prediccion, metricas_rendimiento, model_opti
             resumen += f"¡ALERTA! {pct_ataques:.1f}% del tráfico es malicioso ({ataques:,} paquetes). Acción urgente requerida.\n\n"
     
     # 3. Hallazgos clave
-    resumen += f"### 🔍 Hallazgos Clave\n\n"
+    resumen += f"### {t('key_findings')}\n\n"
     for label, value in zip(labels, values):
         pct = (value / total * 100) if total > 0 else 0
         icono = "✅" if label == "Normal" else "🚨"
@@ -375,7 +376,7 @@ def generar_resumen_general(resumen_prediccion, metricas_rendimiento, model_opti
     resumen += "\n"
     
     # 4. Estado del sistema
-    resumen += f"### 💻 Estado del Sistema\n\n"
+    resumen += f"### {t('system_status')}\n\n"
     cpu_status = "✅ Normal" if metricas_rendimiento['cpu'] < 70 else "⚠️ Alto" if metricas_rendimiento['cpu'] < 90 else "🔥 Crítico"
     mem_status = "✅ Normal" if metricas_rendimiento['memoria'] < 75 else "⚠️ Alto" if metricas_rendimiento['memoria'] < 90 else "🚨 Crítico"
     
@@ -385,12 +386,12 @@ def generar_resumen_general(resumen_prediccion, metricas_rendimiento, model_opti
     
     # 5. Patrón de tráfico (si existe)
     if tiene_patron:
-        resumen += f"### 📈 Patrón de Tráfico\n\n"
+        resumen += f"### {t('traffic_pattern')}\n\n"
         resumen += f"Se analizó el patrón temporal del tráfico. Revise la gráfica inferior para identificar "
         resumen += f"picos anómalos o comportamientos irregulares que podrían indicar ataques.\n\n"
     
     # 6. Recomendaciones finales
-    resumen += f"### 💡 Recomendaciones Finales\n\n"
+    resumen += f"### {t('final_recommendations')}\n\n"
     
     if model_option in ['IForest', 'OCSVM']:
         anomaly_pct = 0.0

@@ -17,6 +17,7 @@ from autoencoder_classifier import AutoencoderClassifier
 from backend.notifications_db import NotificationsDB
 from backend.notifications import NotificationManager
 from config.theme import get_current_theme
+from config.i18n import SUPPORTED_LANGUAGES, get_language, t
 
 # Imports de frontend
 from frontend.style import setup_page_and_style
@@ -60,10 +61,21 @@ if "authenticated" not in st.session_state:
     st.session_state.username = "admin"
 
 # Obtener tema actual
-t = get_current_theme()
-c = t.colors
+theme = get_current_theme()
+c = theme.colors
 
 with st.sidebar:
+    selected_language = st.selectbox(
+        t("language"),
+        options=list(SUPPORTED_LANGUAGES),
+        format_func=SUPPORTED_LANGUAGES.get,
+        index=list(SUPPORTED_LANGUAGES).index(get_language()),
+        key="language_selector",
+    )
+    if selected_language != get_language():
+        st.session_state.language = selected_language
+        st.rerun()
+
     # Logo centrado (cacheado en session_state para no re-leer del disco)
     if "_logo_b64" not in st.session_state:
         import base64
@@ -83,18 +95,18 @@ with st.sidebar:
     
     # Info de usuario
     if st.session_state.get("authenticated"):
-        st.caption(f"Conectado como: {st.session_state.username}")
-        if st.button("Cerrar sesión", key="logout_btn"):
+        st.caption(t("connected_as", username=st.session_state.username))
+        if st.button(t("logout"), key="logout_btn"):
             st.session_state.authenticated = False
             st.session_state.username = None
             st.rerun()
     
     # ── Menú de navegación nativo (sin iframe, respeta el tema) ──
     _nav_items = [
-        ("🏠 Inicio", "home"),
-        ("📚 Guía del Sistema", "guia"),
-        ("🛡️ Panel de Control", "dashboard"),
-        ("📊 Comparar Modelos", "compare"),
+        (t("home"), "home"),
+        (t("guide"), "guia"),
+        (t("dashboard"), "dashboard"),
+        (t("compare"), "compare"),
     ]
     
     # Título de sección
@@ -103,7 +115,7 @@ with st.sidebar:
         font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
         letter-spacing: 0.05em; color: {c.text_secondary};
         padding: 0.3rem 0.2rem; margin: 0 0 0.3rem 0;
-    ">Navegación</p>
+    ">{t("navigation")}</p>
     """, unsafe_allow_html=True)
     
     # Contenedor visual con borde redondeado
@@ -136,70 +148,64 @@ with st.sidebar:
     # Opciones avanzadas
     st.divider()
 
-    with st.expander("⚙️ Configuración avanzada", expanded=False):
-        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>🤖 Autoencoder</p>", unsafe_allow_html=True)
+    with st.expander(t("advanced_settings"), expanded=False):
+        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>{t('autoencoder')}</p>", unsafe_allow_html=True)
         st.session_state.ae_normal_threshold = st.slider(
-            "Umbral Normal (Autoencoder)", 
+            t("normal_threshold"),
             min_value=0.0, max_value=1.0, value=0.60, step=0.01,
-            help="Si la probabilidad de 'Normal' es mayor o igual al umbral, se clasifica como Normal."
+            help=t("normal_threshold_help")
         )
         st.session_state.ae_reconstruction_threshold = st.slider(
-            "Umbral Reconstrucción (AE)", 
+            t("reconstruction_threshold"),
             min_value=0.0, max_value=1.0, value=0.02, step=0.001,
-            help="Si el error de reconstrucción es menor o igual al umbral, se considera normal."
+            help=t("reconstruction_threshold_help")
         )
         
-        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>🔵 OCSVM</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>{t('ocsvm')}</p>", unsafe_allow_html=True)
         st.session_state.ocsvm_use_sign = st.toggle(
-            "Predicción por signo",
+            t("sign_prediction"),
             value=True,
-            help="Usa labels del OCSVM (1=inlier, -1=outlier)."
+            help=t("sign_prediction_help")
         )
         st.session_state.ocsvm_percentile = st.slider(
-            "Percentil umbral", 
+            t("percentile_threshold"),
             min_value=0.0, max_value=1.0, value=0.45, step=0.01,
-            help="Clasifica como normal si el score ≥ percentil seleccionado."
+            help=t("percentile_threshold_help")
         )
 
-    with st.expander("👤 Configuración de usuario", expanded=False):
-        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>📧 Notificaciones por Email</p>", unsafe_allow_html=True)
+    with st.expander(t("user_settings"), expanded=False):
+        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>{t('email_notifications')}</p>", unsafe_allow_html=True)
         
         db = st.session_state.notifications_db
         
         st.session_state.enable_email_notifications = st.toggle(
-            "Activar notificaciones por email",
+            t("enable_email_notifications"),
             value=st.session_state.get("enable_email_notifications", False),
-            help="Envía alertas por correo cuando se detectan anomalías en capturas automáticas."
+            help=t("enable_email_notifications_help")
         )
         
         if st.session_state.enable_email_notifications:
             st.session_state.user_email = st.text_input(
-                "📬 Email de destino",
+                t("destination_email"),
                 value=st.session_state.get("user_email", ""),
-                help="Correo donde recibirás las alertas."
+                help=t("destination_email_help")
             )
             st.session_state.gmail_user = st.text_input(
-                "👤 Usuario Gmail (remitente)",
+                t("gmail_sender"),
                 value=st.session_state.get("gmail_user", ""),
-                help="Cuenta Gmail que enviará los correos."
+                help=t("gmail_sender_help")
             )
             st.session_state.gmail_app_password = st.text_input(
-                "🔑 Contraseña de aplicación Gmail",
+                t("gmail_app_password"),
                 type="password",
                 value=st.session_state.get("gmail_app_password", ""),
-                help="Genera en: https://myaccount.google.com/apppasswords (no es tu contraseña normal)"
+                help=t("gmail_app_password_help")
             )
-            st.info(
-                "📌 **Instrucciones:**\n"
-                "1. Ve a https://myaccount.google.com/apppasswords\n"
-                "2. Asegúrate de tener verificación en 2 pasos activada\n"
-                "3. Selecciona 'Mail' y 'Windows Computer'\n"
-                "4. Copia la contraseña de 16 caracteres y pégala arriba"
-            )
+            st.info(t("email_instructions"))
             
             col_save, col_clear = st.columns(2)
             with col_save:
-                if st.button("💾 Guardar", key="save_email_cfg", use_container_width=True):
+                if st.button(t("save"), key="save_email_cfg", use_container_width=True):
                     if st.session_state.user_email and st.session_state.gmail_user:
                         success, msg = db.save_email_config(
                             st.session_state.user_email,
@@ -209,35 +215,35 @@ with st.sidebar:
                         db.save_preferences(True)
                         st.toast(msg)
                     else:
-                        st.toast("⚠️ Completa todos los campos")
+                        st.toast(t("complete_all_fields"))
             with col_clear:
-                if st.button("🗑️ Limpiar", key="clear_email_cfg", use_container_width=True):
+                if st.button(t("clear"), key="clear_email_cfg", use_container_width=True):
                     db.delete_email_config()
                     st.session_state.user_email = ""
                     st.session_state.gmail_user = ""
                     st.session_state.gmail_app_password = ""
                     st.session_state.enable_email_notifications = False
                     db.save_preferences(False)
-                    st.toast("✅ Configuración eliminada")
+                    st.toast(t("configuration_deleted"))
                     st.rerun()
         else:
             db.save_preferences(False)
 
         st.markdown("---")
-        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>🛡️ Filtro ARP</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>{t('arp_filter')}</p>", unsafe_allow_html=True)
         st.session_state.arp_limit_mode = st.selectbox(
-            "Modo de límite ARP",
+            t("arp_limit_mode"),
             options=["low", "medium", "high", "none"],
             index=["low", "medium", "high", "none"].index(
                 st.session_state.get("arp_limit_mode", "medium")
             ),
-            help="Controla cuántos paquetes ARP se permiten antes de alertar."
+            help=t("arp_limit_mode_help")
         )
 
     # Toggle de tema claro/oscuro
     st.divider()
     is_dark = st.session_state.get("theme_mode", "dark") == "dark"
-    theme_label = "🌙 Modo Oscuro" if is_dark else "☀️ Modo Claro"
+    theme_label = t("dark_mode") if is_dark else t("light_mode")
     if st.button(theme_label, key="theme_toggle", use_container_width=True):
         st.session_state.theme_mode = "light" if is_dark else "dark"
         st.rerun()

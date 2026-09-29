@@ -4,7 +4,7 @@ FROM python:3.11-slim-bullseye
 # Instala dependencias del sistema necesarias para tshark y librerías científicas
 RUN echo 'wireshark-common wireshark-common/install-setuid boolean false' | debconf-set-selections && \
     apt-get update && \
-    apt-get install -y tshark build-essential libpcap-dev python3-dev python3-pip && \
+    apt-get install -y tshark build-essential libpcap-dev python3-dev python3-pip iproute2 && \
     rm -rf /var/lib/apt/lists/*
 
 # Crea el directorio de la app

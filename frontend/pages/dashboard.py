@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 import streamlit as st
 from config.theme import get_current_theme
+from config.i18n import t, t_list
 import joblib
 import pandas as pd
 import numpy as np
@@ -101,20 +102,20 @@ def capture_via_api(duration_sec, backend_url):
                 df = pd.DataFrame(result['data'])
                 return _normalize_dataframe_types(df)
             else:
-                st.error(f"No se capturaron paquetes")
+                st.error(t("capture_no_packets"))
                 return None
         else:
-            st.error(f"Error en la captura: {response.status_code} - {response.text}")
+            st.error(t("capture_error", status=response.status_code, detail=response.text))
             return None
             
     except requests.exceptions.Timeout:
-        st.error("⏱️ Timeout: La captura tomó demasiado tiempo")
+        st.error(t("capture_timeout"))
         return None
     except requests.exceptions.ConnectionError:
-        st.error("🔌 Error de conexión: No se pudo conectar al backend. Verifica que el backend esté corriendo y la URL sea correcta.")
+        st.error(t("backend_connection_error"))
         return None
     except Exception as e:
-        st.error(f"❌ Error en la captura: {str(e)}")
+        st.error(t("capture_error_generic", detail=str(e)))
         return None
 
 
@@ -146,6 +147,38 @@ def _compute_external_metrics(y_true, y_pred, scores=None):
             roc_curve_data = None
 
     return external_metrics, roc_curve_data
+
+def _build_prediction_download_dataframe(base_df, y_pred, model_option):
+    """Construye un CSV etiquetado con predicciones para descarga y análisis externo."""
+    if not isinstance(base_df, pd.DataFrame):
+        return None
+
+    pred_array = np.asarray(y_pred).reshape(-1)
+    if len(base_df) != len(pred_array):
+        return None
+
+    out_df = base_df.copy()
+    out_df['modelo_prediccion'] = model_option
+    out_df['prediccion_id'] = pred_array
+
+    if model_option == 'KMEANS':
+        dict_pred = dict_predict(KMEANS_TXT_PATH)
+        pred_labels = [dict_pred.get(int(c), t('unknown')) for c in pred_array]
+        pred_bin = np.array([0 if lbl == 'Normal' else 1 for lbl in pred_labels], dtype=int)
+    elif model_option == 'AUTOENCODER':
+        ae_map = {0: 'Normal', 1: 'DDoS_TCP', 2: 'Reconnaissance', 3: 'DDoS_UDP'}
+        pred_labels = [ae_map.get(int(c), t('unknown')) for c in pred_array]
+        pred_bin = np.array([0 if int(c) == 0 else 1 for c in pred_array], dtype=int)
+    elif _is_supervised_model(model_option):
+        pred_bin = metricas.to_binary_attack_labels(pred_array).astype(int)
+        pred_labels = [t('attack') if v == 1 else 'Normal' for v in pred_bin]
+    else:
+        pred_bin = np.where(pred_array == 1, 1, 0).astype(int)
+        pred_labels = [t('anomalous') if v == 1 else 'Normal' for v in pred_bin]
+
+    out_df['prediccion_binaria'] = pred_bin
+    out_df['prediccion'] = pred_labels   # sin tilde, para que coincida con el notebook de Alex
+    return out_df
 
 def render_svg_gauge(value, min_val, max_val, title, icon, unit, zones, bar_color, threshold=None, text_color="#F0FAFE"):
     """
@@ -208,13 +241,13 @@ def render_svg_gauge(value, min_val, max_val, title, icon, unit, zones, bar_colo
 def show_dashboard_page():
     """Página principal del dashboard."""
 
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
     
     # Título con botón de descarga PDF en la misma línea
     col_title, col_pdf = st.columns([3, 1])
     with col_title:
-        st.title('🎯 Panel de Control de Detección')
+        st.title(t("detection_dashboard"))
     with col_pdf:
         # Botón de descarga PDF en la esquina superior derecha
         if st.session_state.get('prediccion_realizada') and 'resumen_prediccion' in st.session_state:
@@ -223,8 +256,8 @@ def show_dashboard_page():
             fig_bar, ax = plt.subplots(figsize=(6, 3.5))
             bar_colors = [(c.success if (str(lbl).lower() == 'normal') else c.error) for lbl in resumen['labels']]
             ax.bar(resumen['labels'], resumen['values'], color=bar_colors)
-            ax.set_title('Distribución de Detecciones')
-            ax.set_ylabel('Cantidad')
+            ax.set_title(t('chart_detection_distribution'))
+            ax.set_ylabel(t('chart_quantity'))
             for i, v in enumerate(resumen['values']):
                 ax.text(i, v + 0.1, str(v), ha='center', va='bottom', fontsize=10)
             plt.tight_layout()
@@ -237,7 +270,7 @@ def show_dashboard_page():
                 fig=fig_bar
             )
             st.download_button(
-                label="📄 Descargar PDF",
+                label=t("download_pdf"),
                 data=pdf_bytes,
                 file_name="reporte_prediccion_IDS.pdf",
                 mime="application/pdf",
@@ -246,10 +279,10 @@ def show_dashboard_page():
             plt.close(fig_bar)
         else:
             st.button(
-                "📄 Descargar PDF",
+                t("download_pdf"),
                 disabled=True,
                 use_container_width=True,
-                help="⚠ Primero debes capturar tráfico o hacer una predicción antes de descargar el reporte."
+                help=t("download_pdf_help")
             )
 
     # Inicializa el flag una sola vez
@@ -312,11 +345,11 @@ def show_dashboard_page():
     with col2:
         # Mostrar panel de captura en vivo si está capturando
         if st.session_state.auto_capture.get('is_capturing', False):
-            st.info("💡 **Tip:** Si la captura se detiene, puedes reiniciarla en cualquier momento, dale en detener captura y vuelve a ejecutar la captura.")
+            st.info(t("capture_restart_tip"))
             
         # Mostrar resultados si hay predicción completada
         elif 'prediccion_realizada' in st.session_state and st.session_state['prediccion_realizada']:
-            st.markdown("## 📄 Resumen de la Predicción")
+            st.markdown(f"## {t('prediction_summary')}")
             resumen = st.session_state['resumen_prediccion']
             st.success(resumen['texto'])
 
@@ -327,30 +360,30 @@ def show_dashboard_page():
                 alert_lvl = alert_info['alert_level']
                 email_res = alert_info.get('email_result')
 
-                st.markdown("### 🚦 Nivel de Alerta")
+                st.markdown(f"### {t('alert_level')}")
                 col_alert_a, col_alert_b = st.columns([1, 2])
                 with col_alert_a:
                     if alert_lvl == 'attack':
-                        st.metric("Anomalías", f"{anomaly_pct:.1f}%", delta="Crítico", delta_color="inverse")
+                        st.metric(t("anomalies"), f"{anomaly_pct:.1f}%", delta=t("critical"), delta_color="inverse")
                     elif alert_lvl == 'suspicious':
-                        st.metric("Anomalías", f"{anomaly_pct:.1f}%", delta="Sospechoso", delta_color="off")
+                        st.metric(t("anomalies"), f"{anomaly_pct:.1f}%", delta=t("suspicious"), delta_color="off")
                     else:
-                        st.metric("Anomalías", f"{anomaly_pct:.1f}%", delta="Normal", delta_color="normal")
+                        st.metric(t("anomalies"), f"{anomaly_pct:.1f}%", delta=t("normal"), delta_color="normal")
                 with col_alert_b:
                     if alert_lvl == 'attack':
-                        st.markdown('<div style="background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">🚨 NIVEL CRÍTICO - Posible ataque</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">{t("alert_critical_attack")}</div>', unsafe_allow_html=True)
                     elif alert_lvl == 'suspicious':
-                        st.markdown('<div style="background: linear-gradient(90deg, #ff9800 0%, #ff6f00 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">⚠️ NIVEL MEDIO - Actividad sospechosa</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="background: linear-gradient(90deg, #ff9800 0%, #ff6f00 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">{t("alert_medium_suspicious")}</div>', unsafe_allow_html=True)
                     else:
-                        st.markdown('<div style="background: linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">✅ NIVEL NORMAL</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="background: linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%); padding: 12px; border-radius: 10px; text-align: center; color: white; font-weight: bold;">{t("alert_normal")}</div>', unsafe_allow_html=True)
 
                 # Resultado de envío de email
                 if email_res is not None:
                     ok, email_msg = email_res
                     if ok:
-                        st.success(f"📧 Notificación por email enviada correctamente")
+                        st.success(t("email_sent"))
                     else:
-                        st.warning(f"⚠️ Error enviando email: {email_msg}")
+                        st.warning(t("email_error", detail=email_msg))
 
                 st.markdown("---")
             
@@ -363,12 +396,12 @@ def show_dashboard_page():
                     color=resumen['labels'],
                     color_discrete_map={
                         'Normal': c.success,
-                        'Anómalo': c.error,
+                        t('anomalous'): c.error,
                         'DDOS_TCP': c.error,
                         'DDOS_UDP': c.warning,
                         'Reconnaissance': c.primary
                     },
-                    title="Distribución porcentual"
+                    title=t("chart_percentage_distribution")
                 )
                 pie_fig.update_traces(textinfo='percent+label')
                 st.plotly_chart(pie_fig, use_container_width=True)
@@ -377,17 +410,17 @@ def show_dashboard_page():
                 # Gráfica de barras
                 bar_colors = [(c.success if (str(lbl).lower() == 'normal') else c.error) for lbl in resumen['labels']]
                 fig_bar = go.Figure(data=[go.Bar(x=resumen['labels'], y=resumen['values'], text=resumen['values'], textposition='auto', marker_color=bar_colors)])
-                fig_bar.update_layout(title='Distribución de Detecciones', title_x=0.5)
+                fig_bar.update_layout(title=t('chart_detection_distribution'), title_x=0.5)
                 st.plotly_chart(fig_bar, use_container_width=True)
             
             # Explicación inteligente de la distribución
-            with st.expander("🧠 Análisis Inteligente de Resultados", expanded=True):
+            with st.expander(t("intelligent_results"), expanded=True):
                 model_used = st.session_state.get('model_option_used', 'IForest')
                 explicacion_dist = explicar_distribucion(resumen['labels'], resumen['values'], model_used)
                 st.markdown(explicacion_dist)
             
             # Resumen ejecutivo general
-            with st.expander("📋 Resumen Ejecutivo Completo"):
+            with st.expander(t("executive_summary")):
                 if 'metricas_rendimiento' in st.session_state:
                     tiene_patron = 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None
                     resumen_general = generar_resumen_general(
@@ -412,7 +445,7 @@ def show_dashboard_page():
                         if thr is not None:
                             hist_fig.add_shape(type='line', x0=thr, x1=thr, y0=0, y1=1, xref='x', yref='paper', line=dict(color=c.error, width=2))
                             hist_fig.add_annotation(x=thr, y=1, yref='paper', text=f"Umbral={thr:.3f}", showarrow=True, arrowhead=1)
-                        hist_fig.update_layout(title='OCSVM: distribución de decision_function', title_x=0.5)
+                        hist_fig.update_layout(title=t('ocsvm_distribution'), title_x=0.5)
                         st.plotly_chart(hist_fig, use_container_width=True)
                     except Exception:
                         pass
@@ -428,33 +461,36 @@ def show_dashboard_page():
                     silhouette, calinski, davies = metricas.metrica_internas(pp3, y_pred)
                     mostrar_metricas(silhouette, calinski, davies)
                 else:
-                    st.info("Las métricas internas requieren al menos dos clases en la predicción.")
+                    st.info(t("internal_metrics_two_classes"))
 
             # Métricas Externas (modelos supervisados)
             if st.session_state.get('metric_option_used') == 'Externas':
                 external_metrics = st.session_state.get('external_metrics')
                 if external_metrics:
-                    st.markdown("### 📊 Métricas Externas")
+                    st.markdown(t("external_metrics_heading_dashboard"))
                     mcol1, mcol2, mcol3, mcol4, mcol5 = st.columns(5)
+                    def _fmt_metric(key):
+                        value = external_metrics.get(key)
+                        return f"{value:.3f}" if value is not None else "N/A"
+
                     with mcol1:
-                        st.metric("Accuracy", f"{external_metrics.get('Accuracy', 0):.3f}")
+                        st.metric(t("metric_accuracy"), _fmt_metric('Accuracy'))
                     with mcol2:
-                        st.metric("Precision", f"{external_metrics.get('Precision', 0):.3f}")
+                        st.metric(t("metric_precision"), _fmt_metric('Precision'))
                     with mcol3:
-                        st.metric("Recall", f"{external_metrics.get('Recall', 0):.3f}")
+                        st.metric(t("metric_recall"), _fmt_metric('Recall'))
                     with mcol4:
-                        st.metric("F1", f"{external_metrics.get('F1', 0):.3f}")
+                        st.metric(t("metric_f1"), _fmt_metric('F1'))
                     with mcol5:
-                        roc_auc_value = external_metrics.get('ROC_AUC')
-                        st.metric("ROC AUC", f"{roc_auc_value:.3f}" if roc_auc_value is not None else "N/A")
+                        st.metric(t("metric_roc_auc"), _fmt_metric('ROC_AUC'))
 
                     cm = external_metrics.get('MatrizConfusion')
                     if cm is not None:
-                        st.markdown("#### 🧮 Matriz de Confusión")
+                        st.markdown(t("confusion_matrix_heading"))
                         cm_df = pd.DataFrame(
                             cm,
-                            columns=['Pred: Normal', 'Pred: Ataque'],
-                            index=['Real: Normal', 'Real: Ataque']
+                            columns=[t('pred_normal'), t('pred_attack')],
+                            index=[t('real_normal'), t('real_attack')]
                         )
                         st.dataframe(cm_df, use_container_width=True)
 
@@ -472,24 +508,24 @@ def show_dashboard_page():
                             x=[0, 1],
                             y=[0, 1],
                             mode='lines',
-                            name='Azar',
+                            name=t('roc_random'),
                             line=dict(color=c.warning, width=2, dash='dash')
                         ))
                         roc_fig.update_layout(
-                            title='Curva ROC',
-                            xaxis_title='False Positive Rate',
-                            yaxis_title='True Positive Rate',
+                            title=t('roc_curve'),
+                            xaxis_title=t('false_positive_rate'),
+                            yaxis_title=t('true_positive_rate'),
                             title_x=0.5,
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)'
                         )
                         st.plotly_chart(roc_fig, use_container_width=True)
                 else:
-                    st.info("No hay métricas externas disponibles para esta ejecución.")
+                    st.info(t("no_external_metrics"))
             
             # Métricas de Rendimiento con gráficos dinámicos
             if 'metricas_rendimiento' in st.session_state:
-                st.markdown("### ⚙️ Métricas de Rendimiento del Sistema")
+                st.markdown(t("performance_heading_dashboard"))
                 met = st.session_state['metricas_rendimiento']
                 
                 # Crear 2 filas de métricas con gauges
@@ -501,26 +537,26 @@ def show_dashboard_page():
                     cpu_color = c.success if met['cpu'] < 60 else c.warning if met['cpu'] < 85 else c.error
                     gauge_html = render_svg_gauge(
                         value=met['cpu'], min_val=0, max_val=100,
-                        title="Uso de CPU", icon="🖥️", unit="%",
+                        title=t("cpu_usage_dashboard"), icon="🖥️", unit="%",
                         zones=[(0, 60, c.success), (60, 85, c.warning), (85, 100, c.error)],
                         bar_color=cpu_color, threshold=85, text_color=c.text_primary,
                     )
                     st.markdown(gauge_html, unsafe_allow_html=True)
-                    cpu_status = "✅ Normal" if met['cpu'] < 60 else "⚠️ Alto" if met['cpu'] < 85 else "🔥 Crítico"
-                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {cpu_status}</div>", unsafe_allow_html=True)
+                    cpu_status = t("normal") if met['cpu'] < 60 else t("status_high") if met['cpu'] < 85 else t("status_critical")
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>{t('status_label')}</b> {cpu_status}</div>", unsafe_allow_html=True)
                 
                 with col_gauge2:
                     # Gauge de Memoria
                     mem_color = c.success if met['memoria'] < 70 else c.warning if met['memoria'] < 85 else c.error
                     gauge_html = render_svg_gauge(
                         value=met['memoria'], min_val=0, max_val=100,
-                        title="Uso de Memoria RAM", icon="💾", unit="%",
+                        title=t("memory_usage_dashboard"), icon="💾", unit="%",
                         zones=[(0, 70, c.success), (70, 85, c.warning), (85, 100, c.error)],
                         bar_color=mem_color, threshold=85, text_color=c.text_primary,
                     )
                     st.markdown(gauge_html, unsafe_allow_html=True)
-                    mem_status = "✅ Normal" if met['memoria'] < 70 else "⚠️ Alto" if met['memoria'] < 85 else "🚨 Crítico"
-                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {mem_status}</div>", unsafe_allow_html=True)
+                    mem_status = t("normal") if met['memoria'] < 70 else t("status_high") if met['memoria'] < 85 else t("status_critical_memory")
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>{t('status_label')}</b> {mem_status}</div>", unsafe_allow_html=True)
                 
                 # Segunda fila: Disco y Tiempo
                 col_gauge3, col_gauge4 = st.columns(2, gap="medium")
@@ -530,29 +566,29 @@ def show_dashboard_page():
                     disk_color = c.success if met['disco'] < 70 else c.warning if met['disco'] < 85 else c.error
                     gauge_html = render_svg_gauge(
                         value=met['disco'], min_val=0, max_val=100,
-                        title="Uso de Disco", icon="📀", unit="%",
+                        title=t("disk_usage_dashboard"), icon="📀", unit="%",
                         zones=[(0, 70, c.success), (70, 85, c.warning), (85, 100, c.error)],
                         bar_color=disk_color, threshold=85, text_color=c.text_primary,
                     )
                     st.markdown(gauge_html, unsafe_allow_html=True)
-                    disk_status = "✅ Espacio OK" if met['disco'] < 70 else "⚠️ Considerar limpieza" if met['disco'] < 85 else "🚨 Casi lleno"
-                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Estado:</b> {disk_status}</div>", unsafe_allow_html=True)
+                    disk_status = t("disk_ok") if met['disco'] < 70 else t("disk_cleanup") if met['disco'] < 85 else t("disk_almost_full")
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>{t('status_label')}</b> {disk_status}</div>", unsafe_allow_html=True)
                 
                 with col_gauge4:
                     # Indicador de Tiempo (diferente estilo - más simple)
                     tiempo_color = c.success if met['tiempo'] < 5 else c.warning if met['tiempo'] < 15 else c.error
                     gauge_html = render_svg_gauge(
                         value=met['tiempo'], min_val=0, max_val=30,
-                        title="Tiempo de Análisis", icon="⏱️", unit=" seg",
+                        title=t("analysis_time_dashboard"), icon="⏱️", unit=" seg",
                         zones=[(0, 5, c.success), (5, 15, c.warning), (15, 30, c.error)],
                         bar_color=tiempo_color, threshold=15, text_color=c.text_primary,
                     )
                     st.markdown(gauge_html, unsafe_allow_html=True)
-                    time_status = "⚡ Excelente" if met['tiempo'] < 5 else "✅ Bueno" if met['tiempo'] < 15 else "🐌 Lento"
-                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>Velocidad:</b> {time_status}</div>", unsafe_allow_html=True)
+                    time_status = t("excellent") if met['tiempo'] < 5 else t("good") if met['tiempo'] < 15 else t("slow")
+                    st.markdown(f"<div style='text-align: center; font-size: 16px;'><b>{t('speed_label')}</b> {time_status}</div>", unsafe_allow_html=True)
                 
                 # Explicación inteligente de métricas de rendimiento
-                with st.expander("🔍 Interpretación Detallada de Métricas"):
+                with st.expander(t("performance_interpretation_dashboard")):
                     explicacion_metricas = explicar_metricas_rendimiento(
                         met['tiempo'], met['cpu'], met['memoria'], met['disco']
                     )
@@ -567,12 +603,12 @@ def show_dashboard_page():
                 datos_para_grafica = st.session_state.data
             
             if datos_para_grafica is not None and len(datos_para_grafica) > 0:
-                st.markdown("### 📈 Patrón de Tráfico y Anomalías")
+                st.markdown(t("traffic_heading"))
                 
                 # Explicación del patrón ANTES de la gráfica
                 explicacion_patron = explicar_patron_trafico(datos_para_grafica)
                 if explicacion_patron:
-                    with st.expander("📊 ¿Qué significa esta gráfica?", expanded=True):
+                    with st.expander(t("traffic_meaning"), expanded=True):
                         st.markdown(explicacion_patron)
                 
                 try:
@@ -580,7 +616,7 @@ def show_dashboard_page():
                     numeric_data = datos_para_grafica.select_dtypes(include=[np.number])
                     
                     if numeric_data.empty or len(numeric_data.columns) == 0:
-                        st.warning("⚠️ No hay datos numéricos para visualizar el patrón de tráfico")
+                        st.warning(t("no_numeric_data"))
                     else:
                         # Calculate traffic metrics
                         traffic_data = numeric_data.mean(axis=1)
@@ -598,7 +634,7 @@ def show_dashboard_page():
                             x=list(range(len(traffic_data))),
                             y=traffic_data,
                             mode='lines',
-                            name='Tráfico',
+                            name=t('traffic_series'),
                             line=dict(color=c.primary, width=1)
                         ))
 
@@ -607,7 +643,7 @@ def show_dashboard_page():
                             x=list(range(len(ceiling))),
                             y=ceiling,
                             mode='lines',
-                            name='Techo',
+                            name=t('ceiling_series'),
                             line=dict(color=c.success, width=2, dash='dash')
                         ))
 
@@ -616,13 +652,13 @@ def show_dashboard_page():
                             x=list(range(len(floor))),
                             y=floor,
                             mode='lines',
-                            name='Suelo',
+                            name=t('floor_series'),
                             line=dict(color=c.warning, width=2, dash='dash')
                         ))
 
                         # Update layout
                         fig_traffic.update_layout(
-                            title="Patrón de Tráfico y Detección de Anomalías",
+                            title=t("traffic_chart_title"),
                             title_x=0.5,
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)',
@@ -637,13 +673,13 @@ def show_dashboard_page():
                             ),
                             margin=dict(t=50, l=50, r=50, b=50),
                             xaxis=dict(
-                                title="Muestras",
+                                title=t("samples_axis"),
                                 showgrid=False,
                                 showline=True,
                                 linecolor=c.border
                             ),
                             yaxis=dict(
-                                title="Intensidad de Tráfico",
+                                title=t("traffic_intensity_axis"),
                                 showgrid=True,
                                 gridcolor=c.surface_overlay,
                                 zeroline=False
@@ -652,97 +688,63 @@ def show_dashboard_page():
 
                         st.plotly_chart(fig_traffic, use_container_width=True)
                 except Exception as e:
-                    st.error(f"❌ Error al generar visualización de tráfico: {str(e)}")
+                    st.error(t("traffic_visualization_error", detail=str(e)))
             
             # Tabla de paquetes capturados (siempre visible debajo de la gráfica de tráfico)
             if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
-                st.markdown("### 📊 Paquetes Capturados")
+                st.markdown(t("captured_packets_heading"))
                 st.dataframe(st.session_state['data_prediccion'], use_container_width=True)
         
         # Mostrar tabla de paquetes capturados (captura manual completada, aún sin predicción)
         elif st.session_state.get('captura_manual_lista', False):
-            st.markdown("### 📊 Paquetes Capturados")
+            st.markdown(t("captured_packets_heading"))
             # Mensaje temporal "Datos listos" (3s)
             msg_listos = st.empty()
-            msg_listos.success("✅ Datos capturados listos para predicción")
+            msg_listos.success(t("captured_data_ready"))
             if 'data' in st.session_state and st.session_state.data is not None:
                 # Mensaje temporal con conteo (6s)
                 msg_info = st.empty()
-                msg_info.info(f"📏 **{len(st.session_state.data)}** paquetes capturados · Presiona **Realizar Predicción** en el panel izquierdo para analizar.")
+                msg_info.info(t("captured_data_prompt", count=len(st.session_state.data)))
                 st.dataframe(st.session_state.data, use_container_width=True)
                 time.sleep(3)
                 msg_listos.empty()
                 time.sleep(3)
                 msg_info.empty()
             else:
-                st.warning("⚠️ No hay datos disponibles")
+                st.warning(t("no_data_available"))
         
         # Mostrar mensaje de bienvenida si no hay captura ni predicción
         else:
-                st.markdown("### 🚀 Comenzar")
-                st.info("""
-                **Pasos para usar el sistema:**
-            
-                     1. 📌 Selecciona un **modelo de detección** en el combo (separado por No supervisados y Supervisados)
-                     2. 📊 La **métrica se selecciona automáticamente**:
-                         - No supervisados → Internas
-                         - Supervisados → Externas
-                3. 🎯 Escoge tu método de captura:
-                    - **🚀 Automática**: Capturas programadas en intervalos
-                    - **🖐️ Manual**: Captura única bajo demanda
-                    - **📂 CSV**: Carga un archivo de datos
-                4. 🔍 Presiona **"Realizar Predicción"** para analizar
-            
-                ---
-            
-                **¿Quieres desplegar el IDS en Raspberry Pi u otra arquitectura ARM?**
-            
-                - 📦 **Imagen Docker ARM disponible:**
-                  [juancaing/ids-iot-app:arm en Docker Hub](https://hub.docker.com/r/juancaing/ids-iot-app)
-            
-                - **Instrucciones para ejecutar la ISO Docker:**
-                  1. Instala Docker en tu Raspberry Pi.
-                  2. Descarga y ejecuta la imagen con los permisos adecuados:
-                 
-                      ```bash
-                      sudo docker run --rm -it --net=host --cap-add=NET_ADMIN --cap-add=NET_RAW -e STREAMLIT_SERVER_PORT=8502 juancaing/ids-iot-app:arm
-                      ```
-                  3. Accede a la app en tu navegador: [http://localhost:8502](http://localhost:8502)
-            
-                > Si tienes dudas, revisa la documentación en el repositorio o en Docker Hub.
-            
-                ---
-            
-                Los resultados aparecerán aquí con gráficas interactivas y análisis detallado.
-                """)
+                                st.markdown(t("start_heading"))
+                                st.info(t("dashboard_welcome"))
     
     # Interfaz Usuario Panel de Control
     with col1:
-        st.markdown("### 🖥 Panel de Control")
+        st.markdown(t("control_panel_heading"))
 
         model_options = list(UNSUPERVISED_MODEL_PATHS.keys()) + list(SUPERVISED_MODEL_PATHS.keys())
         model_option = st.selectbox(
-            "📌 Seleccione el modelo de detección",
+            t("select_model"),
             model_options,
             format_func=_format_model_label,
-            help="Cada modelo utiliza diferentes técnicas para detectar anomalías"
+            help=t("model_help")
         )
 
         model_type = MODEL_TYPE_BY_ID.get(model_option, "No supervisados")
         metric_option = 'Externas' if _is_supervised_model(model_option) else 'Internas'
-        st.caption(f"📏 Métrica automática: **{metric_option}** ({model_type})")
+        st.caption(t("automatic_metric", metric=metric_option, model_type=model_type))
 
         if _is_supervised_model(model_option):
             attack_thr = st.slider(
-                "🎯 Umbral de ataque (modelos supervisados)",
+                t("attack_threshold_dashboard"),
                 min_value=0.05,
                 max_value=0.95,
                 value=float(st.session_state.get('supervised_attack_threshold', 0.70)),
                 step=0.01,
-                help="Mayor umbral = menos falsos positivos (más conservador). Menor umbral = más sensibilidad."
+                help=t("attack_threshold_help_dashboard")
             )
             st.session_state['supervised_attack_threshold'] = float(attack_thr)
-            st.caption(f"Umbral activo: {attack_thr:.2f}")
+            st.caption(t("active_threshold", value=attack_thr))
 
         true_label_col = None
         current_data = st.session_state.get('data')
@@ -751,52 +753,52 @@ def show_dashboard_page():
                 label_candidates = metricas.candidate_label_columns(current_data)
                 if label_candidates:
                     true_label_col = st.selectbox(
-                        "🏷️ Columna de etiquetas reales (para métricas externas)",
+                        t("true_label_column"),
                         label_candidates,
                         key="dashboard_true_label_col",
-                        help="Solo se muestran columnas que parecen etiquetas reales (0/1, -1/1, Normal/Ataque, etc.)."
+                        help=t("true_label_help")
                     )
                 else:
-                    st.info("📂 No se detectaron columnas de etiqueta válidas; se omitirán métricas externas.")
+                    st.info(t("invalid_label_columns"))
             else:
-                st.info("📂 Para métricas externas, carga un CSV con columna de etiqueta real.")
+                st.info(t("missing_label_column"))
 
         # Pestañas: Captura Automática, Captura Manual y Cargar CSV
-        tab_auto, tab_manual, tab_csv = st.tabs(["🚀 Captura automática", "🖐️ Captura manual", "📂 Cargar archivo CSV"])
+        tab_auto, tab_manual, tab_csv = st.tabs(t_list("capture_tabs"))
 
         # ---------------- Captura automática (en pestaña) ----------------
         with tab_auto:
-            st.title("⚙️ Captura automática")
+            st.title(t("automatic_capture"))
             
             # Configuración de parámetros
             col_auto_a, col_auto_b = st.columns(2)
             with col_auto_a:
                 _default_dur_min = max(1, int(st.session_state.auto_capture['duration_sec'] // 60))
                 _val_dur_min = st.number_input(
-                    'Duración de captura (minutos)', min_value=1, max_value=1440, value=_default_dur_min, step=1,
-                    help='La captura automática finalizará cuando se cumpla este tiempo'
+                    t("capture_duration_minutes"), min_value=1, max_value=1440, value=_default_dur_min, step=1,
+                    help=t("automatic_capture_duration_help")
                 )
                 st.session_state.auto_capture['duration_sec'] = int(_val_dur_min * 60)
             with col_auto_b:
                 _default_minutes = max(1, int(st.session_state.auto_capture['interval_sec'] // 60))
                 _val_minutes = st.number_input(
-                    'Intervalo entre capturas (minutos)', min_value=1, max_value=1440, value=_default_minutes, step=1,
-                    help='Pausa (en minutos) entre el fin de una captura y el inicio de la siguiente'
+                    t("capture_interval_minutes"), min_value=1, max_value=1440, value=_default_minutes, step=1,
+                    help=t("capture_interval_help")
                 )
                 st.session_state.auto_capture['interval_sec'] = int(_val_minutes * 60)
-                auto_status = '🟢 Activa' if st.session_state.auto_capture['active'] else '🔴 Detenida'
-                st.metric('Estado', auto_status)
+                auto_status = t("active") if st.session_state.auto_capture['active'] else t("stopped")
+                st.metric(t("state"), auto_status)
 
             col_btn_a, col_btn_b = st.columns(2)
             with col_btn_a:
-                if st.button('▶️ Iniciar automática', use_container_width=True, disabled=st.session_state.auto_capture['active']):
+                if st.button(t("start_automatic"), use_container_width=True, disabled=st.session_state.auto_capture['active']):
                     st.session_state.auto_capture['active'] = True
                     st.session_state.auto_capture['stop_requested'] = False
                     # Ejecutar inmediatamente la primera
                     st.session_state.auto_capture['next_run_ts'] = time.time()
                     st.rerun()
             with col_btn_b:
-                if st.button('⏹️ Detener automática', use_container_width=True, disabled=not st.session_state.auto_capture['active']):
+                if st.button(t("stop_automatic"), use_container_width=True, disabled=not st.session_state.auto_capture['active']):
                     st.session_state.auto_capture['stop_requested'] = True
                     st.session_state.auto_capture['active'] = False
                     st.session_state.auto_capture['next_run_ts'] = None
@@ -818,7 +820,7 @@ def show_dashboard_page():
                     remaining = max(0, int(st.session_state.auto_capture['next_run_ts'] - time.time()))
                     if remaining > 0:
                         m, s = divmod(remaining, 60)
-                        st.info(f"⏳ Próxima captura en {m:02d}:{s:02d} min:s")
+                        st.info(t("next_capture", minutes=m, seconds=s))
                         # Refrescar para avanzar el conteo
                         time.sleep(1)
                         st.rerun()
@@ -837,7 +839,7 @@ def show_dashboard_page():
         def run_prediction_on_data(data_df, is_manual=True):
             try:
                 if data_df is None or len(data_df) == 0:
-                    st.error('❌ No se capturaron paquetes. Verifica que haya tráfico de red.')
+                    st.error(t("no_packets_verify_traffic"))
                     return
 
                 # Separar etiqueta real del set de entrada para evitar fuga de etiquetas en predict.
@@ -849,12 +851,12 @@ def show_dashboard_page():
 
                 model_path = MODEL_PATHS.get(model_option)
                 if model_path is None:
-                    st.error('No existe ruta configurada para el modelo seleccionado')
+                    st.error(t("model_route_missing"))
                     return
 
                 model = load_model(model_path)
                 if model is None:
-                    st.error('No se pudo cargar el modelo seleccionado')
+                    st.error(t("selected_model_load_failed"))
                     return
 
                 lista = ['ip_ttl','tos','ip_flags_rb','ip_flags_df','ip_flags_mf']
@@ -877,14 +879,14 @@ def show_dashboard_page():
 
                 pp3, y_pred, scores = predecir(model, work_df, model_option)
                 if pp3 is None or y_pred is None:
-                    st.error('Error en la predicción')
+                    st.error(t("prediction_error"))
                     return
 
                 # Conteos y etiquetas
                 if model_option == 'KMEANS':
                     path2 = KMEANS_TXT_PATH
                     dict_pred = dict_predict(path2)
-                    etiquetas = [dict_pred.get(int(c), 'Desconocido') for c in y_pred]
+                    etiquetas = [dict_pred.get(int(c), t('unknown')) for c in y_pred]
                     conteo = Counter(etiquetas)
                     normal_count = conteo.get('Normal',0)
                     ddos_tcp_count = conteo.get('DDoS_TCP',0)
@@ -893,7 +895,7 @@ def show_dashboard_page():
                     total = normal_count + ddos_tcp_count + ddos_udp_count + reconnaissance_count
                     labels = ['Normal','DDOS_TCP','DDOS_UDP','Reconnaissance']
                     values = [normal_count, ddos_tcp_count, ddos_udp_count, reconnaissance_count]
-                    resumen_text = f"Se analizaron {total} paquetes. Normal: {normal_count}, DDOS_TCP: {ddos_tcp_count}, DDOS_UDP: {ddos_udp_count}, Reconnaissance: {reconnaissance_count}."
+                    resumen_text = t("summary_kmeans", total=total, normal=normal_count, tcp=ddos_tcp_count, udp=ddos_udp_count, recon=reconnaissance_count)
                 elif model_option=='AUTOENCODER':
                     normal_count = int(np.count_nonzero(y_pred == 0))
                     ddos_tcp_count = int(np.count_nonzero(y_pred == 1))
@@ -902,22 +904,22 @@ def show_dashboard_page():
                     total = normal_count + ddos_tcp_count + ddos_udp_count + reconnaissance_count
                     labels = ['Normal','DDOS_TCP','DDOS_UDP','Reconnaissance']
                     values = [normal_count, ddos_tcp_count, ddos_udp_count, reconnaissance_count]
-                    resumen_text = f"Se analizaron {total} paquetes. Normal: {normal_count}, DDOS_TCP: {ddos_tcp_count}, DDOS_UDP: {ddos_udp_count}, Reconnaissance: {reconnaissance_count}."
+                    resumen_text = t("summary_kmeans", total=total, normal=normal_count, tcp=ddos_tcp_count, udp=ddos_udp_count, recon=reconnaissance_count)
                 elif _is_supervised_model(model_option):
                     y_bin = metricas.to_binary_attack_labels(y_pred)
                     n_normales = int((y_bin == 0).sum())
                     n_anomalos = int((y_bin == 1).sum())
                     total = n_normales + n_anomalos
-                    labels = ['Normal','Anómalo']
+                    labels = ['Normal', t('anomalous')]
                     values = [n_normales, n_anomalos]
-                    resumen_text = f"Se analizaron {total} paquetes. Normales: {n_normales}, Ataques: {n_anomalos}."
+                    resumen_text = t("summary_supervised", total=total, normal=n_normales, attacks=n_anomalos)
                 else:
                     n_normales = int((y_pred == 0).sum())
                     n_anomalos = int((y_pred == 1).sum())
                     total = n_normales + n_anomalos
-                    labels = ['Normal','Anómalo']
+                    labels = ['Normal', t('anomalous')]
                     values = [n_normales, n_anomalos]
-                    resumen_text = f"Se analizaron {total} paquetes. Normales: {n_normales}, Anómalos: {n_anomalos}."
+                    resumen_text = t("summary_binary", total=total, normal=n_normales, anomalous=n_anomalos)
 
                 # ============ NOTIFICACIONES ============
                 # Calcular porcentaje de anomalías
@@ -966,18 +968,21 @@ def show_dashboard_page():
                             try:
                                 external_metrics, roc_curve_data = _compute_external_metrics(y_true, y_pred, scores)
                             except Exception as ext_err:
-                                st.warning(f"No se pudieron calcular métricas externas: {str(ext_err)}")
+                                st.warning(t("external_metrics_error", detail=str(ext_err)))
                         else:
-                            st.warning("No se calcularon métricas externas: longitud distinta entre etiquetas reales y predicciones.")
+                            st.warning(t("external_metrics_length"))
                     else:
-                        st.info("Métricas externas omitidas: falta columna de etiquetas reales.")
+                        st.info(t("external_metrics_missing_labels"))
 
                 # Guardar estado completo para el panel derecho (col2)
                 tiempo_total = time.time() - start_time
+                download_df = _build_prediction_download_dataframe(data_df, y_pred, model_option)
+                if download_df is None:
+                    download_df = work_df.copy()
                 st.session_state['prediccion_realizada'] = True
                 st.session_state['captura_manual_lista'] = False  # Limpiar flag de captura manual
                 st.session_state['resumen_prediccion'] = {'texto': resumen_text, 'labels': labels, 'values': values}
-                st.session_state['data_prediccion'] = work_df
+                st.session_state['data_prediccion'] = download_df
                 st.session_state['y_pred'] = y_pred
                 st.session_state['scores'] = scores
                 st.session_state['pp3'] = pp3
@@ -994,11 +999,11 @@ def show_dashboard_page():
 
                 print("[PRED] state saved", flush=True)
 
-                st.success("✅ Predicción completada. Revisa los resultados en el panel de la derecha →")
+                st.success(t("prediction_completed"))
                 st.rerun()  # Refrescar para mostrar resultados en col2
 
             except Exception as e:
-                st.error(f"❌ Error en la predicción: {str(e)}")
+                st.error(t("prediction_error_detail", detail=str(e)))
 
         # ============ EJECUCIÓN AUTOMÁTICA (dentro de tab_auto) ============
         with tab_auto:
@@ -1007,7 +1012,7 @@ def show_dashboard_page():
                 due = st.session_state.auto_capture['next_run_ts'] is not None and time.time() >= st.session_state.auto_capture['next_run_ts']
                 if due:
                     st.session_state.auto_capture['is_capturing'] = True
-                    st.info('🚀 Ejecutando captura automática...')
+                    st.info(t("running_automatic_capture"))
                     process = capturing_packets(comm_arg)
                     captured_rows = []
                     duration_sec = int(st.session_state.auto_capture['duration_sec'])
@@ -1015,7 +1020,7 @@ def show_dashboard_page():
                         duration_sec = 60
                     start_ts = time.time()
                     end_ts = start_ts + duration_sec
-                    prog = st.progress(0, text='Capturando (automática)...')
+                    prog = st.progress(0, text=t("capturing_automatic"))
 
                     arp_mode = st.session_state.get('arp_limit_mode', 'low')
                     arp_count = 0
@@ -1049,7 +1054,7 @@ def show_dashboard_page():
 
                         elapsed = time.time() - start_ts
                         frac = min(1.0, elapsed / duration_sec)
-                        prog.progress(frac, text=f"Tiempo: {int(elapsed)}s / {duration_sec}s (Paquetes: {packets_count}, ARP: {arp_count})")
+                        prog.progress(frac, text=t("capture_progress", elapsed=int(elapsed), duration=duration_sec, packets=packets_count, arp=arp_count))
 
                     captured_data = build_dataframe_from_rows(captured_rows)        
 
@@ -1060,7 +1065,7 @@ def show_dashboard_page():
                     prog.empty()
 
                     if st.session_state.auto_capture['stop_requested']:
-                        st.warning('⏹️ Captura automática detenida por el usuario.')
+                        st.warning(t("automatic_capture_stopped"))
                         st.session_state.auto_capture['active'] = False
                         st.session_state.auto_capture['is_capturing'] = False
                         st.session_state.auto_capture['next_run_ts'] = None
@@ -1078,13 +1083,13 @@ def show_dashboard_page():
 
                         if captured_data is not None and list(captured_data.columns) != ['value']:
                             if arp_mode != 'none':
-                                st.info(f"📊 Captura completada: {packets_count - arp_count} paquetes útiles + {arp_count} ARP = {packets_count} total")
+                                st.info(t("capture_completed", useful=packets_count - arp_count, arp=arp_count, total=packets_count))
                             normalized_captured_data = _normalize_dataframe_types(captured_data)
                             st.session_state.data = normalized_captured_data
                             # run_prediction_on_data hace st.rerun() al final
                             run_prediction_on_data(normalized_captured_data, is_manual=False)
                         else:
-                            st.warning('⚠️ No se capturaron paquetes en este ciclo.')
+                            st.warning(t("cycle_no_packets"))
                             st.rerun()
 
         # Streamlit UI (contenido de pestañas)
@@ -1092,27 +1097,31 @@ def show_dashboard_page():
 
         # ---------------- Pestaña: Captura manual ----------------
         with tab_manual:
-            st.title("🖐️ Captura manual")
+            st.title(t("manual_capture"))
 
             # Parámetros manuales
             col_man_a, col_man_b = st.columns(2, gap="medium")
             with col_man_a:
-                manual_packets = st.number_input('Paquetes a capturar (manual)', min_value=10, max_value=50000, value=100, step=10)
+                manual_packets = st.number_input(t("packets_to_capture"), min_value=10, max_value=50000, value=100, step=10)
             with col_man_b:
-                manual_duration_min = st.number_input('Duración máx. (min) (manual)', min_value=1, max_value=1440, value=1, step=1)
+                manual_duration_min = st.number_input(t("max_duration_manual"), min_value=1, max_value=1440, value=1, step=1)
             manual_duration = int(manual_duration_min * 60)
 
             # Botones de acción: misma fila, mismo ancho que los inputs
             col_btn_cap, col_btn_save = st.columns(2, gap="medium")
             with col_btn_cap:
-                btn_capture = st.button("🚀 Iniciar Captura", key="btn_manual_capture", use_container_width=True, type="primary")
+                btn_capture = st.button(t("start_capture"), key="btn_manual_capture", use_container_width=True, type="primary")
             with col_btn_save:
-                # Botón de guardar CSV (solo habilitado si hay datos capturados)
-                has_manual_data = 'data' in st.session_state and st.session_state.data is not None
+                # Prioriza el CSV con predicción si ya se ejecutó; si no, cae al crudo
+                download_source = st.session_state.get('data_prediccion')
+                if not isinstance(download_source, pd.DataFrame):
+                    download_source = st.session_state.get('data')
+                has_manual_data = isinstance(download_source, pd.DataFrame)
                 if has_manual_data:
-                    csv_bytes = build_packet_csv_bytes(st.session_state.data)
+                    csv_bytes = build_packet_csv_bytes(download_source)
+                    label = t("prediction_csv") if 'prediccion' in download_source.columns else t("save_csv")
                     st.download_button(
-                        "💾 Guardar en CSV",
+                        label,
                         data=csv_bytes,
                         file_name="captura_paquetes.csv",
                         mime="text/csv",
@@ -1120,8 +1129,8 @@ def show_dashboard_page():
                         use_container_width=True,
                     )
                 else:
-                    st.button("💾 Guardar en CSV", key="btn_save_csv_disabled", use_container_width=True, disabled=True,
-                              help="Primero captura paquetes para poder guardarlos")
+                    st.button(t("save_csv"), key="btn_save_csv_disabled", use_container_width=True, disabled=True,
+                              help=t("save_csv_help"))
 
             if btn_capture:
                 # Detectar si estamos en Cloud o local
@@ -1129,27 +1138,27 @@ def show_dashboard_page():
                 
                 if use_api:
                     # Usar backend API (Streamlit Cloud)
-                    st.info("🌐 Capturando desde backend remoto...")
+                    st.info(t("remote_capture"))
                     backend_url = get_backend_url()
-                    progress_bar = st.progress(0, text="⏳ Esperando respuesta del backend...")
+                    progress_bar = st.progress(0, text=t("backend_wait"))
                     
                     captured_data = capture_via_api(manual_duration, backend_url)
                     progress_bar.empty()
                     
                     if captured_data is not None and len(captured_data) > 0:
-                        st.success(f"✅ Captura finalizada: {len(captured_data)} paquetes capturados")
+                        st.success(t("capture_finished", count=len(captured_data)))
                     else:
-                        st.warning("⚠️ No se capturaron paquetes")
+                        st.warning(t("no_packets"))
                 else:
                     # Usar tshark local
                     info_placeholder = st.empty()
                     captured_rows = []
-                    info_placeholder.info("💻 Capturando desde interfaz local...")
+                    info_placeholder.info(t("local_capture"))
                     process = capturing_packets(comm_arg)
                     
                     # Inicializamos el DataFrame
                     captured_data = None
-                    progress_bar = st.progress(0, text="🌐 Preparando captura de paquetes...")
+                    progress_bar = st.progress(0, text=t("preparing_capture"))
                     total_packets = manual_packets
                     start_ts = time.time()
 
@@ -1175,7 +1184,7 @@ def show_dashboard_page():
                             captured_rows.append(type_packet_data)
                             i += 1
                             pct = i / total_packets
-                            progress_bar.progress(pct, text=f"📡 Capturando paquetes: **{i}/{total_packets}** ({pct*100:.0f}%)")
+                            progress_bar.progress(pct, text=t("capture_progress_packets", current=i, total=total_packets, percent=pct * 100))
 
                     captured_data = build_dataframe_from_rows(captured_rows)
 
@@ -1188,7 +1197,7 @@ def show_dashboard_page():
                     info_placeholder.empty()
                     # Mensaje temporal "Captura finalizada" (2.5s)
                     finalizado_placeholder = st.empty()
-                    finalizado_placeholder.success("✅ Captura finalizada.")
+                    finalizado_placeholder.success(t("capture_finished_short"))
                     time.sleep(2.5)
                     finalizado_placeholder.empty()
 
@@ -1205,19 +1214,19 @@ def show_dashboard_page():
                         st.session_state['captura_manual_lista'] = True
                         st.rerun()
                     else:
-                        st.warning("⚠️ No se capturaron paquetes válidos")
+                        st.warning(t("no_valid_packets"))
                 else:
-                    st.warning("⚠️ No se capturaron datos")
+                    st.warning(t("no_captured_data"))
 
         # ---------------- Pestaña: Cargar archivo CSV ----------------
         with tab_csv:
-            st.title("📂 Cargar archivo CSV")
-            st.markdown("### 📊 Cargar Datos para Predicción")
+            st.title(t("csv_file"))
+            st.markdown(t("csv_prediction_heading"))
             
             uploaded_file = st.file_uploader(
-                "📂 Cargar archivo CSV",
+                t("csv_file"),
                 type="csv",
-                help="Cargue sus datos de red en formato CSV",
+                help=t("csv_help"),
                 key="csv_uploader_1"
             )
             
@@ -1225,26 +1234,26 @@ def show_dashboard_page():
                 try:
                     data = pd.read_csv(uploaded_file)
                     if data.empty or data.shape[1] == 0:
-                        st.error("❌ El archivo CSV está vacío o no contiene columnas válidas.")
+                        st.error(t("csv_empty"))
                         data = None
                     else:
                         data = _normalize_dataframe_types(data)
-                        st.success("✅ Datos cargados exitosamente")
+                        st.success(t("csv_loaded"))
                         
-                        with st.expander("📊 Vista previa de datos"):
+                        with st.expander(t("data_preview")):
                             st.dataframe(data.head(), use_container_width=True)
-                            st.info(f"📏 Dimensiones del dataset: {data.shape[0]} filas, {data.shape[1]} columnas")
+                            st.info(t("dataset_dimensions", rows=data.shape[0], columns=data.shape[1]))
                         
                         # Guardar en session_state
                         st.session_state.data = data
                 except pd.errors.EmptyDataError:
-                    st.error("❌ El archivo CSV está vacío o no tiene columnas válidas.")
+                    st.error(t("csv_empty"))
                     data = None
                 except Exception as e:
-                    st.error(f"❌ Error al cargar el archivo: {str(e)}")
+                    st.error(t("csv_load_error", detail=str(e)))
                     data = None
             else:
-                st.info("⬆️ Selecciona un archivo CSV para cargar los datos")
+                st.info(t("select_csv"))
 
         # Botón de predicción fuera de las pestañas (común para todas)
         st.markdown("---")
@@ -1254,15 +1263,15 @@ def show_dashboard_page():
         if 'data' in st.session_state and st.session_state.data is not None:
             data = st.session_state.data
 
-        if st.button('🚀 Realizar Predicción', key='predict', use_container_width=True):
+        if st.button(t("predict_button"), key='predict', use_container_width=True):
             if data is not None:
                 run_prediction_on_data(data)
             else:
-                st.warning("⚠ Por favor capture paquetes o cargue un archivo CSV antes de realizar la predicción.")
+                st.warning(t("predict_data_required"))
         
         # Botón para limpiar y volver a predecir
         if st.session_state.get('prediccion_realizada', False):
-            if st.button('🔄 Volver a Predecir', key='reset_prediction', use_container_width=True, type="primary"):
+            if st.button(t("reset_prediction"), key='reset_prediction', use_container_width=True, type="primary"):
                 # Limpiar todos los estados de predicción
                 st.session_state['prediccion_realizada'] = False
                 st.session_state['resumen_prediccion'] = None
@@ -1275,7 +1284,7 @@ def show_dashboard_page():
                 st.session_state['metricas_rendimiento'] = None
                 st.session_state['external_metrics'] = None
                 st.session_state['roc_curve_data'] = None
-                st.success("✅ Predicción limpiada. Puedes realizar una nueva predicción.")
+                st.success(t("prediction_cleared"))
                 st.rerun()
 
     # ============ AUTO-REFRESH para cuenta regresiva (fuera de col1/col2) ============

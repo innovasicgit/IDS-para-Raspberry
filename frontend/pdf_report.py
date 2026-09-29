@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import tempfile
 import os
 import unicodedata
+from config.i18n import t
 
 
 def _find_system_font():
@@ -101,9 +102,10 @@ def generar_reporte_pdf(resumen, labels, values, descripcion_amenazas, fig=None,
 
     # Título
     pdf.set_font(font_name, 'B', 18)
-    pdf.cell(0, 15, _normalize_for_ascii("Reporte de Predicción IDS") if _normalize_fallback else "Reporte de Predicción IDS", ln=True, align='C')
+    report_title = t("pdf_prediction_report")
+    pdf.cell(0, 15, _normalize_for_ascii(report_title) if _normalize_fallback else report_title, ln=True, align='C')
     pdf.set_font(font_name, '', 12)
-    fecha_txt = f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    fecha_txt = f"{t('pdf_date')}: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
     pdf.cell(0, 10, _normalize_for_ascii(fecha_txt) if _normalize_fallback else fecha_txt, ln=True, align='R')
     pdf.ln(5)
 
@@ -132,7 +134,8 @@ def generar_reporte_pdf(resumen, labels, values, descripcion_amenazas, fig=None,
 
     # Tabla de resultados
     pdf.set_font(font_name, 'B', 12)
-    pdf.cell(0, 10, _normalize_for_ascii("Resumen de Resultados:") if _normalize_fallback else "Resumen de Resultados:", ln=True)
+    results_title = t("pdf_results_summary")
+    pdf.cell(0, 10, _normalize_for_ascii(results_title) if _normalize_fallback else results_title, ln=True)
     pdf.set_font(font_name, '', 12)
     for label, value in zip(labels, values):
         line = f"{label}: {value}"
@@ -141,10 +144,11 @@ def generar_reporte_pdf(resumen, labels, values, descripcion_amenazas, fig=None,
 
     # Descripción de amenazas
     pdf.set_font(font_name, 'B', 12)
-    pdf.cell(0, 10, _normalize_for_ascii("Descripción de Amenazas:") if _normalize_fallback else "Descripción de Amenazas:", ln=True)
+    threats_title = t("pdf_threat_descriptions")
+    pdf.cell(0, 10, _normalize_for_ascii(threats_title) if _normalize_fallback else threats_title, ln=True)
     pdf.set_font(font_name, '', 12)
     for label in labels:
-        desc = descripcion_amenazas.get(label, "Sin descripción disponible.")
+        desc = descripcion_amenazas.get(label, t("no_description"))
         text_block = f"{label}: {desc}"
         pdf.multi_cell(0, 8, _normalize_for_ascii(text_block) if _normalize_fallback else text_block)
         pdf.ln(1)
@@ -152,7 +156,7 @@ def generar_reporte_pdf(resumen, labels, values, descripcion_amenazas, fig=None,
     # Pie de página
     pdf.set_y(-30)
     pdf.set_font(font_name, 'I', 10)
-    footer = "Sistema de Detección de Anomalías IoT - Innovasic UCC"
+    footer = t("pdf_footer")
     pdf.cell(0, 10, _normalize_for_ascii(footer) if _normalize_fallback else footer, 0, 0, 'C')
 
     # Salida en memoria como bytes (compatibles con Streamlit)

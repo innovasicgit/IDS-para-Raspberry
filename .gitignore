@@ -1,5 +1,6 @@
 ## Entornos virtuales
 nuevoEntorno/
+.nuevoentorno/
 entorno_servidor/
 venv/
 .env

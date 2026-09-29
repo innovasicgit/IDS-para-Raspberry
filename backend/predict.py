@@ -97,7 +97,8 @@ def predecir(model, data, model_option):
 
         if(model_option=='IForest'):
             scores = model.decision_function(data)
-            predicciones = pred_threshold(scores, -0.10)['Pred'].values
+            pred_raw = model.predict(data)
+            predicciones = np.where(pred_raw == 1, 1, 0)
         
         elif(model_option=='OCSVM'):
             try:
@@ -153,7 +154,9 @@ def predecir(model, data, model_option):
                     else:
                         pred_list.append(int(np.argmax(row)))
                 predicciones = np.array(pred_list, dtype=int)
-                scores = row[normal_idx] if 'row' in locals() else proba[:, normal_idx]
+                # Probabilidad de ataque por muestra (1 - P(normal)), coherente con
+                # roc_curve/roc_auc_score donde la clase positiva es 1=Ataque.
+                scores = 1.0 - proba[:, normal_idx]
             else:
                 try:
                     predicciones = model.predict(data)

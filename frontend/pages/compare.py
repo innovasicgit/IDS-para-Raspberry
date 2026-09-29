@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 import streamlit as st
 from config.theme import get_current_theme
+from config.i18n import t
 from pathlib import Path
 import base64
 import pandas as pd
@@ -38,8 +39,8 @@ import metricas
 def show_compare_page():
     """Página principal de comparación de modelos."""
 
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
 
     # helper base64
     # subir un nivel extra para llegar al directorio de la raíz donde está
@@ -83,16 +84,16 @@ def show_compare_page():
     </style>
     <div class="compare-hero">
         <div class="compare-hero-content">
-            <h1 style="margin: 0 0 0.5rem 0; color: {c.hero_title}; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">📊 Comparar Modelos</h1>
+            <h1 style="margin: 0 0 0.5rem 0; color: {c.hero_title}; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">{t('compare_models')}</h1>
             <p style="margin: 0; font-size: 1.1rem; color: {c.hero_subtitle}; text-shadow: 0 1px 5px rgba(0,0,0,0.3);">
-                Ejecuta varios modelos de IA sobre el mismo dataset y compara su rendimiento lado a lado
+                {t('compare_subtitle')}
             </p>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     # ==================== ¿QUÉ ES Y PARA QUÉ SIRVE? ====================
-    with st.expander("💡 ¿Qué es esta página y cómo funciona?", expanded=False):
+    with st.expander(t("compare_help_title"), expanded=False):
         st.markdown(f"""
         <div style="line-height: 1.8; font-size: 0.95rem;">
 
@@ -156,11 +157,11 @@ def show_compare_page():
             return f"{model_group} | {opt}"
 
         selected_models = st.multiselect(
-            '🤖 Modelos a comparar',
+            t('models_to_compare'),
             model_options,
             default=default_models,
             format_func=_fmt_model,
-            help='Selecciona 2 o más modelos para una comparación efectiva.'
+            help=t('models_to_compare_help')
         )
 
         # Info sobre los modelos seleccionados
@@ -180,20 +181,20 @@ def show_compare_page():
     with cfg_col2:
         selected_supervised = [m for m in selected_models if m in SUPERVISED_MODEL_PATHS]
         selected_unsupervised = [m for m in selected_models if m in UNSUPERVISED_MODEL_PATHS]
-        st.markdown("**📏 Métricas automáticas por tipo**")
-        st.caption(f"No supervisados: Internas ({len(selected_unsupervised)})")
-        st.caption(f"Supervisados: Externas ({len(selected_supervised)})")
+        st.markdown(f"**{t('automatic_metrics')}**")
+        st.caption(f"{t('unsupervised')}: {t('internal_metrics')} ({len(selected_unsupervised)})")
+        st.caption(f"{t('supervised')}: {t('external_metrics')} ({len(selected_supervised)})")
 
         if selected_supervised:
             if 'supervised_attack_threshold' not in st.session_state:
                 st.session_state['supervised_attack_threshold'] = 0.70
             attack_thr = st.slider(
-                '🎯 Umbral de ataque (supervisados)',
+                t('attack_threshold'),
                 min_value=0.05,
                 max_value=0.95,
                 value=float(st.session_state.get('supervised_attack_threshold', 0.70)),
                 step=0.01,
-                help='Mayor umbral reduce falsos positivos; menor umbral detecta más ataques.'
+                help=t('attack_threshold_help')
             )
             st.session_state['supervised_attack_threshold'] = float(attack_thr)
             st.caption(f"Umbral activo: {attack_thr:.2f}")
@@ -204,25 +205,25 @@ def show_compare_page():
                 posibles = metricas.candidate_label_columns(data_source)
                 if posibles:
                     true_label_col = st.selectbox(
-                        '🏷️ Columna de etiquetas reales',
+                        t('real_labels_column'),
                         posibles,
-                        help='Necesaria para métricas externas de modelos supervisados (0=Normal, 1=Ataque o equivalentes).'
+                        help=t('real_labels_help')
                     )
                 else:
-                    st.info('📂 No se detectaron columnas de etiqueta válidas; se omitirán métricas externas.')
+                    st.info(t('no_valid_label_columns'))
             else:
-                st.info('📂 Carga datos con etiquetas reales para métricas externas en modelos supervisados.')
+                st.info(t('load_labeled_data'))
 
     # Validación visual
     st.markdown("")
     if len(selected_models) < 2:
-        st.warning('⚠️ Selecciona al menos **2 modelos** para realizar una comparación significativa.')
+        st.warning(t('select_two_models'))
 
     # Botón de comparación
     btn_col1, btn_col2, btn_col3 = st.columns([1, 2, 1])
     with btn_col2:
         comparar = st.button(
-            '🚀 Ejecutar Comparación',
+            t('run_comparison'),
             use_container_width=True,
             type="primary",
             disabled=(data_source is None or len(selected_models) < 1)
@@ -234,8 +235,8 @@ def show_compare_page():
 
 def _select_data_source():
     """Seleccionar origen de datos (captura o CSV)."""
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
     src_col1, src_col2 = st.columns(2, gap="medium")
     data_source = None
 
@@ -246,38 +247,38 @@ def _select_data_source():
         <div style="background: rgba(16,185,129,0.06); padding: 0.8rem 1rem; border-radius: 10px;
                     border: 1px solid rgba(16,185,129,0.15); margin-bottom: 0.5rem;">
             <p style="margin: 0; font-size: 0.9rem; color: rgba(240,250,254,0.6);">
-                📡 <strong style="color: {c.success};">Última captura de red</strong>
+                {t('last_capture')}
             </p>
         </div>
         """, unsafe_allow_html=True)
         if has_capture:
-            usar_captura = st.checkbox('Usar datos de la última captura', value=True)
+            usar_captura = st.checkbox(t('use_last_capture'), value=True)
             if usar_captura:
                 data_source = st.session_state.data.copy()
                 n_rows = len(data_source)
-                st.caption(f"✅ {n_rows:,} registros disponibles")
+                st.caption(t('records_available', count=n_rows))
         else:
-            st.caption("⚪ No hay captura disponible. Ve al Panel de Control para capturar tráfico.")
+            st.caption(t('no_capture_available'))
 
     with src_col2:
         st.markdown(f"""
         <div style="background: rgba(19,131,167,0.06); padding: 0.8rem 1rem; border-radius: 10px;
                     border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
             <p style="margin: 0; font-size: 0.9rem; color: rgba(240,250,254,0.6);">
-                📄 <strong style="color: {c.heading_secondary};">Subir archivo CSV</strong>
+                {t('upload_csv')}
             </p>
         </div>
         """, unsafe_allow_html=True)
         if data_source is None:
-            uploaded_cmp = st.file_uploader('Cargar CSV para comparar', type='csv', key='csv_compare', label_visibility='collapsed')
+            uploaded_cmp = st.file_uploader(t('load_csv_compare'), type='csv', key='csv_compare', label_visibility='collapsed')
             if uploaded_cmp is not None:
                 data_source = pd.read_csv(uploaded_cmp)
-                st.caption(f"✅ {len(data_source):,} registros cargados desde CSV")
+                st.caption(t('records_loaded_csv', count=len(data_source)))
         else:
-            st.caption("⚪ Usando datos de captura (desmarca arriba para subir CSV)")
+            st.caption(t('using_capture_uncheck'))
 
     if data_source is None:
-        st.info('📂 Carga un archivo CSV o realiza una captura en el Panel de Control para comenzar.')
+        st.info(t('load_csv_or_capture'))
 
     return data_source
 
@@ -342,7 +343,7 @@ def _counts(opt: str, y):
 def _run_comparison(data_source, selected_models, true_label_col):
     """Ejecutar comparación de modelos."""
     if data_source is None:
-        st.warning('⚠ Cargue datos o use la última captura antes de comparar.')
+        st.warning(t('load_data_before_compare'))
         return
 
     y_true = None
@@ -354,19 +355,19 @@ def _run_comparison(data_source, selected_models, true_label_col):
     dfp = _prep_df(df_features)
 
     filas = []
-    progress_bar = st.progress(0, text="Ejecutando modelos...")
+    progress_bar = st.progress(0, text=t('running_models'))
 
     for i, opt in enumerate(selected_models):
-        progress_bar.progress((i) / len(selected_models), text=f"🔄 Analizando modelo **{opt}**...")
+        progress_bar.progress((i) / len(selected_models), text=t('analyzing_model', model=opt))
 
         path = _load_model_path(opt)
         if path is None:
-            st.error(f'Ruta no definida para {opt}')
+            st.error(t('model_path_missing', model=opt))
             continue
 
         model = load_model(path)
         if model is None:
-            st.error(f'No se pudo cargar el modelo {opt}')
+            st.error(t('model_load_failed', model=opt))
             continue
 
         t0 = time.time()
@@ -393,7 +394,10 @@ def _run_comparison(data_source, selected_models, true_label_col):
         # Métricas externas para supervisados.
         if model_type == 'Supervisados' and y_true is not None and y is not None and len(y_true) == len(y):
             try:
-                fila.update(metricas.metricas_externas(y_true, y, y_score=scores))
+                if np.unique(metricas.to_binary_attack_labels(y_true)).size < 2:
+                    st.info(f"{opt}: las etiquetas reales solo contienen una clase tras la normalización binaria; se omiten métricas externas.")
+                else:
+                    fila.update(metricas.metricas_externas(y_true, y, y_score=scores))
             except Exception as e:
                 st.warning(f"No se pudieron calcular métricas externas para {opt}: {str(e)}")
 
@@ -402,12 +406,12 @@ def _run_comparison(data_source, selected_models, true_label_col):
 
         filas.append(fila)
 
-    progress_bar.progress(1.0, text="✅ Análisis completado")
+    progress_bar.progress(1.0, text=t('analysis_completed'))
     time.sleep(0.5)
     progress_bar.empty()
 
     if not filas:
-        st.info('Sin resultados para mostrar.')
+        st.info(t('no_results'))
         return
 
     _display_results(filas)
@@ -415,8 +419,8 @@ def _run_comparison(data_source, selected_models, true_label_col):
 
 def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
     """Generar explicación inteligente para la gráfica Normal vs Ataques."""
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
     insights = []
 
     for i, modelo in enumerate(res_df['Modelo'].values):
@@ -474,8 +478,8 @@ def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
 
 def _generate_time_insight(res_df):
     """Generar explicación inteligente para la gráfica de tiempos."""
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
     if 'Tiempo (s)' not in res_df.columns or len(res_df) == 0:
         return ""
 
@@ -515,8 +519,8 @@ def _generate_time_insight(res_df):
 
 def _display_results(filas):
     """Mostrar resultados de la comparación."""
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
     res_df = pd.DataFrame(filas)
 
     # CSS crítico: prevenir que los resultados expandan la página horizontalmente
@@ -563,7 +567,7 @@ def _display_results(filas):
     st.markdown("---")
     st.markdown(f"""
     <h2 style="text-align: center; color: {c.heading_primary}; margin: 1rem 0 1.5rem 0;">
-        📈 Resultados del Análisis
+        {t('analysis_results')}
     </h2>
     """, unsafe_allow_html=True)
 
@@ -580,25 +584,25 @@ def _display_results(filas):
 
     kpi_cols = st.columns(4, gap="medium")
     with kpi_cols[0]:
-        st.metric("🤖 Modelos evaluados", f"{num_modelos}")
+        st.metric(t('evaluated_models'), f"{num_modelos}")
     with kpi_cols[1]:
-        st.metric("📦 Predicciones totales", f"{total_paquetes // num_modelos:,}" if num_modelos > 0 else "0")
+        st.metric(t('total_predictions'), f"{total_paquetes // num_modelos:,}" if num_modelos > 0 else "0")
     with kpi_cols[2]:
         alert_level = get_alert_level_from_anomaly_percentage(pct_ataques)
         if alert_level == 'normal':
-            delta_text = 'Bajo riesgo'
+            delta_text = t('low_risk')
             delta_color = 'normal'
         elif alert_level == 'suspicious':
-            delta_text = 'Medio riesgo'
+            delta_text = t('medium_risk')
             delta_color = 'off'
         else:
-            delta_text = 'Alto riesgo'
+            delta_text = t('high_risk')
             delta_color = 'inverse'
-        st.metric("🚨 Amenazas (promedio)", f"{pct_ataques:.1f}%",
+        st.metric(t('average_threats'), f"{pct_ataques:.1f}%",
                    delta=delta_text,
                    delta_color=delta_color)
     with kpi_cols[3]:
-        st.metric("⏱️ Tiempo promedio", f"{avg_time:.3f}s")
+        st.metric(t('average_time'), f"{avg_time:.3f}s")
 
     st.markdown("")
 
@@ -606,9 +610,9 @@ def _display_results(filas):
     st.markdown(f"""
     <div style="background: rgba(19,131,167,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                 border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
-        <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">📋 Tabla comparativa detallada</h3>
+        <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">{t('comparison_table')}</h3>
         <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
-            Cada fila muestra cuántos paquetes clasificó cada modelo como Normal, Anómalo o tipo de ataque específico.
+            {t('comparison_table_help')}
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -626,7 +630,7 @@ def _display_results(filas):
 
     # Explicación de métricas internas
     if any(c in res_df.columns for c in ['Silhouette', 'Calinski', 'Davies']):
-        with st.expander("📖 ¿Qué significan estas métricas?"):
+        with st.expander(t('metric_meanings')):
             st.markdown(f"""
             | Métrica | Qué mide | Valor ideal |
             |---------|----------|-------------|
@@ -647,9 +651,9 @@ def _display_results(filas):
         st.markdown(f"""
         <div style="background: rgba(245,158,11,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(245,158,11,0.15); margin-bottom: 0.5rem;">
-            <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">🧮 Matrices de Confusión</h3>
+            <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">{t('confusion_matrices')}</h3>
             <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
-                Comparan las predicciones del modelo vs las etiquetas reales. La diagonal principal (↘) muestra aciertos.
+                {t('confusion_matrices_help')}
             </p>
         </div>
         """, unsafe_allow_html=True)

@@ -5,6 +5,7 @@ Página principal con información del sistema, características y guía de uso.
 
 import streamlit as st
 from config.theme import get_current_theme
+from config.i18n import t
 from pathlib import Path
 import base64
 
@@ -12,8 +13,8 @@ import base64
 def show_home_page():
     """Mostrar página de inicio con información del sistema."""
 
-    t = get_current_theme()
-    c = t.colors
+    theme = get_current_theme()
+    c = theme.colors
 
     # Rutas a imágenes + helpers para base64
     # el directorio `img` está situado en la raíz del proyecto; desde aquí
@@ -59,8 +60,8 @@ def show_home_page():
     </style>
     <div class="home-hero">
         <div class="home-hero-content">
-            <h1 style="margin: 0; color: {c.hero_title}; font-size: 3rem;">🛡️ Sistema de Detección de Intrusos</h1>
-            <p style="margin-top: 0.5rem; color: {c.hero_subtitle}; font-size: 1.2rem;">Monitoreo de red en tiempo real con Inteligencia Artificial</p>
+            <h1 style="margin: 0; color: {c.hero_title}; font-size: 3rem;">{t("ids_title")}</h1>
+            <p style="margin-top: 0.5rem; color: {c.hero_subtitle}; font-size: 1.2rem;">{t("ids_subtitle")}</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -72,24 +73,24 @@ def show_home_page():
         st.markdown(f"""
         <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
             <h1 style="margin: 0; font-size: 3em;">⚡</h1>
-            <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>Tiempo Real</strong></p>
-            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">Captura y análisis instantáneo</p>
+            <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>{t("real_time")}</strong></p>
+            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">{t("instant_capture")}</p>
         </div>
         """, unsafe_allow_html=True)
     with col_feat2:
         st.markdown(f"""
         <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
             <h1 style="margin: 0; font-size: 3em;">🤖</h1>
-            <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>IA Avanzada</strong></p>
-            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">8 modelos de Machine Learning</p>
+            <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>{t("advanced_ai")}</strong></p>
+            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">{t("ml_models")}</p>
         </div>
         """, unsafe_allow_html=True)
     with col_feat3:
         st.markdown(f"""
         <div style="text-align: center; padding: 30px; background: {c.surface_variant}; border-radius: 15px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; border: 1px solid {c.border};">
             <h1 style="margin: 0; font-size: 3em;">📊</h1>
-            <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>Visualización</strong></p>
-            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">Gráficas interactivas y reportes</p>
+            <p style="margin: 15px 0 5px 0; font-size: 1.3em;"><strong>{t("visualization")}</strong></p>
+            <p style="margin: 5px 0 0 0; font-size: 1em; color: {c.text_secondary};">{t("interactive_reports")}</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -100,16 +101,10 @@ def show_home_page():
     <div style="background: {c.surface_overlay}; padding: 2rem; border-radius: 15px; 
                 border-left: 4px solid {c.primary}; margin: 2rem 0;">
         <p style="font-size: 1.2rem; line-height: 1.8; text-align: justify;">
-            Bienvenido al <strong>Sistema de Detección de Intrusiones en Redes IoT</strong>, 
-            una solución avanzada diseñada para monitorear y detectar anomalías 
-            en redes de IoT, brindando seguridad y confiabilidad sin precedentes.
+            {t("welcome_text")}
         </p>
         <p style="font-size: 1.1rem; line-height: 1.8; text-align: justify; margin-top: 1rem;">
-            Nuestro sistema utiliza modelos de vanguardia en detección de anomalías y clasificación supervisada, como 
-            <strong>IForest</strong> (Isolation Forest), <strong>OCSVM</strong> (One Class Support Vector Machine),
-            <strong>K-MEANS</strong>, <strong>Autoencoder multiclase</strong>, <strong>DecisionTree</strong>,
-            <strong>ExtraTrees</strong>, <strong>LogisticRegression</strong> y <strong>RandomForest</strong> para analizar patrones complejos 
-            y alertar sobre posibles irregularidades en la red en tiempo real.
+            {t("models_description")}
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -118,7 +113,7 @@ def show_home_page():
     st.markdown("---")
     st.markdown(f"""
     <h2 style="text-align: center; color: {c.heading_primary}; margin: 3rem 0 2rem 0;">
-        🎯 Características Principales del Sistema
+        {t("main_features")}
     </h2>
     """, unsafe_allow_html=True)
     
@@ -130,10 +125,8 @@ def show_home_page():
                     border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid rgba(16, 185, 129, 0.25);">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔍</div>
-            <h3 style="color: {c.success}; margin-bottom: 1rem;">Detección en Tiempo Real</h3>
-            <p style="font-size: 0.95rem; line-height: 1.6;">
-                Monitoreo continuo y análisis instantáneo de patrones de red
-            </p>
+            <h3 style="color: {c.success}; margin-bottom: 1rem;">{t("real_time_detection")}</h3>
+            <p style="font-size: 0.95rem; line-height: 1.6;">{t("continuous_monitoring")}</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -143,10 +136,8 @@ def show_home_page():
                     border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid {c.border_active};">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧠</div>
-            <h3 style="color: {c.heading_secondary}; margin-bottom: 1rem;">IA Avanzada</h3>
-            <p style="font-size: 0.95rem; line-height: 1.6;">
-                Algoritmos de machine learning de última generación
-            </p>
+            <h3 style="color: {c.heading_secondary}; margin-bottom: 1rem;">{t("advanced_ai")}</h3>
+            <p style="font-size: 0.95rem; line-height: 1.6;">{t("latest_ml")}</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -156,10 +147,8 @@ def show_home_page():
                     border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid rgba(245, 158, 11, 0.25);">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">📊</div>
-            <h3 style="color: {c.warning}; margin-bottom: 1rem;">Análisis Predictivo</h3>
-            <p style="font-size: 0.95rem; line-height: 1.6;">
-                Predicción de amenazas y comportamientos anómalos
-            </p>
+            <h3 style="color: {c.warning}; margin-bottom: 1rem;">{t("predictive_analysis")}</h3>
+            <p style="font-size: 0.95rem; line-height: 1.6;">{t("threat_prediction")}</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -169,30 +158,25 @@ def show_home_page():
                     border-radius: 15px; text-align: center; min-height: 200px; 
                     border: 1px solid rgba(239, 68, 68, 0.25);">
             <div style="font-size: 3.5rem; margin-bottom: 1rem;">🚫</div>
-            <h3 style="color: {c.error}; margin-bottom: 1rem;">Protección Activa</h3>
-            <p style="font-size: 0.95rem; line-height: 1.6;">
-                Identificación y mitigación automática de amenazas
-            </p>
+            <h3 style="color: {c.error}; margin-bottom: 1rem;">{t("active_protection")}</h3>
+            <p style="font-size: 0.95rem; line-height: 1.6;">{t("threat_mitigation")}</p>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(f"""
     <div style="background: {c.surface_overlay}; padding: 1.2rem 1.5rem; border-radius: 15px; border: 1px solid {c.border};">
-        <h3 style="margin-top: 0; color: {c.heading_primary};">🧠 Modelos Supervisados Agregados</h3>
-        <p style="margin-bottom: 0.75rem; color: {c.text_secondary};">
-            Estos modelos complementan a los algoritmos no supervisados para escenarios con datos etiquetados.
-            <strong>GradientBoosting</strong> queda descartado temporalmente.
-        </p>
+        <h3 style="margin-top: 0; color: {c.heading_primary};">{t("supervised_models")}</h3>
+        <p style="margin-bottom: 0.75rem; color: {c.text_secondary};">{t("supervised_models_description")}</p>
         <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem;">
             <div style="padding: 0.8rem 1rem; background: rgba(56, 189, 248, 0.08); border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.2);">
-                <strong>DecisionTree</strong><br><span style="color: {c.text_secondary};">Clasificador interpretable basado en reglas.</span>
+                <strong>DecisionTree</strong><br><span style="color: {c.text_secondary};">{t("decision_tree_description")}</span>
             </div>
             <div style="padding: 0.8rem 1rem; background: rgba(16, 185, 129, 0.08); border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.2);">
-                <strong>ExtraTrees</strong><br><span style="color: {c.text_secondary};">Ensamble robusto de árboles aleatorios.</span>
+                <strong>ExtraTrees</strong><br><span style="color: {c.text_secondary};">{t("extra_trees_description")}</span>
             </div>
             <div style="padding: 0.8rem 1rem; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
-                <strong>RandomForest</strong><br><span style="color: {c.text_secondary};">Ensamble balanceado con buen rendimiento general.</span>
+                <strong>RandomForest</strong><br><span style="color: {c.text_secondary};">{t("random_forest_description")}</span>
             </div>
         </div>
     </div>
@@ -202,7 +186,7 @@ def show_home_page():
     st.markdown("---")
     st.markdown(f"""
     <h2 style="text-align: center; color: {c.heading_primary}; margin: 3rem 0 2rem 0;">
-        💬 Interpretación de Resultados
+        {t("results_interpretation")}
     </h2>
     """, unsafe_allow_html=True)
 
@@ -213,11 +197,11 @@ def show_home_page():
         st.markdown(f"""
         <div style="background: {c.success_light}; padding: 1.5rem; border-radius: 12px; 
                     border-left: 4px solid {c.success};">
-            <h3 style="color: {c.success}; margin-bottom: 1rem;">🟢 Métricas de Validación</h3>
+            <h3 style="color: {c.success}; margin-bottom: 1rem;">{t("validation_metrics")}</h3>
             <ul style="line-height: 2;">
-                <li><strong>Silhouette Score:</strong> Mide la calidad de los clusters (ideal > 0.5)</li>
-                <li><strong>Calinski Score:</strong> Evalúa la separación entre clusters</li>
-                <li><strong>Davies Score:</strong> Indica la similitud dentro de clusters</li>
+                <li><strong>Silhouette Score:</strong> {t("cluster_quality")}</li>
+                <li><strong>Calinski Score:</strong> {t("cluster_separation")}</li>
+                <li><strong>Davies Score:</strong> {t("cluster_similarity")}</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -226,10 +210,10 @@ def show_home_page():
         st.markdown(f"""
         <div style="background: {c.surface_variant}; padding: 1.5rem; border-radius: 12px; 
                     border-left: 4px solid {c.primary};">
-            <h3 style="color: {c.heading_secondary}; margin-bottom: 1rem;">🔰 Clasificación de Anomalías</h3>
+            <h3 style="color: {c.heading_secondary}; margin-bottom: 1rem;">{t("anomaly_classification")}</h3>
             <ul style="line-height: 2;">
-                <li><strong>Normal:</strong> Tráfico de red esperado</li>
-                <li><strong>Anómalo:</strong> Patrones sospechosos</li>
+                <li><strong>Normal:</strong> {t("expected_network_traffic")}</li>
+                <li><strong>{t("anomalous_label")}:</strong> {t("suspicious_patterns")}</li>
                 <li><strong>Multiclase:</strong>
                     <ul>
                         <li>DDoS_TCP</li>
@@ -245,12 +229,12 @@ def show_home_page():
         st.markdown(f"""
         <div style="background: {c.warning_light}; padding: 1.5rem; border-radius: 12px; 
                     border-left: 4px solid {c.warning};">
-            <h3 style="color: {c.warning}; margin-bottom: 1rem;">⚙️ Métricas de Rendimiento</h3>
+            <h3 style="color: {c.warning}; margin-bottom: 1rem;">{t("performance_metrics")}</h3>
             <ul style="line-height: 2;">
-                <li><strong>CPU:</strong> % Consumo por segundo</li>
-                <li><strong>Memoria:</strong> % Uso de RAM</li>
-                <li><strong>Disco:</strong> % Uso de almacenamiento</li>
-                <li><strong>Tiempo:</strong> Duración en segundos</li>
+                <li><strong>CPU:</strong> {t("cpu_usage")}</li>
+                <li><strong>Memoria:</strong> {t("ram_usage")}</li>
+                <li><strong>Disco:</strong> {t("storage_usage")}</li>
+                <li><strong>Tiempo:</strong> {t("duration_seconds")}</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -259,7 +243,7 @@ def show_home_page():
     st.markdown("---")
     st.markdown(f"""
     <h2 style="text-align: center; color: {c.heading_primary}; margin: 3rem 0 2rem 0;">
-        🔎 Modelos de Detección de Anomalías
+        {t("anomaly_models")}
     </h2>
     """, unsafe_allow_html=True)
 
@@ -271,8 +255,7 @@ def show_home_page():
                     margin-bottom: 1rem; border: 2px solid {c.primary};">
             <h3 style="color: {c.heading_secondary};">🔵 OCSVM (One Class Support Vector Machine)</h3>
             <p style="line-height: 1.8; margin-top: 1rem;">
-                Modelo de aprendizaje supervisado que aprende características del tráfico normal 
-                y detecta desviaciones. Ideal para escenarios donde solo se tiene acceso a datos normales.
+                {t("ocsvm_description")}
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -282,8 +265,7 @@ def show_home_page():
                     margin-bottom: 1rem; border: 2px solid {c.success};">
             <h3 style="color: {c.success};">🟢 IForest (Isolation Forest)</h3>
             <p style="line-height: 1.8; margin-top: 1rem;">
-                Algoritmo basado en árboles de decisión que aísla anomalías de forma eficiente. 
-                Excelente para detectar outliers en grandes volúmenes de datos.
+                {t("iforest_description")}
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -294,8 +276,7 @@ def show_home_page():
                     margin-bottom: 1rem; border: 2px solid {c.warning};">
             <h3 style="color: {c.warning};">🟠 K-means</h3>
             <p style="line-height: 1.8; margin-top: 1rem;">
-                Algoritmo de clustering no supervisado que agrupa datos similares. 
-                Identifica patrones anómalos al detectar puntos alejados de los centroides.
+                {t("kmeans_description")}
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -305,8 +286,7 @@ def show_home_page():
                     margin-bottom: 1rem; border: 2px solid {c.error};">
             <h3 style="color: {c.error};">🔴 Autoencoder multiclase</h3>
             <p style="line-height: 1.8; margin-top: 1rem;">
-                Red neuronal profunda que aprende representaciones comprimidas de datos normales. 
-                Detecta anomalías y clasifica múltiples tipos de ataques simultáneamente.
+                {t("autoencoder_description")}
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -315,16 +295,16 @@ def show_home_page():
     st.markdown("---")
     st.markdown(f"""
     <h2 style="text-align: center; color: {c.heading_primary}; margin: 3rem 0 2rem 0;">
-        📖 Guía de Uso del Sistema
+        {t("usage_guide")}
     </h2>
     """, unsafe_allow_html=True)
 
     steps = [
-        ("🔌", "Paso 1: Seleccionar Modelo", "Elige el algoritmo de detección más adecuado"),
-        ("📡", "Paso 2: Capturar Paquetes", "Inicia la captura de tráfico de red"),
-        ("🖱️", "Paso 3: Realizar Predicción", "Ejecuta el análisis con un solo clic"),
-        ("📊", "Paso 4: Visualizar Resultados", "Examina gráficos interactivos y métricas"),
-        ("💾", "Paso 5: Guardar Resultados", "Exporta los datos en formato CSV")
+        ("🔌", t("step_select_model"), t("step_select_model_desc")),
+        ("📡", t("step_capture"), t("step_capture_desc")),
+        ("🖱️", t("step_predict"), t("step_predict_desc")),
+        ("📊", t("step_results"), t("step_results_desc")),
+        ("💾", t("step_save"), t("step_save_desc"))
     ]
 
     cols = st.columns(5)
@@ -371,10 +351,10 @@ def show_home_page():
     <div class="cta-banner">
         <div class="cta-content">
             <h2 style="color: {c.hero_title}; margin-bottom: 1rem; font-size: 2rem;">
-                ¿Listo para comenzar?
+                {t("ready_to_start")}
             </h2>
             <p style="color: {c.hero_subtitle}; font-size: 1.2rem; margin-bottom: 1.5rem;">
-                Accede al <strong>Panel de Control</strong> y empezar a proteger tu red IoT
+                {t("access_dashboard")}
             </p>
             <div style="font-size: 3rem;">🚀</div>
         </div>
@@ -386,13 +366,13 @@ def show_home_page():
     st.markdown(f"""
     <div style="text-align: center; padding: 2rem; color: {c.text_secondary};">
         <p style="margin: 0.5rem 0;">
-            <strong>Sistema de Detección de Intrusiones para IoT</strong> v1.0
+            <strong>{t("ids_footer")}</strong> v1.0
         </p>
         <p style="margin: 0.5rem 0; font-size: 0.9rem;">
-            Desarrollado por <strong>Innovasic UCC</strong> | Potenciado por IA Avanzada
+            {t("developed_by")}
         </p>
         <p style="margin: 0.5rem 0; font-size: 0.85rem; color: {c.text_disabled};">
-            © 2026 - Todos los derechos reservados
+            {t("all_rights_reserved")}
         </p>
     </div>
     """, unsafe_allow_html=True)
