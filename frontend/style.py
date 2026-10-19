@@ -5,8 +5,40 @@ Soporta tema oscuro y claro dinámicamente.
 """
 
 import streamlit as st
+import pandas as pd
+from pandas.io.formats.style import Styler
 from config.i18n import t
 from config.theme import get_current_theme
+
+
+def style_dataframe_for_theme(dataframe: pd.DataFrame) -> pd.DataFrame | Styler:
+    """Aplica colores del tema a las tablas de Streamlit."""
+    if dataframe.size > pd.get_option("styler.render.max_elements"):
+        return dataframe
+
+    colors = get_current_theme().colors
+    return dataframe.style.set_properties(**{
+        "background-color": colors.surface,
+        "color": colors.text_primary,
+        "border-color": colors.border,
+    }).set_table_styles([
+        {
+            "selector": "th.row_heading, th.blank",
+            "props": [
+                ("background-color", colors.surface_elevated),
+                ("color", colors.text_primary),
+                ("border-color", colors.border),
+            ],
+        },
+        {
+            "selector": "th.col_heading",
+            "props": [
+                ("background-color", colors.surface_elevated),
+                ("color", colors.text_primary),
+                ("border-color", colors.border),
+            ],
+        },
+    ])
 
 
 def setup_page_and_style():
@@ -994,6 +1026,17 @@ def _build_css(theme) -> str:
     [data-baseweb="popover"] [aria-selected="true"] {{
         background-color: {colors.surface_variant} !important;
     }}
+    [data-baseweb="popover"] [role="option"],
+    [data-baseweb="popover"] [role="option"] * {{
+        color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
+    }}
+    [data-baseweb="popover"] [role="option"][aria-selected="true"],
+    [data-baseweb="popover"] [role="option"][aria-selected="true"] * {{
+        background-color: {colors.surface_variant} !important;
+        color: {colors.text_primary} !important;
+        -webkit-text-fill-color: {colors.text_primary} !important;
+    }}
 
     /* st.popover() body — override baseweb popover when it wraps stPopoverBody */
     [data-baseweb="popover"]:has([data-testid="stPopoverBody"]) {{
@@ -1196,11 +1239,11 @@ def _build_css(theme) -> str:
         color: {colors.heading_primary} !important;
     }}
 
-    /* Hero sections: títulos y subtítulos SIEMPRE blancos */
+    /* Hero sections: texto blanco sobre fondos oscuros para mantener contraste. */
     .home-hero-content h1, .home-hero-content h2, .home-hero-content h3,
     .home-hero-content p, .home-hero-content strong,
-    .home-cta-content h1, .home-cta-content h2, .home-cta-content h3,
-    .home-cta-content p, .home-cta-content strong,
+    .cta-content h1, .cta-content h2, .cta-content h3,
+    .cta-content p, .cta-content strong,
     .guia-header-content h1, .guia-header-content h2, .guia-header-content h3,
     .guia-header-content p, .guia-header-content strong,
     .guia-footer-content h1, .guia-footer-content h2, .guia-footer-content h3,
@@ -1208,6 +1251,8 @@ def _build_css(theme) -> str:
     .compare-hero-content h1, .compare-hero-content h2, .compare-hero-content h3,
     .compare-hero-content p, .compare-hero-content strong {{
         color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
     }}
 
     /* Caption text */

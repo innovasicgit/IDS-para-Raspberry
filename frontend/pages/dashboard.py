@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 import streamlit as st
 from config.theme import get_current_theme
 from config.i18n import t, t_list
+from frontend.style import style_dataframe_for_theme
 import joblib
 import pandas as pd
 import numpy as np
@@ -404,6 +405,7 @@ def show_dashboard_page():
                     title=t("chart_percentage_distribution")
                 )
                 pie_fig.update_traces(textinfo='percent+label')
+                pie_fig.update_layout(**theme.get_plotly_layout())
                 st.plotly_chart(pie_fig, use_container_width=True)
             
             with col_graf2:
@@ -411,6 +413,7 @@ def show_dashboard_page():
                 bar_colors = [(c.success if (str(lbl).lower() == 'normal') else c.error) for lbl in resumen['labels']]
                 fig_bar = go.Figure(data=[go.Bar(x=resumen['labels'], y=resumen['values'], text=resumen['values'], textposition='auto', marker_color=bar_colors)])
                 fig_bar.update_layout(title=t('chart_detection_distribution'), title_x=0.5)
+                fig_bar.update_layout(**theme.get_plotly_layout())
                 st.plotly_chart(fig_bar, use_container_width=True)
             
             # Explicación inteligente de la distribución
@@ -436,16 +439,10 @@ def show_dashboard_page():
                 scores = st.session_state['scores']
                 if isinstance(scores, (np.ndarray, list)) and len(scores) > 0:
                     try:
-                        thr = None
-                        if not st.session_state.get('ocsvm_use_sign', True):
-                            pct = float(st.session_state.get('ocsvm_percentile', 0.45))
-                            thr = np.percentile(scores, 100 * pct)
                         hist_fig = go.Figure()
-                        hist_fig.add_trace(go.Histogram(x=scores, nbinsx=30, marker_color=c.primary, name='decision_function'))
-                        if thr is not None:
-                            hist_fig.add_shape(type='line', x0=thr, x1=thr, y0=0, y1=1, xref='x', yref='paper', line=dict(color=c.error, width=2))
-                            hist_fig.add_annotation(x=thr, y=1, yref='paper', text=f"Umbral={thr:.3f}", showarrow=True, arrowhead=1)
+                        hist_fig.add_trace(go.Histogram(x=scores, nbinsx=30, marker_color=c.primary, name='attack_score'))
                         hist_fig.update_layout(title=t('ocsvm_distribution'), title_x=0.5)
+                        hist_fig.update_layout(**theme.get_plotly_layout())
                         st.plotly_chart(hist_fig, use_container_width=True)
                     except Exception:
                         pass
@@ -492,7 +489,7 @@ def show_dashboard_page():
                             columns=[t('pred_normal'), t('pred_attack')],
                             index=[t('real_normal'), t('real_attack')]
                         )
-                        st.dataframe(cm_df, use_container_width=True)
+                        st.dataframe(style_dataframe_for_theme(cm_df), use_container_width=True)
 
                     roc_curve_data = st.session_state.get('roc_curve_data')
                     if roc_curve_data is not None:
@@ -519,6 +516,7 @@ def show_dashboard_page():
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)'
                         )
+                        roc_fig.update_layout(**theme.get_plotly_layout())
                         st.plotly_chart(roc_fig, use_container_width=True)
                 else:
                     st.info(t("no_external_metrics"))
@@ -685,6 +683,7 @@ def show_dashboard_page():
                                 zeroline=False
                             )
                         )
+                        fig_traffic.update_layout(**theme.get_plotly_layout())
 
                         st.plotly_chart(fig_traffic, use_container_width=True)
                 except Exception as e:
@@ -693,7 +692,10 @@ def show_dashboard_page():
             # Tabla de paquetes capturados (siempre visible debajo de la gráfica de tráfico)
             if 'data_prediccion' in st.session_state and st.session_state['data_prediccion'] is not None:
                 st.markdown(t("captured_packets_heading"))
-                st.dataframe(st.session_state['data_prediccion'], use_container_width=True)
+                st.dataframe(
+                    style_dataframe_for_theme(st.session_state['data_prediccion']),
+                    use_container_width=True,
+                )
         
         # Mostrar tabla de paquetes capturados (captura manual completada, aún sin predicción)
         elif st.session_state.get('captura_manual_lista', False):
@@ -705,7 +707,10 @@ def show_dashboard_page():
                 # Mensaje temporal con conteo (6s)
                 msg_info = st.empty()
                 msg_info.info(t("captured_data_prompt", count=len(st.session_state.data)))
-                st.dataframe(st.session_state.data, use_container_width=True)
+                st.dataframe(
+                    style_dataframe_for_theme(st.session_state.data),
+                    use_container_width=True,
+                )
                 time.sleep(3)
                 msg_listos.empty()
                 time.sleep(3)
@@ -1241,7 +1246,10 @@ def show_dashboard_page():
                         st.success(t("csv_loaded"))
                         
                         with st.expander(t("data_preview")):
-                            st.dataframe(data.head(), use_container_width=True)
+                            st.dataframe(
+                                style_dataframe_for_theme(data.head()),
+                                use_container_width=True,
+                            )
                             st.info(t("dataset_dimensions", rows=data.shape[0], columns=data.shape[1]))
                         
                         # Guardar en session_state

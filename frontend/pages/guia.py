@@ -233,7 +233,7 @@ def show_guia_page():
         <div class="guide-model-card {get_language()}" style="padding: 1rem; background: {c.success_light}; border-radius: 10px;">
         <div class="guide-translated">{t('guide_iforest_body')}</div>
         
-            <h4 style="color: {c.success};">{t('model_what_how')}</h4>
+        <h4 style="color: {c.success};">{t('model_what_how')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>Isolation Forest</strong> funciona con un principio simple pero poderoso: 
@@ -248,7 +248,7 @@ def show_guia_page():
             persona de la fiesta para notar que el dinosaurio es diferente.
         </p>
         
-            <h4 style="color: {c.success}; margin-top: 1.5rem;">{t('model_technical')}</h4>
+        <h4 style="color: {c.success}; margin-top: 1.5rem;">{t('model_technical')}</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Construcción de árboles</strong>: Crea múltiples "árboles de decisión" aleatorios</li>
@@ -291,7 +291,7 @@ def show_guia_page():
         <div class="guide-model-card {get_language()}" style="padding: 1rem; background: rgba(33, 150, 243, 0.08); border-radius: 10px;">
         <div class="guide-translated">{t('guide_ocsvm_body')}</div>
         
-            <h4 style="color: {c.heading_secondary};">{t('model_what_how')}</h4>
+        <h4 style="color: {c.heading_secondary};">{t('model_what_how')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>One-Class SVM</strong> aprende a crear una "frontera" o "perímetro de seguridad" 
@@ -305,7 +305,7 @@ def show_guia_page():
             o potencial intruso.
         </p>
         
-            <h4 style="color: {c.heading_secondary}; margin-top: 1.5rem;">{t('model_technical')}</h4>
+        <h4 style="color: {c.heading_secondary}; margin-top: 1.5rem;">{t('model_technical')}</h4>
         
         <ol style="font-size: 1.05rem; line-height: 1.7;">
             <li><strong>Aprendizaje de la normalidad</strong>: Estudia solo ejemplos de tráfico legítimo</li>
@@ -352,7 +352,7 @@ def show_guia_page():
         <div class="guide-model-card {get_language()}" style="padding: 1rem; background: {c.warning_light}; border-radius: 10px;">
         <div class="guide-translated">{t('guide_kmeans_body')}</div>
         
-            <h4 style="color: {c.warning};">{t('model_what_how')}</h4>
+        <h4 style="color: {c.warning};">{t('model_what_how')}</h4>
         
         <p style="font-size: 1.05rem; line-height: 1.8; text-align: justify;">
             <strong>K-MEANS</strong> es un algoritmo de agrupamiento (clustering) que organiza el tráfico 

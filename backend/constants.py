@@ -1,9 +1,10 @@
 # Model path constants used across the app
 IFOREST_MODEL_PATHS = "model/iforest__EJERCICIO10_n_components6_fit.pkl"
-OCSVM_MODEL_PATH    = "model/ocsvm__EJERCICIO10_n_components6_fit.pkl"
+OCSVM_MODEL_PATH    = "model/ocsvm_reentrenado_v2.pkl"
 KMEANS_MODEL_PATHS  = "model/kmeans1__EJERCICIO10_n_components6_over.pkl"
-AUTOENCODER_MODEL_PATH = "model/autoencoder.pkl"
+AUTOENCODER_MODEL_PATH = "model/autoencoder_reentrenado_v2.pkl"
 KMEANS_TXT_PATH     = "model/list_kmeans_over.txt"
+KMEANS_RETRAINED_V3_TXT_PATH = "model/list_kmeans_reentrenado_v3.txt"
 
 # Supervised models (scikit-learn 1.6.1)
 DECISION_TREE_MODEL_PATH = "model/Supervisados/dedup_groupip_Decision_tree_fit.pkl"

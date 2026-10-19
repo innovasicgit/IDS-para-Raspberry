@@ -56,6 +56,12 @@ def _sanitize_numeric_frame(data):
 def predecir(model, data, model_option):
     try:
         data = data.copy()
+        iforest_threshold = None
+        if model_option == 'IForest' and isinstance(model, dict):
+            if 'modelo' not in model or 'umbral' not in model:
+                raise ValueError("El artefacto IForest debe incluir 'modelo' y 'umbral'.")
+            iforest_threshold = float(model['umbral'])
+            model = model['modelo']
 
         # Alinear columnas de entrada a lo esperado por el pipeline si es posible
         expected_cols = None
@@ -96,41 +102,40 @@ def predecir(model, data, model_option):
         predicciones = None
 
         if(model_option=='IForest'):
-            scores = model.decision_function(data)
-            pred_raw = model.predict(data)
-            predicciones = np.where(pred_raw == 1, 1, 0)
+            decision_scores = model.decision_function(data)
+            scores = decision_scores
+            if iforest_threshold is not None:
+                predicciones = np.where(decision_scores > iforest_threshold, 1, 0)
+            else:
+                pred_raw = model.predict(data)
+                predicciones = np.where(pred_raw == 1, 1, 0)
         
         elif(model_option=='OCSVM'):
             try:
                 scores = model.decision_function(data)
             except Exception:
                 scores = None
-            # Este artefacto OCSVM quedó con la polaridad invertida respecto a la
-            # convención que usa el resto de la app, así que normalizamos siempre a
-            # 0=Normal y 1=Anómalo aquí.
-            if st.session_state.get('ocsvm_use_sign', True):
-                pred_raw = model.predict(data)
-                predicciones = np.where(pred_raw == 1, 1, 0)
-            else:
-                if scores is None:
-                    predicciones = model.predict(data)
-                    predicciones = np.where(predicciones == 1, 1, 0)
-                else:
-                    pct = float(st.session_state.get('ocsvm_percentile', 0.45))
-                    threshold = np.percentile(scores, 100 * pct)
-                    predicciones = np.where(scores >= threshold, 1, 0)
+            pred_raw = model.predict(data)
+            predicciones = np.where(pred_raw == 1, 1, 0)
         elif(model_option=='KMEANS'):
             scores = None
             predicciones = model.predict(data)
         elif(model_option=='AUTOENCODER'):
             proba = None
-            est = None
+            est = getattr(model, 'named_steps', {}).get('autoencoder_classifier', None)
+            # El estimador interno espera la salida del preprocesado del pipeline
+            # (PCA a 6 componentes), no las columnas crudas.
+            data_est = data
+            if est is not None:
+                try:
+                    data_est = model[:-1].transform(data)
+                except Exception:
+                    data_est = data
             try:
                 if hasattr(model, 'predict_proba'):
                     proba = model.predict_proba(data)
-                est = getattr(model, 'named_steps', {}).get('autoencoder_classifier', None)
                 if proba is None and est is not None and hasattr(est, 'predict_proba'):
-                    proba = est.predict_proba(data)
+                    proba = est.predict_proba(data_est)
             except Exception:
                 proba = None
             rec_err = None
@@ -138,7 +143,7 @@ def predecir(model, data, model_option):
                 if hasattr(model, 'reconstruction_error'):
                     rec_err = model.reconstruction_error(data)
                 elif est is not None and hasattr(est, 'reconstruction_error'):
-                    rec_err = est.reconstruction_error(data)
+                    rec_err = est.reconstruction_error(data_est)
             except Exception:
                 rec_err = None
             normal_idx = 0
@@ -161,7 +166,7 @@ def predecir(model, data, model_option):
                 try:
                     predicciones = model.predict(data)
                 except Exception:
-                    predicciones = est.predict(data) if est is not None else np.zeros(len(data), dtype=int)
+                    predicciones = est.predict(data_est) if est is not None else np.zeros(len(data), dtype=int)
                 scores = None
         else:
             # Modelos supervisados de scikit-learn.

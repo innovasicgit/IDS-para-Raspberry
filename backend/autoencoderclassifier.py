@@ -7,6 +7,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.optimizers import Adam
 import numpy as np
+from .del_columns import del_columns
 
 class AutoencoderClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, input_dim=None, n_classes=2, epochs=100, batch_size=32, verbose=0, patience=5):
