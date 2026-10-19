@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 import streamlit as st
 from config.theme import get_current_theme
 from config.i18n import t
+from frontend.style import style_dataframe_for_theme
 from pathlib import Path
 import base64
 import pandas as pd
@@ -246,7 +247,7 @@ def _select_data_source():
         st.markdown(f"""
         <div style="background: rgba(16,185,129,0.06); padding: 0.8rem 1rem; border-radius: 10px;
                     border: 1px solid rgba(16,185,129,0.15); margin-bottom: 0.5rem;">
-            <p style="margin: 0; font-size: 0.9rem; color: rgba(240,250,254,0.6);">
+            <p style="margin: 0; font-size: 0.9rem; color: {c.text_secondary};">
                 {t('last_capture')}
             </p>
         </div>
@@ -264,7 +265,7 @@ def _select_data_source():
         st.markdown(f"""
         <div style="background: rgba(19,131,167,0.06); padding: 0.8rem 1rem; border-radius: 10px;
                     border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
-            <p style="margin: 0; font-size: 0.9rem; color: rgba(240,250,254,0.6);">
+            <p style="margin: 0; font-size: 0.9rem; color: {c.text_secondary};">
                 {t('upload_csv')}
             </p>
         </div>
@@ -456,7 +457,7 @@ def _generate_normal_vs_attacks_insight(res_df, normales, ataques):
             )
 
         insights.append(f'<p style="margin: 4px 0;"><strong style="color: {color};">{estado} {modelo}</strong>: {msg} '
-                        f'<span style="color: rgba(240,250,254,0.5);">({int(n):,} normales / {int(a):,} ataques)</span></p>')
+                        f'<span style="color: {c.text_secondary};">({int(n):,} normales / {int(a):,} ataques)</span></p>')
 
     # Análisis de consenso entre modelos
     if len(res_df) >= 2:
@@ -498,7 +499,7 @@ def _generate_time_insight(res_df):
 
         if fastest["Tiempo (s)"] > 0:
             factor = slowest["Tiempo (s)"] / fastest["Tiempo (s)"]
-            insights.append(f'<p style="margin: 4px 0;"><strong style="color: {c.heading_secondary};">�� Diferencia:</strong> '
+            insights.append(f'<p style="margin: 4px 0;"><strong style="color: {c.heading_secondary};">🔀 Diferencia:</strong> '
                             f'{fastest["Modelo"]} es <strong>{factor:.1f}x más rápido</strong> que {slowest["Modelo"]}.</p>')
 
     avg_time = tiempos['Tiempo (s)'].mean()
@@ -611,7 +612,7 @@ def _display_results(filas):
     <div style="background: rgba(19,131,167,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                 border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
         <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">{t('comparison_table')}</h3>
-        <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
+        <p style="margin: 0; font-size: 0.85rem; color: {c.text_secondary};">
             {t('comparison_table_help')}
         </p>
     </div>
@@ -626,7 +627,7 @@ def _display_results(filas):
             cols.append(col)
 
     cols_disponibles = [c for c in cols if c in res_df.columns]
-    st.dataframe(res_df[cols_disponibles], use_container_width=True, hide_index=True)
+    st.dataframe(style_dataframe_for_theme(res_df[cols_disponibles]), use_container_width=True, hide_index=True)
 
     # Explicación de métricas internas
     if any(c in res_df.columns for c in ['Silhouette', 'Calinski', 'Davies']):
@@ -652,7 +653,7 @@ def _display_results(filas):
         <div style="background: rgba(245,158,11,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(245,158,11,0.15); margin-bottom: 0.5rem;">
             <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">{t('confusion_matrices')}</h3>
-            <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
+            <p style="margin: 0; font-size: 0.85rem; color: {c.text_secondary};">
                 {t('confusion_matrices_help')}
             </p>
         </div>
@@ -668,7 +669,7 @@ def _display_results(filas):
                     columns=['Pred: Normal', 'Pred: Ataque'],
                     index=['Real: Normal', 'Real: Ataque']
                 )
-                st.dataframe(cm_df, use_container_width=True)
+                st.dataframe(style_dataframe_for_theme(cm_df), use_container_width=True)
         st.markdown("")
 
     # ==================== GRÁFICAS LADO A LADO ====================
@@ -680,7 +681,7 @@ def _display_results(filas):
         <div style="background: rgba(19,131,167,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
             <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">📊 Normal vs Ataques</h3>
-            <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
+            <p style="margin: 0; font-size: 0.85rem; color: {c.text_secondary};">
                 Cuántos paquetes clasificó cada modelo como tráfico legítimo vs amenazas detectadas.
             </p>
         </div>
@@ -711,13 +712,13 @@ def _display_results(filas):
             barmode='group',
             xaxis_title='Modelo',
             yaxis_title='Paquetes',
-            template='plotly_dark',
             height=400,
             margin=dict(t=20, b=40, l=50, r=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
+        fig.update_layout(**theme.get_plotly_layout())
         st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False, 'responsive': True})
 
         # Insight inteligente
@@ -738,7 +739,7 @@ def _display_results(filas):
         <div style="background: rgba(19,131,167,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(19,131,167,0.15); margin-bottom: 0.5rem;">
             <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">⏱️ Tiempos de predicción</h3>
-            <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
+            <p style="margin: 0; font-size: 0.85rem; color: {c.text_secondary};">
                 Cuánto tardó cada modelo en analizar todos los paquetes. Menor es mejor.
             </p>
         </div>
@@ -748,8 +749,8 @@ def _display_results(filas):
             tiempos = res_df['Tiempo (s)'].values
             max_t = max(tiempos) if max(tiempos) > 0 else 1
             colors = []
-            for t in tiempos:
-                ratio = t / max_t
+            for tiempo in tiempos:
+                ratio = tiempo / max_t
                 if ratio < 0.4:
                     colors.append(c.success)
                 elif ratio < 0.7:
@@ -766,12 +767,12 @@ def _display_results(filas):
             figt.update_layout(
                 xaxis_title='Modelo',
                 yaxis_title='Segundos',
-                template='plotly_dark',
                 height=400,
                 margin=dict(t=20, b=40, l=50, r=20),
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
             )
+            figt.update_layout(**theme.get_plotly_layout())
             st.plotly_chart(figt, use_container_width=False, config={'displayModeBar': False, 'responsive': True})
 
             # Insight inteligente
@@ -796,7 +797,7 @@ def _display_results(filas):
         <div style="background: rgba(239,68,68,0.06); padding: 1rem 1.2rem; border-radius: 12px;
                     border: 1px solid rgba(239,68,68,0.15); margin-bottom: 0.5rem;">
             <h3 style="margin: 0 0 0.3rem 0; color: {c.heading_primary}; font-size: 1.1rem;">🎯 Desglose por tipo de ataque</h3>
-            <p style="margin: 0; font-size: 0.85rem; color: rgba(240,250,254,0.5);">
+            <p style="margin: 0; font-size: 0.85rem; color: {c.text_secondary};">
                 Detalle de los tipos de ataques detectados por los modelos multiclase (KMEANS y Autoencoder).
             </p>
         </div>
@@ -820,13 +821,13 @@ def _display_results(filas):
             barmode='group',
             xaxis_title='Modelo',
             yaxis_title='Paquetes detectados',
-            template='plotly_dark',
             height=350,
             margin=dict(t=20, b=40, l=50, r=20),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
         )
+        fig_detail.update_layout(**theme.get_plotly_layout())
         st.plotly_chart(fig_detail, use_container_width=False, config={'displayModeBar': False, 'responsive': True})
 
         # Insight de ataques

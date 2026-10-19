@@ -31,6 +31,16 @@ LABEL_COLUMN_NAME_HINTS = {
 # Las columnas que genera la captura son features del tráfico, nunca etiquetas
 # reales (p. ej. tcp_flags_syn marca un inicio de conexión TCP, no un ataque).
 CAPTURE_FEATURE_COLUMNS = {c.lower() for c in CAPTURE_FIELDNAMES}
+PREDICTION_OUTPUT_COLUMNS = {
+    "prediccion",
+    "prediccion_id",
+    "prediccion_binaria",
+    "modelo_prediccion",
+    "prediction",
+    "prediction_id",
+    "prediction_binary",
+    "model_prediction",
+}
 
 
 def purity_score(y_true, y_pred):
@@ -102,7 +112,11 @@ def candidate_label_columns(df, max_unique=20):
     if df is None or not isinstance(df, pd.DataFrame) or df.empty:
         return []
 
-    cols = [c for c in df.columns if str(c).strip().lower() not in CAPTURE_FEATURE_COLUMNS]
+    cols = [
+        c for c in df.columns
+        if str(c).strip().lower() not in CAPTURE_FEATURE_COLUMNS
+        and str(c).strip().lower() not in PREDICTION_OUTPUT_COLUMNS
+    ]
     by_name = [
         c for c in cols
         if any(hint in str(c).strip().lower() for hint in LABEL_COLUMN_NAME_HINTS)
@@ -268,4 +282,3 @@ def matriz(df1,tipo_ataque,Trans_cluster):
     tabla_binaria.iloc[0,3]=tabla_conf.iloc[0,5]
     tabla_binaria.iloc[1,3]=tabla_conf.iloc[0,6]
     return tabla_binaria ,tabla_conf
-

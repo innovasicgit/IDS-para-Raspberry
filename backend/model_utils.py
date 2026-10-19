@@ -16,6 +16,7 @@ from .constants import (
     AUTOENCODER_MODEL_PATH,
     KMEANS_TXT_PATH,
 )
+from .legacy_del_columns import del_columns as legacy_del_columns
 
 # Importar la clase del_columns necesaria para cargar los modelos serializados
 try:
@@ -48,8 +49,24 @@ def load_model(model_path):
         absolute_path = os.path.abspath(model_path)
         if not os.path.exists(absolute_path):
             raise FileNotFoundError(f"El archivo {absolute_path} no se encuentra.")
-        
-        model = joblib.load(absolute_path)
+
+        legacy_model_paths = {
+            os.path.abspath(IFOREST_MODEL_PATHS),
+            os.path.abspath(KMEANS_MODEL_PATHS),
+        }
+        main_module = sys.modules.get("__main__")
+        main_del_columns = getattr(main_module, "del_columns", None)
+        use_legacy_transformer = absolute_path in legacy_model_paths
+        if use_legacy_transformer and main_module is not None:
+            main_module.del_columns = legacy_del_columns
+        try:
+            model = joblib.load(absolute_path)
+        finally:
+            if use_legacy_transformer and main_module is not None:
+                if main_del_columns is None:
+                    delattr(main_module, "del_columns")
+                else:
+                    main_module.del_columns = main_del_columns
         
         # Verificar si el modelo está fitted
         from sklearn.utils.validation import check_is_fitted

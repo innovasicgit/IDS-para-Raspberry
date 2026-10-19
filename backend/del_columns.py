@@ -7,17 +7,16 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 
 
-# Lista de columnas a eliminar durante el preprocesamiento
+# Lista de columnas eliminadas por los modelos no supervisados reentrenados.
 elimina = [
-    'number__tcp_flags_cwr', 
-    'number__tcp_flags_ecn', 
-    'number__tcp_flags_urg', 
+    'number__tcp_flags_cwr',
+    'number__tcp_flags_ecn',
+    'number__tcp_flags_urg',
     'number__tcp_flags_ack',
-    'number__tcp_flags_push', 
+    'number__tcp_flags_push',
     'number__tcp_flags_reset',
-    'number__tcp_flags_fin', 
-    'number__icmp_type',
-    'number__ip_flags_rb', 
+    'number__tcp_flags_fin',
+    'number__ip_flags_rb',
     'number__tcp_flags_res'
 ]
 

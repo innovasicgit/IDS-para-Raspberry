@@ -317,17 +317,24 @@ class Theme:
 
     def get_plotly_layout(self) -> dict:
         """Layout de Plotly según el tema."""
+        text_color = self.colors.text_primary
+        grid_color = self.get_chart_colors()['grid']
         return {
+            'template': 'plotly_dark' if self.is_dark else 'plotly_white',
             'paper_bgcolor': 'rgba(0,0,0,0)',
             'plot_bgcolor': 'rgba(0,0,0,0)',
-            'font': {'color': self.colors.text_primary},
+            'font': {'color': text_color},
             'xaxis': {
-                'gridcolor': self.get_chart_colors()['grid'],
-                'zerolinecolor': self.get_chart_colors()['grid'],
+                'gridcolor': grid_color,
+                'zerolinecolor': grid_color,
+                'tickfont': {'color': text_color},
+                'title': {'font': {'color': text_color}},
             },
             'yaxis': {
-                'gridcolor': self.get_chart_colors()['grid'],
-                'zerolinecolor': self.get_chart_colors()['grid'],
+                'gridcolor': grid_color,
+                'zerolinecolor': grid_color,
+                'tickfont': {'color': text_color},
+                'title': {'font': {'color': text_color}},
             },
         }
 

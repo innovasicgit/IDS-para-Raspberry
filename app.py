@@ -160,19 +160,6 @@ with st.sidebar:
             min_value=0.0, max_value=1.0, value=0.02, step=0.001,
             help=t("reconstruction_threshold_help")
         )
-        
-        st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>{t('ocsvm')}</p>", unsafe_allow_html=True)
-        st.session_state.ocsvm_use_sign = st.toggle(
-            t("sign_prediction"),
-            value=True,
-            help=t("sign_prediction_help")
-        )
-        st.session_state.ocsvm_percentile = st.slider(
-            t("percentile_threshold"),
-            min_value=0.0, max_value=1.0, value=0.45, step=0.01,
-            help=t("percentile_threshold_help")
-        )
-
     with st.expander(t("user_settings"), expanded=False):
         st.markdown(f"<p style='font-weight:600;color:{c.heading_secondary};margin:0.8rem 0 0.3rem 0;'>{t('email_notifications')}</p>", unsafe_allow_html=True)
         
